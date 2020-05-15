@@ -41,11 +41,15 @@ func PushData(c *gin.Context) {
 	}
 
 	if backend.Config.Enabled {
-		backend.Push2TsdbSendQueue(metricValues)
-	}
-
-	if backend.Config.Enabled {
 		backend.Push2JudgeSendQueue(metricValues)
+
+		if backend.Config.Tsdb.Enabled {
+			backend.Push2TsdbSendQueue(metricValues)
+		}
+
+		if backend.Config.Influxdb.Enabled {
+			backend.Push2InfluxDBSendQueue(metricValues)
+		}
 	}
 
 	if msg != "" {

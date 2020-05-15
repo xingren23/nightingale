@@ -2,15 +2,19 @@ backend:
   # in ms
   # connTimeout: 1000
   # callTimeout: 3000
-  cluster:
-    tsdb01: 127.0.0.1:5821
-  influxdb:
+  tsdb:
     enabled: false
+    cluster:
+      tsdb01: 127.0.0.1:5821
+
+  influxdb:
+    enabled: true
     username: "influx"
     password: "admin123"
     precision: "s"
     database: "n9e"
-    address: "http://127.0.0.1:8086"
+    cluster:
+      influxdb01: "http://127.0.0.1:8086"
 
 logger:
   dir: logs/transfer

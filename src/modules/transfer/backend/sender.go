@@ -43,31 +43,34 @@ func startSendTasks() {
 	}
 
 	if Config.Enabled {
-		for node, item := range Config.ClusterList {
-			for _, addr := range item.Addrs {
-				queue := TsdbQueues[node+addr]
-				go Send2TsdbTask(queue, node, addr, tsdbConcurrent)
-			}
-		}
-	}
-
-	if Config.Enabled {
 		judgeQueue := JudgeQueues.GetAll()
 		for instance, queue := range judgeQueue {
 			go Send2JudgeTask(queue, instance, judgeConcurrent)
 		}
+
+		if Config.Tsdb.Enabled {
+			for node, item := range Config.Tsdb.ClusterList {
+				for _, addr := range item.Addrs {
+					queue := TsdbQueues[node+addr]
+					go Send2TsdbTask(queue, node, addr, tsdbConcurrent)
+				}
+			}
+		}
+
+		if Config.Influxdb.Enabled {
+			for node, item := range Config.Tsdb.ClusterList {
+				for _, addr := range item.Addrs {
+					queue := TsdbQueues[node+addr]
+					go send2InfluxDBTask(queue, node, addr, influxdbConcurrent)
+				}
+			}
+		}
 	}
 
-	if Config.Influxdb.Enabled {
-		go send2InfluxdbTask(influxdbConcurrent)
-
-	}
 }
 
 func Send2TsdbTask(Q *list.SafeListLimited, node, addr string, concurrent int) {
 	batch := Config.Batch // 一次发送,最多batch条数据
-	Q = TsdbQueues[node+addr]
-
 	sema := semaphore.NewSemaphore(concurrent)
 
 	for {
@@ -125,7 +128,7 @@ func Push2TsdbSendQueue(items []*dataobj.MetricValue) {
 			continue
 		}
 
-		cnode := Config.ClusterList[node]
+		cnode := Config.Tsdb.ClusterList[node]
 		for _, addr := range cnode.Addrs {
 			Q := TsdbQueues[node+addr]
 			// 队列已满
@@ -219,7 +222,11 @@ func Push2JudgeSendQueue(items []*dataobj.MetricValue) {
 			}
 		}
 	}
-	stats.Counter.Set("judge.queue.err", errCnt)
+
+	if errCnt > 0 {
+		stats.Counter.Set("judge.queue.err", errCnt)
+		logger.Error("Push2JudgeSendQueue err num: ", errCnt)
+	}
 }
 
 // 打到 Tsdb 的数据,要根据 rrdtool 的特定 来限制 step、counterType、timestamp
@@ -283,9 +290,9 @@ type InfluxClient struct {
 	Precision string
 }
 
-func NewInfluxdbClient() (*InfluxClient, error) {
+func NewInfluxClient(addr string) (*InfluxClient, error) {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     Config.Influxdb.Address,
+		Addr:     addr,
 		Username: Config.Influxdb.Username,
 		Password: Config.Influxdb.Password,
 		Timeout:  time.Millisecond * time.Duration(Config.Influxdb.Timeout),
@@ -302,7 +309,7 @@ func NewInfluxdbClient() (*InfluxClient, error) {
 	}, nil
 }
 
-func (c *InfluxClient) Send(items []*dataobj.InfluxdbItem) error {
+func (c *InfluxClient) Send(items []*dataobj.InfluxDBItem) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  c.Database,
 		Precision: c.Precision,
@@ -325,21 +332,36 @@ func (c *InfluxClient) Send(items []*dataobj.InfluxdbItem) error {
 }
 
 // 将原始数据插入到influxdb缓存队列
-func Push2InfluxdbSendQueue(items []*dataobj.MetricValue) {
+func Push2InfluxDBSendQueue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
-		influxdbItem := convert2InfluxdbItem(item)
-		isSuccess := InfluxdbQueue.PushFront(influxdbItem)
+		influxDBItem := convert2InfluxDBItem(item)
 
-		if !isSuccess {
-			errCnt += 1
+		node, err := InfluxNodeRing.GetNode(influxDBItem.PK())
+		if err != nil {
+			logger.Warningf("get influxdb node error: %v", err)
+			continue
+		}
+
+		cnode := Config.Influxdb.ClusterList[node]
+		for _, addr := range cnode.Addrs {
+			Q := InfluxdbQueue[node+addr]
+			// 队列已满
+			if !Q.PushFront(influxDBItem) {
+				errCnt += 1
+			}
 		}
 	}
-	stats.Counter.Set("influxdb.queue.err", errCnt)
+
+	if errCnt > 0 {
+		stats.Counter.Set("influxdb.queue.err", errCnt)
+		logger.Error("Push2InfluxDBSendQueue err num: ", errCnt)
+	}
+
 }
 
-func convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
-	t := dataobj.InfluxdbItem{Tags: make(map[string]string), Fields: make(map[string]interface{})}
+func convert2InfluxDBItem(d *dataobj.MetricValue) *dataobj.InfluxDBItem {
+	t := dataobj.InfluxDBItem{Tags: make(map[string]string), Fields: make(map[string]interface{})}
 
 	for k, v := range d.TagsMap {
 		t.Tags[k] = v
@@ -352,44 +374,42 @@ func convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
 	return &t
 }
 
-func send2InfluxdbTask(concurrent int) {
+func send2InfluxDBTask(Q *list.SafeListLimited, node, addr string, concurrent int) {
 	batch := Config.Influxdb.Batch // 一次发送,最多batch条数据
 	retry := Config.Influxdb.MaxRetry
-	addr := Config.Influxdb.Address
 	sema := semaphore.NewSemaphore(concurrent)
 
 	var err error
-	c, err := NewInfluxdbClient()
-	defer c.Client.Close()
-
+	influxClient, err := NewInfluxClient(addr)
 	if err != nil {
 		logger.Errorf("init influxdb client fail: %v", err)
 		return
 	}
+	defer influxClient.Client.Close()
 
 	for {
-		items := InfluxdbQueue.PopBackBy(batch)
+		items := Q.PopBackBy(batch)
 		count := len(items)
 		if count == 0 {
 			time.Sleep(DefaultSendTaskSleepInterval)
 			continue
 		}
 
-		influxdbItems := make([]*dataobj.InfluxdbItem, count)
+		influxdbItems := make([]*dataobj.InfluxDBItem, count)
 		for i := 0; i < count; i++ {
-			influxdbItems[i] = items[i].(*dataobj.InfluxdbItem)
+			influxdbItems[i] = items[i].(*dataobj.InfluxDBItem)
 			stats.Counter.Set("points.out.influxdb", 1)
 			logger.Debug("send to influxdb: ", influxdbItems[i])
 		}
 
 		//  同步Call + 有限并发 进行发送
 		sema.Acquire()
-		go func(addr string, influxdbItems []*dataobj.InfluxdbItem, count int) {
+		go func(addr string, influxdbItems []*dataobj.InfluxDBItem, count int) {
 			defer sema.Release()
 			sendOk := false
 
 			for i := 0; i < retry; i++ {
-				err = c.Send(influxdbItems)
+				err = influxClient.Send(influxdbItems)
 				if err == nil {
 					sendOk = true
 					break
@@ -400,9 +420,9 @@ func send2InfluxdbTask(concurrent int) {
 
 			if !sendOk {
 				stats.Counter.Set("points.out.influxdb.err", count)
-				logger.Errorf("send %v to influxdb %s fail: %v", influxdbItems, addr, err)
+				logger.Errorf("send %v to influxdb %s:%s fail: %v", influxdbItems, node, addr, err)
 			} else {
-				logger.Debugf("send to influxdb %s ok", addr)
+				logger.Debugf("send to influxdb %s:%s ok", node, addr)
 			}
 		}(addr, influxdbItems, count)
 	}

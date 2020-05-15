@@ -259,7 +259,7 @@ func QueryOne(para dataobj.TsdbQueryParam) (resp *dataobj.TsdbQueryResponse, err
 		}()
 
 		select {
-		case <-time.After(time.Duration(callTimeout) * time.Millisecond):
+		case <-time.After(time.Duration(Config.CallTimeout) * time.Millisecond):
 			onePool.ForceClose(conn)
 			logger.Errorf("%s, call timeout. proc: %s", addr, onePool.Proc())
 			break
@@ -303,7 +303,7 @@ func SelectPoolByPK(pk string) ([]Pool, error) {
 		return []Pool{}, err
 	}
 
-	nodeAddrs, found := Config.ClusterList[node]
+	nodeAddrs, found := Config.Tsdb.ClusterList[node]
 	if !found {
 		return []Pool{}, errors.New("node not found")
 	}

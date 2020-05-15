@@ -37,15 +37,15 @@ func (t *Transfer) Push(args []*dataobj.MetricValue, reply *dataobj.TransferResp
 	}
 
 	if backend.Config.Enabled {
-		backend.Push2TsdbSendQueue(items)
-	}
-
-	if backend.Config.Enabled {
 		backend.Push2JudgeSendQueue(items)
-	}
 
-	if backend.Config.Influxdb.Enabled {
-		backend.Push2InfluxdbSendQueue(items)
+		if backend.Config.Tsdb.Enabled {
+			backend.Push2TsdbSendQueue(items)
+		}
+
+		if backend.Config.Influxdb.Enabled {
+			backend.Push2InfluxDBSendQueue(items)
+		}
 	}
 
 	if reply.Invalid == 0 {

@@ -12,34 +12,40 @@ import (
 )
 
 type InfluxdbSection struct {
-	Enabled   bool   `yaml:"enabled"`
-	Batch     int    `yaml:"batch"`
-	MaxRetry  int    `yaml:"maxRetry"`
-	WorkerNum int    `yaml:"workerNum"`
-	Timeout   int    `yaml:"timeout"`
-	Address   string `yaml:"address"`
-	Database  string `yaml:"database"`
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	Precision string `yaml:"precision"`
-}
-
-type BackendSection struct {
-	Enabled      bool   `yaml:"enabled"`
-	Batch        int    `yaml:"batch"`
-	ConnTimeout  int    `yaml:"connTimeout"`
-	CallTimeout  int    `yaml:"callTimeout"`
-	WorkerNum    int    `yaml:"workerNum"`
-	MaxConns     int    `yaml:"maxConns"`
-	MaxIdle      int    `yaml:"maxIdle"`
-	IndexTimeout int    `yaml:"indexTimeout"`
-	StraPath     string `yaml:"straPath"`
-	HbsMod       string `yaml:"hbsMod"`
-
+	Enabled     bool                    `yaml:"enabled"`
+	Batch       int                     `yaml:"batch"`
+	MaxRetry    int                     `yaml:"maxRetry"`
+	WorkerNum   int                     `yaml:"workerNum"`
+	Timeout     int                     `yaml:"timeout"`
+	Database    string                  `yaml:"database"`
+	Username    string                  `yaml:"username"`
+	Password    string                  `yaml:"password"`
+	Precision   string                  `yaml:"precision"`
 	Replicas    int                     `yaml:"replicas"`
 	Cluster     map[string]string       `yaml:"cluster"`
 	ClusterList map[string]*ClusterNode `json:"clusterList"`
-	Influxdb    InfluxdbSection         `yaml:"influxdb"`
+}
+
+type TsdbSection struct {
+	Enabled     bool                    `yaml:enabled`
+	Replicas    int                     `yaml:"replicas"`
+	Cluster     map[string]string       `yaml:"cluster"`
+	ClusterList map[string]*ClusterNode `json:"clusterList"`
+}
+
+type BackendSection struct {
+	Enabled      bool            `yaml:"enabled"`
+	Batch        int             `yaml:"batch"`
+	ConnTimeout  int             `yaml:"connTimeout"`
+	CallTimeout  int             `yaml:"callTimeout"`
+	WorkerNum    int             `yaml:"workerNum"`
+	MaxConns     int             `yaml:"maxConns"`
+	MaxIdle      int             `yaml:"maxIdle"`
+	IndexTimeout int             `yaml:"indexTimeout"`
+	StraPath     string          `yaml:"straPath"`
+	HbsMod       string          `yaml:"hbsMod"`
+	Tsdb         TsdbSection     `yaml:tsdb`
+	Influxdb     InfluxdbSection `yaml:"influxdb"`
 }
 
 const DefaultSendQueueMaxSize = 102400 //10.24w
@@ -51,26 +57,21 @@ type ClusterNode struct {
 var (
 	Config BackendSection
 	// 服务节点的一致性哈希环 pk -> node
-	TsdbNodeRing *ConsistentHashRing
+	TsdbNodeRing   *ConsistentHashRing
+	InfluxNodeRing *ConsistentHashRing
 
 	// 发送缓存队列 node -> queue_of_data
-	TsdbQueues    = make(map[string]*list.SafeListLimited)
 	JudgeQueues   = cache.SafeJudgeQueue{}
-	InfluxdbQueue *list.SafeListLimited
+	TsdbQueues    = make(map[string]*list.SafeListLimited)
+	InfluxdbQueue = make(map[string]*list.SafeListLimited)
 
 	// 连接池 node_address -> connection_pool
 	TsdbConnPools  *pools.ConnPools
 	JudgeConnPools *pools.ConnPools
-
-	connTimeout int32
-	callTimeout int32
 )
 
 func Init(cfg BackendSection) {
 	Config = cfg
-	// 初始化默认参数
-	connTimeout = int32(Config.ConnTimeout)
-	callTimeout = int32(Config.CallTimeout)
 
 	initHashRing()
 	initConnPools()
@@ -80,12 +81,14 @@ func Init(cfg BackendSection) {
 }
 
 func initHashRing() {
-	TsdbNodeRing = NewConsistentHashRing(int32(Config.Replicas), str.KeysOfMap(Config.Cluster))
+	TsdbNodeRing = NewConsistentHashRing(int32(Config.Tsdb.Replicas), str.KeysOfMap(Config.Tsdb.Cluster))
+
+	InfluxNodeRing = NewConsistentHashRing(int32(Config.Influxdb.Replicas), str.KeysOfMap(Config.Influxdb.Cluster))
 }
 
 func initConnPools() {
 	tsdbInstances := set.NewSafeSet()
-	for _, item := range Config.ClusterList {
+	for _, item := range Config.Tsdb.ClusterList {
 		for _, addr := range item.Addrs {
 			tsdbInstances.Add(addr)
 		}
@@ -100,20 +103,22 @@ func initConnPools() {
 }
 
 func initSendQueues() {
-	for node, item := range Config.ClusterList {
-		for _, addr := range item.Addrs {
-			TsdbQueues[node+addr] = list.NewSafeListLimited(DefaultSendQueueMaxSize)
-		}
-	}
-
 	JudgeQueues = cache.NewJudgeQueue()
 	judges := GetJudges()
 	for _, judge := range judges {
 		JudgeQueues.Set(judge, list.NewSafeListLimited(DefaultSendQueueMaxSize))
 	}
 
-	if Config.Influxdb.Enabled {
-		InfluxdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	for node, item := range Config.Tsdb.ClusterList {
+		for _, addr := range item.Addrs {
+			TsdbQueues[node+addr] = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+		}
+	}
+
+	for node, item := range Config.Influxdb.ClusterList {
+		for _, addr := range item.Addrs {
+			InfluxdbQueue[node+addr] = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+		}
 	}
 }
 
