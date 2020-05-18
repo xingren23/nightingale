@@ -208,29 +208,16 @@ func (c *InfluxClient) QueryIndexByFullTags(endpoints []string, measurement stri
 	return
 }
 
-func (c *InfluxClient) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
-	timeStr := fmt.Sprintf("( time >= %d and time <= %d )", input.Start*time.Second.Nanoseconds(),
-		input.End*time.Second.Nanoseconds())
-	var endpointStr string
-	for _, endpoint := range input.Endpoints {
-		endpointStr += fmt.Sprintf(" endpoint = '%s' or", endpoint)
-	}
-	if len(endpointStr) > 2 {
-		endpointStr = fmt.Sprintf("( %s )", endpointStr[:len(endpointStr)-2])
-	}
+func (c *InfluxClient) QueryData(start, end int64, endpoint, metric, dstype string, tags map[string]string) (*dataobj.TsdbQueryResponse, error) {
+	timeStr := fmt.Sprintf("( time >= %d and time <= %d )", start*time.Second.Nanoseconds(),
+		end*time.Second.Nanoseconds())
+	endpointStr := fmt.Sprintf(" ( endpoint = '%s' ) ", endpoint)
 	influxql := fmt.Sprintf("select %s from \"%s\" where %s and %s",
-		strings.ToLower(input.DsType), input.Metric, endpointStr, timeStr)
+		strings.ToLower(dstype), metric, endpointStr, timeStr)
 
 	// TODO: tags
+	influxql += fmt.Sprintf(" group by *")
 
-	if len(input.GroupKey) > 0 {
-		groupbyStr := strings.Join(input.GroupKey, ",")
-		influxql += fmt.Sprintf(" group by %s", groupbyStr)
-	} else {
-		influxql += fmt.Sprintf(" group by *")
-	}
-
-	tsdbResponses := make([]*dataobj.TsdbQueryResponse, 0)
 	q := client.NewQuery(influxql, Config.Influxdb.Database, Config.Influxdb.Precision)
 	response, err := c.Client.Query(q)
 	if err == nil && response.Error() == nil {
@@ -241,9 +228,9 @@ func (c *InfluxClient) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.T
 				tagStr := dataobj.SortedTags(row.Tags)
 				counter := dataobj.PKWithTags(row.Name, tagStr)
 				tsdbResponse := &dataobj.TsdbQueryResponse{
-					Start:    input.Start,
-					End:      input.End,
-					DsType:   input.DsType,
+					Start:    start,
+					End:      end,
+					DsType:   dstype,
 					Counter:  counter,
 					Endpoint: endpoint,
 					Values:   make([]*dataobj.RRDData, 0),
@@ -255,9 +242,9 @@ func (c *InfluxClient) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.T
 						tsdbResponse.Values = append(tsdbResponse.Values, dataobj.NewRRDData(ts, val))
 					}
 				}
-				tsdbResponses = append(tsdbResponses, tsdbResponse)
+				return tsdbResponse, nil
 			}
 		}
 	}
-	return tsdbResponses
+	return nil, err
 }

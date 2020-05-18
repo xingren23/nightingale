@@ -20,12 +20,7 @@ func Config(r *gin.Engine) {
 
 		sys.POST("/push", PushData)
 		sys.POST("/data", QueryData)
-		sys.POST("/data/ui", ProxyQueryDataForUI)
-	}
-
-	v2 := r.Group("/api/transfer/v2")
-	{
-		v2.POST("/data", QueryData)
+		sys.POST("/data/ui", QueryDataForUI)
 	}
 
 	index := r.Group("/api/index")

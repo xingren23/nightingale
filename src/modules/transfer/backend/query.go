@@ -38,7 +38,7 @@ func FetchData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
 		for _, endpoint := range input.Endpoints {
 			for _, counter := range input.Counters {
 				worker <- struct{}{}
-				go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, worker, dataChan)
+				go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, input.DsType, worker, dataChan)
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func FetchDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
 				continue
 			}
 			worker <- struct{}{}
-			go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, worker, dataChan)
+			go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, input.DsType, worker, dataChan)
 		} else {
 			for _, tag := range input.Tags {
 				counter, err := GetCounter(input.Metric, tag, nil)
@@ -86,7 +86,7 @@ func FetchDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
 					continue
 				}
 				worker <- struct{}{}
-				go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, worker, dataChan)
+				go fetchDataSync(input.Start, input.End, input.ConsolFunc, endpoint, counter, input.Step, input.DsType, worker, dataChan)
 			}
 		}
 	}
@@ -168,13 +168,13 @@ func GetCounter(metric, tag string, tagMap map[string]string) (counter string, e
 	return
 }
 
-func fetchDataSync(start, end int64, consolFun, endpoint, counter string, step int, worker chan struct{}, dataChan chan *dataobj.TsdbQueryResponse) {
+func fetchDataSync(start, end int64, consolFun, endpoint, counter string, step int, dstype string, worker chan struct{}, dataChan chan *dataobj.TsdbQueryResponse) {
 	defer func() {
 		<-worker
 	}()
 	stats.Counter.Set("query.tsdb", 1)
 
-	data, err := fetchData(start, end, consolFun, endpoint, counter, step)
+	data, err := fetchDataProxy(start, end, consolFun, endpoint, counter, step, dstype)
 	if err != nil {
 		logger.Warningf("fetch tsdb data error: %+v", err)
 		stats.Counter.Set("query.data.err", 1)
@@ -185,7 +185,32 @@ func fetchDataSync(start, end int64, consolFun, endpoint, counter string, step i
 	dataChan <- data
 }
 
-func fetchData(start, end int64, consolFun, endpoint, counter string, step int) (*dataobj.TsdbQueryResponse, error) {
+func fetchDataProxy(start, end int64, consolFun, endpoint, counter string, step int, dstype string) (*dataobj.TsdbQueryResponse, error) {
+	if Config.Tsdb.Enabled {
+		return fetchData(start, end, consolFun, endpoint, counter, step, dstype)
+	} else if Config.Influxdb.Enabled {
+		metric := getMetric(counter)
+		tagsMap, err := dataobj.SplitTagsString(getTags(counter))
+		if err != nil {
+			logger.Warningf("split tag string error: %+v", err)
+			return nil, err
+		}
+		node, _ := InfluxNodeRing.GetNode(metric)
+		addr := Config.Influxdb.Cluster[node]
+		client, err := NewInfluxClient(addr)
+		if err != nil {
+			logger.Warningf("get influx client %s error, %v", addr, err)
+			return nil, err
+		}
+
+		return client.QueryData(start, end, endpoint, metric, dstype, tagsMap)
+
+	} else {
+		return nil, fmt.Errorf("all tsdb disabled")
+	}
+}
+
+func fetchData(start, end int64, consolFun, endpoint, counter string, step int, dstype string) (*dataobj.TsdbQueryResponse, error) {
 	var resp *dataobj.TsdbQueryResponse
 
 	qparm := GenQParam(start, end, consolFun, endpoint, counter, step)
@@ -196,6 +221,7 @@ func fetchData(start, end int64, consolFun, endpoint, counter string, step int) 
 
 	resp.Start = start
 	resp.End = end
+	resp.DsType = dstype
 
 	return resp, nil
 }
@@ -331,6 +357,14 @@ func getTags(counter string) (tags string) {
 		return ""
 	}
 	return counter[idx+1:]
+}
+
+func getMetric(counter string) string {
+	idx := strings.IndexAny(counter, "/")
+	if idx == -1 {
+		return counter
+	}
+	return counter[:idx]
 }
 
 type Tagkv struct {
