@@ -13,18 +13,27 @@ func Config(r *gin.Engine) {
 		sys.GET("/pid", pid)
 		sys.GET("/addr", addr)
 		sys.POST("/stra", getStra)
+
 		sys.POST("/which-tsdb", tsdbInstance)
 		sys.POST("/which-judge", judgeInstance)
 		sys.GET("/alive-judges", judges)
 
 		sys.POST("/push", PushData)
 		sys.POST("/data", QueryData)
-		sys.POST("/data/ui", QueryDataForUI)
+		sys.POST("/data/ui", ProxyQueryDataForUI)
 	}
 
 	v2 := r.Group("/api/transfer/v2")
 	{
 		v2.POST("/data", QueryData)
+	}
+
+	index := r.Group("/api/index")
+	{
+		index.POST("/metrics", ProxyGetMetrics)
+		index.POST("/tagkv", ProxyGetTagPairs)
+		index.POST("/counter/fullmatch", ProxyGetIndexByFullTags)
+		index.POST("/counter/clude", ProxyGetIndexByClude)
 	}
 
 	pprof.Register(r, "/api/transfer/debug/pprof")

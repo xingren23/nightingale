@@ -29,7 +29,6 @@ func QueryData(c *gin.Context) {
 	stats.Counter.Set("data.api.qp10s", 1)
 
 	var input QueryDataReq
-
 	errors.Dangerous(c.ShouldBindJSON(&input))
 
 	queryData, err := backend.GetSeries(input.Start, input.End, input.Series)
@@ -43,7 +42,24 @@ func QueryData(c *gin.Context) {
 	render.Data(c, resp, nil)
 }
 
-func QueryDataForUI(c *gin.Context) {
+func ProxyFetchDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
+	if backend.Config.Tsdb.Enabled {
+		return backend.FetchDataForUI(input)
+	} else if backend.Config.Influxdb.Enabled {
+		node, _ := backend.InfluxNodeRing.GetNode(input.Metric)
+		addr := backend.Config.Influxdb.Cluster[node]
+		client, err := backend.NewInfluxClient(addr)
+		if err != nil {
+			logger.Warningf("get influx client %s error, %v", addr, err)
+			return make([]*dataobj.TsdbQueryResponse, 0)
+		}
+		return client.QueryDataForUI(input)
+	} else {
+		return make([]*dataobj.TsdbQueryResponse, 0)
+	}
+}
+
+func ProxyQueryDataForUI(c *gin.Context) {
 	stats.Counter.Set("data.ui.qp10s", 1)
 	var input dataobj.QueryDataForUI
 	var respData []*dataobj.QueryDataForUIResp
@@ -51,7 +67,7 @@ func QueryDataForUI(c *gin.Context) {
 	start := input.Start
 	end := input.End
 
-	resp := backend.FetchDataForUI(input)
+	resp := ProxyFetchDataForUI(input)
 	for _, d := range resp {
 		data := &dataobj.QueryDataForUIResp{
 			Start:    d.Start,
@@ -70,7 +86,7 @@ func QueryDataForUI(c *gin.Context) {
 			comparison := input.Comparisons[i]
 			input.Start = start - comparison
 			input.End = end - comparison
-			res := backend.FetchDataForUI(input)
+			res := ProxyFetchDataForUI(input)
 			for _, d := range res {
 				for j := range d.Values {
 					d.Values[j].Timestamp += comparison

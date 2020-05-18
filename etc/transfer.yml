@@ -9,8 +9,8 @@ backend:
 
   influxdb:
     enabled: true
-    username: "influx"
-    password: "admin123"
+    username: ""
+    password: ""
     precision: "s"
     database: "n9e"
     cluster:

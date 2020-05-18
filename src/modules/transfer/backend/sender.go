@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"strings"
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
@@ -8,8 +9,6 @@ import (
 	"github.com/didi/nightingale/src/modules/transfer/cache"
 	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/didi/nightingale/src/toolkits/str"
-
-	client "github.com/influxdata/influxdb/client/v2"
 	"github.com/toolkits/pkg/concurrent/semaphore"
 	"github.com/toolkits/pkg/container/list"
 	"github.com/toolkits/pkg/logger"
@@ -58,9 +57,9 @@ func startSendTasks() {
 		}
 
 		if Config.Influxdb.Enabled {
-			for node, item := range Config.Tsdb.ClusterList {
+			for node, item := range Config.Influxdb.ClusterList {
 				for _, addr := range item.Addrs {
-					queue := TsdbQueues[node+addr]
+					queue := InfluxdbQueue[node+addr]
 					go send2InfluxDBTask(queue, node, addr, influxdbConcurrent)
 				}
 			}
@@ -284,53 +283,6 @@ func TagMatch(straTags []model.Tag, tag map[string]string) bool {
 	return true
 }
 
-type InfluxClient struct {
-	Client    client.Client
-	Database  string
-	Precision string
-}
-
-func NewInfluxClient(addr string) (*InfluxClient, error) {
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     addr,
-		Username: Config.Influxdb.Username,
-		Password: Config.Influxdb.Password,
-		Timeout:  time.Millisecond * time.Duration(Config.Influxdb.Timeout),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &InfluxClient{
-		Client:    c,
-		Database:  Config.Influxdb.Database,
-		Precision: Config.Influxdb.Precision,
-	}, nil
-}
-
-func (c *InfluxClient) Send(items []*dataobj.InfluxDBItem) error {
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  c.Database,
-		Precision: c.Precision,
-	})
-	if err != nil {
-		logger.Error("create batch points error: ", err)
-		return err
-	}
-
-	for _, item := range items {
-		pt, err := client.NewPoint(item.Measurement, item.Tags, item.Fields, time.Unix(item.Timestamp, 0))
-		if err != nil {
-			logger.Error("create new points error: ", err)
-			continue
-		}
-		bp.AddPoint(pt)
-	}
-
-	return c.Client.Write(bp)
-}
-
 // 将原始数据插入到influxdb缓存队列
 func Push2InfluxDBSendQueue(items []*dataobj.MetricValue) {
 	errCnt := 0
@@ -368,7 +320,13 @@ func convert2InfluxDBItem(d *dataobj.MetricValue) *dataobj.InfluxDBItem {
 	}
 	t.Tags["endpoint"] = d.Endpoint
 	t.Measurement = d.Metric
-	t.Fields["value"] = d.Value
+	if d.CounterType == dataobj.GAUGE {
+		t.Fields[strings.ToLower(dataobj.GAUGE)] = d.Value
+	} else if d.CounterType == dataobj.COUNTER {
+		t.Fields[strings.ToLower(dataobj.COUNTER)] = d.Value
+	} else {
+		t.Fields["value"] = d.Value
+	}
 	t.Timestamp = d.Timestamp
 
 	return &t

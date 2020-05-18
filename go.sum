@@ -171,6 +171,8 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/influxdata/flux v0.65.0/go.mod h1:BwN2XG2lMszOoquQaFdPET8FRQfrXiZsWmcMO9rkaVY=
 github.com/influxdata/influxdb v1.8.0 h1:/X+G+i3udzHVxpBMuXdPZcUbkIE0ouT+6U+CzQTsOys=
 github.com/influxdata/influxdb v1.8.0/go.mod h1:SIzcnsjaHRFpmlxpJ4S3NT64qtEKYweNTUMb/vh0OMQ=
+github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3 h1:k3/6a1Shi7GGCp9QpyYuXsMM6ncTOjCzOE9Fd6CDA+Q=
+github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/influxdata/influxql v1.1.0/go.mod h1:KpVI7okXjK6PRi3Z5B+mtKZli+R1DnZgb3N+tzevNgo=
 github.com/influxdata/line-protocol v0.0.0-20180522152040-32c6aa80de5e/go.mod h1:4kt73NQhadE3daL3WhR5EJ/J2ocX0PZzwxQ0gXJ7oFE=
 github.com/influxdata/promql/v2 v2.12.0/go.mod h1:fxOPu+DY0bqCTCECchSRtWfc+0X19ybifQhZoQNF5D8=
@@ -310,6 +312,8 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
+github.com/toolkits/logger v0.0.0-20150526090216-11dc5a89e099 h1:W8uAaSZQmcKFBgp6yn+IXnwEBZcVl5EABnMVVr3ZBmk=
+github.com/toolkits/logger v0.0.0-20150526090216-11dc5a89e099/go.mod h1:DNkib9hpFdWS/Zg5laBHJrS2pvCOuKDgQXM8X6P1QYY=
 github.com/toolkits/pkg v1.1.1 h1:m57zdoBKQmTzhY83F3g56seDfLm+l/toBs8cKv8QFiE=
 github.com/toolkits/pkg v1.1.1/go.mod h1:ge83E8FQqUnFk+2wtVtZ8kvbmoSjE1l8FP3f+qmR0fY=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
