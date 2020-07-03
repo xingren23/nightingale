@@ -1,18 +1,8 @@
 package backend
 
-import (
-	"github.com/toolkits/pkg/container/list"
-	"github.com/toolkits/pkg/container/set"
-	"github.com/toolkits/pkg/str"
-
-	"github.com/didi/nightingale/src/modules/transfer/cache"
-	"github.com/didi/nightingale/src/toolkits/pools"
-	"github.com/didi/nightingale/src/toolkits/report"
-	"github.com/didi/nightingale/src/toolkits/stats"
-)
-
 type InfluxdbSection struct {
 	Enabled   bool   `yaml:"enabled"`
+	Name      string `yaml:"name"`
 	Batch     int    `yaml:"batch"`
 	MaxRetry  int    `yaml:"maxRetry"`
 	WorkerNum int    `yaml:"workerNum"`
@@ -26,6 +16,7 @@ type InfluxdbSection struct {
 
 type OpenTsdbSection struct {
 	Enabled     bool   `yaml:"enabled"`
+	Name        string `yaml:"name"`
 	Batch       int    `yaml:"batch"`
 	ConnTimeout int    `yaml:"connTimeout"`
 	CallTimeout int    `yaml:"callTimeout"`
@@ -38,16 +29,24 @@ type OpenTsdbSection struct {
 
 type KafkaSection struct {
 	Enabled      bool   `yaml:"enabled"`
+	Name         string `yaml:"name"`
 	Topic        string `yaml:"topic"`
 	BrokersPeers string `yaml:"brokersPeers"`
+	ConnTimeout  int    `yaml:"connTimeout"`
+	CallTimeout  int    `yaml:"callTimeout"`
+	MaxRetry     int    `yaml:"maxRetry"`
+	KeepAlive    int64  `yaml:"keepAlive"`
 	SaslUser     string `yaml:"saslUser"`
 	SaslPasswd   string `yaml:"saslPasswd"`
-	Retry        int    `yaml:"retry"`
-	KeepAlive    int64  `yaml:"keepAlive"`
 }
 
-type BackendSection struct {
+type ClusterNode struct {
+	Addrs []string `json:"addrs"`
+}
+
+type TsdbSection struct {
 	Enabled      bool   `yaml:"enabled"`
+	Name         string `yaml:"name"`
 	Batch        int    `yaml:"batch"`
 	ConnTimeout  int    `yaml:"connTimeout"`
 	CallTimeout  int    `yaml:"callTimeout"`
@@ -55,112 +54,77 @@ type BackendSection struct {
 	MaxConns     int    `yaml:"maxConns"`
 	MaxIdle      int    `yaml:"maxIdle"`
 	IndexTimeout int    `yaml:"indexTimeout"`
-	StraPath     string `yaml:"straPath"`
-	HbsMod       string `yaml:"hbsMod"`
 
 	Replicas    int                     `yaml:"replicas"`
 	Cluster     map[string]string       `yaml:"cluster"`
 	ClusterList map[string]*ClusterNode `json:"clusterList"`
-	Influxdb    InfluxdbSection         `yaml:"influxdb"`
-	OpenTsdb    OpenTsdbSection         `yaml:"opentsdb"`
-	Kafka       KafkaSection            `yaml:"kafka"`
 }
 
-const DefaultSendQueueMaxSize = 102400 //10.24w
+type JudgeSection struct {
+	Batch       int    `yaml:"batch"`
+	ConnTimeout int    `yaml:"connTimeout"`
+	CallTimeout int    `yaml:"callTimeout"`
+	WorkerNum   int    `yaml:"workerNum"`
+	MaxConns    int    `yaml:"maxConns"`
+	MaxIdle     int    `yaml:"maxIdle"`
+	HbsMod      string `yaml:"hbsMod"`
+}
 
-type ClusterNode struct {
-	Addrs []string `json:"addrs"`
+type BackendSection struct {
+	Storage  string `yaml:"storage"`
+	StraPath string `yaml:"straPath"`
+
+	Judge    JudgeSection    `yaml:"judge"`
+	Tsdb     TsdbSection     `yaml:"tsdb"`
+	Influxdb InfluxdbSection `yaml:"influxdb"`
+	OpenTsdb OpenTsdbSection `yaml:"opentsdb"`
+	Kafka    KafkaSection    `yaml:"kafka"`
 }
 
 var (
-	Config BackendSection
-	// 服务节点的一致性哈希环 pk -> node
-	TsdbNodeRing *ConsistentHashRing
-
-	// 发送缓存队列 node -> queue_of_data
-	TsdbQueues    = make(map[string]*list.SafeListLimited)
-	JudgeQueues   = cache.SafeJudgeQueue{}
-	InfluxdbQueue *list.SafeListLimited
-	OpenTsdbQueue *list.SafeListLimited
-	KafkaQueue    = make(chan KafkaData, 10)
-
-	// 连接池 node_address -> connection_pool
-	TsdbConnPools          *pools.ConnPools
-	JudgeConnPools         *pools.ConnPools
-	OpenTsdbConnPoolHelper *pools.OpenTsdbConnPoolHelper
-
-	connTimeout int32
-	callTimeout int32
+	defaultStorage    string
+	StraPath          string
+	tsdbStorage       *TSDBStorage
+	openTSDBStorage   *OpenTSDBStorage
+	influxDBStorage   *InfluxDBStorage
+	kafkaPushEndpoint *KafkaPushEndpoint
 )
 
 func Init(cfg BackendSection) {
-	Config = cfg
-	// 初始化默认参数
-	connTimeout = int32(Config.ConnTimeout)
-	callTimeout = int32(Config.CallTimeout)
+	defaultStorage = cfg.Storage
+	StraPath = cfg.StraPath
 
-	initHashRing()
-	initConnPools()
-	initSendQueues()
+	// init judge
+	InitJudge(cfg.Judge)
 
-	startSendTasks()
-}
-
-func initHashRing() {
-	TsdbNodeRing = NewConsistentHashRing(int32(Config.Replicas), str.KeysOfMap(Config.Cluster))
-}
-
-func initConnPools() {
-	tsdbInstances := set.NewSafeSet()
-	for _, item := range Config.ClusterList {
-		for _, addr := range item.Addrs {
-			tsdbInstances.Add(addr)
+	// init tsdb storage
+	if cfg.Tsdb.Enabled {
+		tsdbStorage = &TSDBStorage{
+			section: cfg.Tsdb,
 		}
+		tsdbStorage.Init()
 	}
-	TsdbConnPools = pools.NewConnPools(
-		Config.MaxConns, Config.MaxIdle, Config.ConnTimeout, Config.CallTimeout, tsdbInstances.ToSlice(),
-	)
 
-	JudgeConnPools = pools.NewConnPools(
-		Config.MaxConns, Config.MaxIdle, Config.ConnTimeout, Config.CallTimeout, GetJudges(),
-	)
-	if Config.OpenTsdb.Enabled {
-		OpenTsdbConnPoolHelper = pools.NewOpenTsdbConnPoolHelper(Config.OpenTsdb.Address, Config.OpenTsdb.MaxConns, Config.OpenTsdb.MaxIdle, Config.OpenTsdb.ConnTimeout, Config.OpenTsdb.CallTimeout)
-	}
-}
-
-func initSendQueues() {
-	for node, item := range Config.ClusterList {
-		for _, addr := range item.Addrs {
-			TsdbQueues[node+addr] = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	// init influxdb storage
+	if cfg.Influxdb.Enabled {
+		influxDBStorage = &InfluxDBStorage{
+			section: cfg.Influxdb,
 		}
-	}
+		influxDBStorage.Init()
 
-	JudgeQueues = cache.NewJudgeQueue()
-	judges := GetJudges()
-	for _, judge := range judges {
-		JudgeQueues.Set(judge, list.NewSafeListLimited(DefaultSendQueueMaxSize))
 	}
-
-	if Config.Influxdb.Enabled {
-		InfluxdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	// init opentsdb storage
+	if cfg.OpenTsdb.Enabled {
+		openTSDBStorage = &OpenTSDBStorage{
+			section: cfg.OpenTsdb,
+		}
+		openTSDBStorage.Init()
 	}
-
-	if Config.OpenTsdb.Enabled {
-		OpenTsdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	// init kafka
+	if cfg.Kafka.Enabled {
+		kafkaPushEndpoint = &KafkaPushEndpoint{
+			section: cfg.Kafka,
+		}
+		kafkaPushEndpoint.Init()
 	}
-}
-
-func GetJudges() []string {
-	var judgeInstances []string
-	instances, err := report.GetAlive("judge", Config.HbsMod)
-	if err != nil {
-		stats.Counter.Set("judge.get.err", 1)
-		return judgeInstances
-	}
-	for _, instance := range instances {
-		judgeInstance := instance.Identity + ":" + instance.RPCPort
-		judgeInstances = append(judgeInstances, judgeInstance)
-	}
-	return judgeInstances
 }
