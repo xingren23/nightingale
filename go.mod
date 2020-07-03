@@ -24,6 +24,7 @@ require (
 	github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.4.0
+	github.com/toolkits/net v0.0.0-20160910085801-3f39ab6fe3ce
 	github.com/toolkits/pkg v1.1.1
 	github.com/ugorji/go/codec v1.1.7
 	github.com/unrolled/render v1.0.2
