@@ -17,29 +17,26 @@ type QueryDataReq struct {
 	Series []backend.SeriesReq `json:"series"`
 }
 
-func QueryDataForJudge(c *gin.Context) {
-	var inputs []dataobj.QueryData
-
-	errors.Dangerous(c.ShouldBindJSON(&inputs))
-	resp := backend.FetchData(inputs)
-	render.Data(c, resp, nil)
-}
-
 func QueryData(c *gin.Context) {
 	stats.Counter.Set("data.api.qp10s", 1)
 
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+
 	var input QueryDataReq
-
 	errors.Dangerous(c.ShouldBindJSON(&input))
-
-	queryData, err := backend.GetSeries(input.Start, input.End, input.Series)
+	queryData, err := storage.QuerySeries(input.Start, input.End, input.Series)
 	if err != nil {
 		logger.Error(err, input)
 		render.Message(c, "query err")
 		return
 	}
 
-	resp := backend.FetchData(queryData)
+	resp := storage.QueryData(queryData)
 	render.Data(c, resp, nil)
 }
 
@@ -51,7 +48,13 @@ func QueryDataForUI(c *gin.Context) {
 	start := input.Start
 	end := input.End
 
-	resp := backend.FetchDataForUI(input)
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+	resp := storage.QueryDataForUI(input)
 	for _, d := range resp {
 		data := &dataobj.QueryDataForUIResp{
 			Start:    d.Start,
@@ -70,7 +73,7 @@ func QueryDataForUI(c *gin.Context) {
 			comparison := input.Comparisons[i]
 			input.Start = start - comparison
 			input.End = end - comparison
-			res := backend.FetchDataForUI(input)
+			res := storage.QueryDataForUI(input)
 			for _, d := range res {
 				for j := range d.Values {
 					d.Values[j].Timestamp += comparison

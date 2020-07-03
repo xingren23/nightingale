@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/modules/transfer/backend"
 	"github.com/didi/nightingale/src/modules/transfer/cache"
 	"github.com/didi/nightingale/src/toolkits/http/render"
@@ -47,20 +46,27 @@ type tsdbInstanceRecv struct {
 }
 
 func tsdbInstance(c *gin.Context) {
-	var input tsdbInstanceRecv
-	errors.Dangerous(c.ShouldBindJSON(&input))
-
-	counter, err := backend.GetCounter(input.Metric, "", input.TagMap)
-	errors.Dangerous(err)
-
-	pk := dataobj.PKWithCounter(input.Endpoint, counter)
-	pools, err := backend.SelectPoolByPK(pk)
-	addrs := make([]string, len(pools))
-	for i, pool := range pools {
-		addrs[i] = pool.Addr
-	}
-
-	render.Data(c, addrs, nil)
+	//var input tsdbInstanceRecv
+	//errors.Dangerous(c.ShouldBindJSON(&input))
+	//
+	//storage, error := backend.GetStorageFor("tsdb")
+	//if error != nil {
+	//	logger.Warningf("Could not find storage ")
+	//	render.Message(c, error)
+	//	return
+	//}
+	//
+	//counter, err := storage.GetCounter(input.Metric, "", input.TagMap)
+	//errors.Dangerous(err)
+	//
+	//pk := dataobj.PKWithCounter(input.Endpoint, counter)
+	//pools, err := backend.SelectPoolByPK(pk)
+	//addrs := make([]string, len(pools))
+	//for i, pool := range pools {
+	//	addrs[i] = pool.Addr
+	//}
+	//
+	//render.Data(c, addrs, nil)
 }
 
 type judgeInstanceRecv struct {
