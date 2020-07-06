@@ -5,21 +5,21 @@ import (
 	"sync"
 )
 
-// 服务树节点id -> 节点串
+// 指标名称 -> 元数据信息
 type MonitorItemCacheMap struct {
 	sync.RWMutex
-	Data map[int64]*dataobj.MonitorItem
+	Data map[string]*dataobj.MonitorItem
 }
 
 var MonitorItemCache *MonitorItemCacheMap
 
 func NewMonitorItemCache() *MonitorItemCacheMap {
 	return &MonitorItemCacheMap{
-		Data: make(map[int64]*dataobj.MonitorItem),
+		Data: make(map[string]*dataobj.MonitorItem),
 	}
 }
 
-func (this *MonitorItemCacheMap) Get(key int64) (*dataobj.MonitorItem, bool) {
+func (this *MonitorItemCacheMap) Get(key string) (*dataobj.MonitorItem, bool) {
 	this.RLock()
 	defer this.RUnlock()
 
