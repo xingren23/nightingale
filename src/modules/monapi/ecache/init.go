@@ -1,0 +1,5 @@
+package ecache
+
+func Init() {
+
+}
