@@ -20,7 +20,7 @@ func NewSrvTreeCache() *SrvTreeCacheMap {
 
 func (this *SrvTreeCacheMap) Get(key int64) (string, bool) {
 	this.RLock()
+	defer this.RUnlock()
 	value, exists := this.Data[key]
-	this.RUnlock()
 	return value, exists
 }
