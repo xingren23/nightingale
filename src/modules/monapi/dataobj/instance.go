@@ -10,7 +10,7 @@ import (
 
 type Instance struct {
 	AppCode        string `json:"appCode"`
-	AppID          int    `json:"appId"`
+	AppId          int    `json:"appId"`
 	DataCenterCode string `json:"dataCenterCode"`
 	EnvCode        string `json:"envCode"`
 	GroupCode      string `json:"groupCode"`
