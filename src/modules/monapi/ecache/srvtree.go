@@ -24,3 +24,9 @@ func (this *SrvTreeCacheMap) Get(key int64) (string, bool) {
 	value, exists := this.Data[key]
 	return value, exists
 }
+
+func (this *SrvTreeCacheMap) SetAll(data map[int64]string) {
+	this.Lock()
+	defer this.Unlock()
+	this.Data = data
+}

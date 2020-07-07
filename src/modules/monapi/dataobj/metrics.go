@@ -1,7 +1,7 @@
 package dataobj
 
 type MonitorItem struct {
-	ID           int    `json:"id"`
+	Id           int64  `json:"id"`
 	EndpointType string `json:"endpointType"`
 	Metric       string `json:"metric"`
 	Name         string `json:"name"`

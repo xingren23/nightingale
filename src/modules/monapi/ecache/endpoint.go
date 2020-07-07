@@ -21,7 +21,13 @@ func NewEndpointCache() *EndpointCacheMap {
 
 func (this *EndpointCacheMap) Get(key string) (*model.Endpoint, bool) {
 	this.RLock()
+	defer this.RUnlock()
 	value, exists := this.Data[key]
-	this.RUnlock()
 	return value, exists
+}
+
+func (this *EndpointCacheMap) SetAll(m map[string]*model.Endpoint) {
+	this.Lock()
+	defer this.Unlock()
+	this.Data = m
 }
