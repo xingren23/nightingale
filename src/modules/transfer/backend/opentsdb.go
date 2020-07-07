@@ -12,7 +12,7 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
-type OpenTSDBStorage struct {
+type OpenTsdbStorage struct {
 	// config
 	section OpenTsdbSection
 
@@ -22,7 +22,7 @@ type OpenTSDBStorage struct {
 	OpenTsdbQueue *list.SafeListLimited
 }
 
-func (opentsdb *OpenTSDBStorage) Init() {
+func (opentsdb *OpenTsdbStorage) Init() {
 	// init connPool
 	if opentsdb.section.Enabled {
 		opentsdb.OpenTsdbConnPoolHelper = pools.NewOpenTsdbConnPoolHelper(opentsdb.section.Address,
@@ -42,17 +42,11 @@ func (opentsdb *OpenTSDBStorage) Init() {
 	}
 	go opentsdb.send2OpenTsdbTask(openTsdbConcurrent)
 
-	// TODO
 	RegisterPushEndpoint(opentsdb.section.Name, opentsdb)
 }
 
-// TODO 实现 query 接口
-//func (opentsdb *OpenTSDBStorage) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
-//	return nil
-//}
-
 // 将原始数据入到tsdb发送缓存队列
-func (opentsdb *OpenTSDBStorage) Push2Queue(items []*dataobj.MetricValue) {
+func (opentsdb *OpenTsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
 		tsdbItem := opentsdb.convert2OpenTsdbItem(item)
@@ -65,7 +59,7 @@ func (opentsdb *OpenTSDBStorage) Push2Queue(items []*dataobj.MetricValue) {
 	stats.Counter.Set("opentsdb.queue.err", errCnt)
 }
 
-func (opentsdb *OpenTSDBStorage) send2OpenTsdbTask(concurrent int) {
+func (opentsdb *OpenTsdbStorage) send2OpenTsdbTask(concurrent int) {
 	batch := opentsdb.section.Batch // 一次发送,最多batch条数据
 	retry := opentsdb.section.MaxRetry
 	addr := opentsdb.section.Address
@@ -116,7 +110,7 @@ func (opentsdb *OpenTSDBStorage) send2OpenTsdbTask(concurrent int) {
 	}
 }
 
-func (opentsdb *OpenTSDBStorage) convert2OpenTsdbItem(d *dataobj.MetricValue) *dataobj.OpenTsdbItem {
+func (opentsdb *OpenTsdbStorage) convert2OpenTsdbItem(d *dataobj.MetricValue) *dataobj.OpenTsdbItem {
 	t := dataobj.OpenTsdbItem{Tags: make(map[string]string)}
 
 	for k, v := range d.TagsMap {

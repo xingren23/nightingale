@@ -1,5 +1,10 @@
 package backend
 
+import (
+	"github.com/didi/nightingale/src/dataobj"
+	"github.com/toolkits/pkg/logger"
+)
+
 type InfluxdbSection struct {
 	Enabled   bool   `yaml:"enabled"`
 	Name      string `yaml:"name"`
@@ -84,9 +89,9 @@ type BackendSection struct {
 var (
 	defaultStorage    string
 	StraPath          string
-	tsdbStorage       *TSDBStorage
-	openTSDBStorage   *OpenTSDBStorage
-	influxDBStorage   *InfluxDBStorage
+	tsdbStorage       *TsdbStorage
+	openTSDBStorage   *OpenTsdbStorage
+	influxdbStorage   *InfluxdbStorage
 	kafkaPushEndpoint *KafkaPushEndpoint
 )
 
@@ -99,7 +104,7 @@ func Init(cfg BackendSection) {
 
 	// init tsdb storage
 	if cfg.Tsdb.Enabled {
-		tsdbStorage = &TSDBStorage{
+		tsdbStorage = &TsdbStorage{
 			section: cfg.Tsdb,
 		}
 		tsdbStorage.Init()
@@ -107,15 +112,15 @@ func Init(cfg BackendSection) {
 
 	// init influxdb storage
 	if cfg.Influxdb.Enabled {
-		influxDBStorage = &InfluxDBStorage{
+		influxdbStorage = &InfluxdbStorage{
 			section: cfg.Influxdb,
 		}
-		influxDBStorage.Init()
+		influxdbStorage.Init()
 
 	}
 	// init opentsdb storage
 	if cfg.OpenTsdb.Enabled {
-		openTSDBStorage = &OpenTSDBStorage{
+		openTSDBStorage = &OpenTsdbStorage{
 			section: cfg.OpenTsdb,
 		}
 		openTSDBStorage.Init()
@@ -127,4 +132,18 @@ func Init(cfg BackendSection) {
 		}
 		kafkaPushEndpoint.Init()
 	}
+}
+
+func GetCounter(metric, tag string, tagMap map[string]string) (counter string, err error) {
+	if tagMap == nil {
+		tagMap, err = dataobj.SplitTagsString(tag)
+		if err != nil {
+			logger.Warningf("split tag string error: %+v", err)
+			return
+		}
+	}
+
+	tagStr := dataobj.SortedTags(tagMap)
+	counter = dataobj.PKWithTags(metric, tagStr)
+	return
 }
