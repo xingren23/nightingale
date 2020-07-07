@@ -12,9 +12,7 @@ import (
 )
 
 type QueryDataReq struct {
-	Start  int64               `json:"start"`
-	End    int64               `json:"end"`
-	Series []backend.SeriesReq `json:"series"`
+	queryData []dataobj.QueryData
 }
 
 func QueryData(c *gin.Context) {
@@ -27,16 +25,9 @@ func QueryData(c *gin.Context) {
 		return
 	}
 
-	var input QueryDataReq
-	errors.Dangerous(c.ShouldBindJSON(&input))
-	queryData, err := storage.QuerySeries(input.Start, input.End, input.Series)
-	if err != nil {
-		logger.Error(err, input)
-		render.Message(c, "query err")
-		return
-	}
-
-	resp := storage.QueryData(queryData)
+	var queryDataReq QueryDataReq
+	errors.Dangerous(c.ShouldBindJSON(&queryDataReq))
+	resp := storage.QueryData(queryDataReq.queryData)
 	render.Data(c, resp, nil)
 }
 
@@ -95,4 +86,77 @@ func QueryDataForUI(c *gin.Context) {
 	}
 
 	render.Data(c, respData, nil)
+}
+
+func GetMetrics(c *gin.Context) {
+	stats.Counter.Set("metric.qp10s", 1)
+	recv := dataobj.EndpointsRecv{}
+	errors.Dangerous(c.ShouldBindJSON(&recv))
+
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+
+	resp := storage.QueryMetrics(recv)
+
+	render.Data(c, resp, nil)
+}
+
+func GetTagPairs(c *gin.Context) {
+	stats.Counter.Set("tag.qp10s", 1)
+	recv := dataobj.EndpointMetricRecv{}
+	errors.Dangerous(c.ShouldBindJSON(&recv))
+
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+
+	resp := storage.QueryTagPairs(recv)
+	render.Data(c, resp, nil)
+}
+
+func GetIndexByClude(c *gin.Context) {
+	stats.Counter.Set("xclude.qp10s", 1)
+	recvs := make([]dataobj.CludeRecv, 0)
+	errors.Dangerous(c.ShouldBindJSON(&recvs))
+
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+
+	//var resp []dataobj.XcludeResp
+	//for _, recv := range recvs {
+	resp := storage.QueryIndexByClude(recvs)
+	//resp = append(resp, item)
+	//}
+	render.Data(c, resp, nil)
+}
+
+func GetIndexByFullTags(c *gin.Context) {
+	stats.Counter.Set("counter.qp10s", 1)
+	recvs := make([]dataobj.IndexByFullTagsRecv, 0)
+	errors.Dangerous(c.ShouldBindJSON(&recvs))
+
+	storage, err := backend.GetStorageFor("")
+	if err != nil {
+		logger.Warningf("Could not find storage ")
+		render.Message(c, err)
+		return
+	}
+
+	//var resp []*dataobj.IndexByFullTagsResp
+	//for _, recv := range recvs {
+	resp := storage.QueryIndexByFullTags(recvs)
+	//resp = append(resp, item)
+	//}
+	render.Data(c, resp, nil)
 }

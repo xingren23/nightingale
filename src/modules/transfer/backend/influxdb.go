@@ -11,7 +11,7 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
-type InfluxDBStorage struct {
+type InfluxdbStorage struct {
 	// config
 	section InfluxdbSection
 
@@ -19,60 +19,54 @@ type InfluxDBStorage struct {
 	InfluxdbQueue *list.SafeListLimited
 }
 
-func (influx *InfluxDBStorage) Init() {
+func (influxdb *InfluxdbStorage) Init() {
 
 	// init queue
-	if influx.section.Enabled {
-		influx.InfluxdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	if influxdb.section.Enabled {
+		influxdb.InfluxdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
 	}
 
 	// init task
-	influxdbConcurrent := influx.section.WorkerNum
+	influxdbConcurrent := influxdb.section.WorkerNum
 	if influxdbConcurrent < 1 {
 		influxdbConcurrent = 1
 	}
-	go influx.send2InfluxdbTask(influxdbConcurrent)
+	go influxdb.send2InfluxdbTask(influxdbConcurrent)
 
-	// TODO
-	RegisterPushEndpoint(influx.section.Name, influx)
+	RegisterStorage(influxdb.section.Name, influxdb)
 }
 
-// TODO 实现 query 接口
-//func (influx *InfluxDBStorage) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
-//	return nil
-//}
-
 // 将原始数据插入到influxdb缓存队列
-func (influx *InfluxDBStorage) Push2Queue(items []*dataobj.MetricValue) {
+func (influxdb *InfluxdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
-		influxdbItem := influx.convert2InfluxdbItem(item)
-		isSuccess := influx.InfluxdbQueue.PushFront(influxdbItem)
+		influxdbItem := influxdb.convert2InfluxdbItem(item)
+		isSuccess := influxdb.InfluxdbQueue.PushFront(influxdbItem)
 
 		if !isSuccess {
 			errCnt += 1
 		}
 	}
-	stats.Counter.Set("influxDB.queue.err", errCnt)
+	stats.Counter.Set("influxdb.queue.err", errCnt)
 }
 
-func (influx *InfluxDBStorage) send2InfluxdbTask(concurrent int) {
-	batch := influx.section.Batch // 一次发送,最多batch条数据
-	retry := influx.section.MaxRetry
-	addr := influx.section.Address
+func (influxdb *InfluxdbStorage) send2InfluxdbTask(concurrent int) {
+	batch := influxdb.section.Batch // 一次发送,最多batch条数据
+	retry := influxdb.section.MaxRetry
+	addr := influxdb.section.Address
 	sema := semaphore.NewSemaphore(concurrent)
 
 	var err error
-	c, err := NewInfluxdbClient(influx.section)
+	c, err := NewInfluxdbClient(influxdb.section)
 	defer c.Client.Close()
 
 	if err != nil {
-		logger.Errorf("init influxDB client fail: %v", err)
+		logger.Errorf("init influxdb client fail: %v", err)
 		return
 	}
 
 	for {
-		items := influx.InfluxdbQueue.PopBackBy(batch)
+		items := influxdb.InfluxdbQueue.PopBackBy(batch)
 		count := len(items)
 		if count == 0 {
 			time.Sleep(DefaultSendTaskSleepInterval)
@@ -82,8 +76,8 @@ func (influx *InfluxDBStorage) send2InfluxdbTask(concurrent int) {
 		influxdbItems := make([]*dataobj.InfluxdbItem, count)
 		for i := 0; i < count; i++ {
 			influxdbItems[i] = items[i].(*dataobj.InfluxdbItem)
-			stats.Counter.Set("points.out.influxDB", 1)
-			logger.Debug("send to influxDB: ", influxdbItems[i])
+			stats.Counter.Set("points.out.influxdb", 1)
+			logger.Debug("send to influxdb: ", influxdbItems[i])
 		}
 
 		//  同步Call + 有限并发 进行发送
@@ -98,21 +92,21 @@ func (influx *InfluxDBStorage) send2InfluxdbTask(concurrent int) {
 					sendOk = true
 					break
 				}
-				logger.Warningf("send influxDB fail: %v", err)
+				logger.Warningf("send influxdb fail: %v", err)
 				time.Sleep(time.Millisecond * 10)
 			}
 
 			if !sendOk {
-				stats.Counter.Set("points.out.influxDB.err", count)
-				logger.Errorf("send %v to influxDB %s fail: %v", influxdbItems, addr, err)
+				stats.Counter.Set("points.out.influxdb.err", count)
+				logger.Errorf("send %v to influxdb %s fail: %v", influxdbItems, addr, err)
 			} else {
-				logger.Debugf("send to influxDB %s ok", addr)
+				logger.Debugf("send to influxdb %s ok", addr)
 			}
 		}(addr, influxdbItems, count)
 	}
 }
 
-func (influx *InfluxDBStorage) convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
+func (influxdb *InfluxdbStorage) convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
 	t := dataobj.InfluxdbItem{Tags: make(map[string]string), Fields: make(map[string]interface{})}
 
 	for k, v := range d.TagsMap {

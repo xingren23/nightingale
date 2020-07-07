@@ -21,15 +21,18 @@ var (
 type Storage interface {
 	PushEndpoint
 
-	// get series
-	QuerySeries(start, end int64, req []SeriesReq) ([]dataobj.QueryData, error)
-	// query data
+	// query data for judge
 	QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse
 	// query data for ui
 	QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse
 
-	// health
+	// query metrics & tags
+	QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp
+	QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp
+	QueryIndexByClude(recv []dataobj.CludeRecv) []dataobj.XcludeResp
+	QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp
 
+	// tsdb instance
 }
 
 type PushEndpoint interface {
