@@ -33,6 +33,7 @@ type Storage interface {
 	QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp
 
 	// tsdb instance
+	GetInstance(metric, endpoint string, tags map[string]string) []string
 }
 
 type PushEndpoint interface {

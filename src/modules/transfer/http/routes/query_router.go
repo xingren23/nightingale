@@ -133,11 +133,7 @@ func GetIndexByClude(c *gin.Context) {
 		return
 	}
 
-	//var resp []dataobj.XcludeResp
-	//for _, recv := range recvs {
 	resp := storage.QueryIndexByClude(recvs)
-	//resp = append(resp, item)
-	//}
 	render.Data(c, resp, nil)
 }
 
@@ -153,10 +149,6 @@ func GetIndexByFullTags(c *gin.Context) {
 		return
 	}
 
-	//var resp []*dataobj.IndexByFullTagsResp
-	//for _, recv := range recvs {
 	resp := storage.QueryIndexByFullTags(recvs)
-	//resp = append(resp, item)
-	//}
 	render.Data(c, resp, nil)
 }
