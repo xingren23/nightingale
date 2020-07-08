@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/toolkits/pkg/logger"
 )
 
 const (
@@ -314,6 +316,20 @@ func PKWithCounter(endpoint, counter string) string {
 	ret.WriteString(counter)
 
 	return ret.String()
+}
+
+func GetCounter(metric, tag string, tagMap map[string]string) (counter string, err error) {
+	if tagMap == nil {
+		tagMap, err = SplitTagsString(tag)
+		if err != nil {
+			logger.Warningf("split tag string error: %+v", err)
+			return
+		}
+	}
+
+	tagStr := SortedTags(tagMap)
+	counter = PKWithTags(metric, tagStr)
+	return
 }
 
 func PKWithTags(metric, tags string) string {
