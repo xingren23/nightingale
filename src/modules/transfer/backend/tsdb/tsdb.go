@@ -1,4 +1,4 @@
-package backend
+package tsdb
 
 import (
 	"strings"
@@ -14,9 +14,31 @@ import (
 	"github.com/toolkits/pkg/str"
 )
 
+type TsdbSection struct {
+	Enabled      bool   `yaml:"enabled"`
+	Name         string `yaml:"name"`
+	Batch        int    `yaml:"batch"`
+	ConnTimeout  int    `yaml:"connTimeout"`
+	CallTimeout  int    `yaml:"callTimeout"`
+	WorkerNum    int    `yaml:"workerNum"`
+	MaxConns     int    `yaml:"maxConns"`
+	MaxIdle      int    `yaml:"maxIdle"`
+	IndexTimeout int    `yaml:"indexTimeout"`
+
+	Replicas    int                     `yaml:"replicas"`
+	Cluster     map[string]string       `yaml:"cluster"`
+	ClusterList map[string]*ClusterNode `json:"clusterList"`
+}
+
+type ClusterNode struct {
+	Addrs []string `json:"addrs"`
+}
+
 type TsdbStorage struct {
 	//config
-	section TsdbSection
+	Section               TsdbSection
+	SendQueueMaxSize      int
+	SendTaskSleepInterval time.Duration
 
 	// 服务节点的一致性哈希环 pk -> node
 	TsdbNodeRing *ConsistentHashRing
@@ -31,35 +53,35 @@ type TsdbStorage struct {
 func (tsdb *TsdbStorage) Init() {
 
 	// init hash ring
-	tsdb.TsdbNodeRing = NewConsistentHashRing(int32(tsdb.section.Replicas),
-		str.KeysOfMap(tsdb.section.Cluster))
+	tsdb.TsdbNodeRing = NewConsistentHashRing(int32(tsdb.Section.Replicas),
+		str.KeysOfMap(tsdb.Section.Cluster))
 
 	// init connPool
 	tsdbInstances := set.NewSafeSet()
-	for _, item := range tsdb.section.ClusterList {
+	for _, item := range tsdb.Section.ClusterList {
 		for _, addr := range item.Addrs {
 			tsdbInstances.Add(addr)
 		}
 	}
 	tsdb.TsdbConnPools = pools.NewConnPools(
-		tsdb.section.MaxConns, tsdb.section.MaxIdle, tsdb.section.ConnTimeout, tsdb.section.CallTimeout,
+		tsdb.Section.MaxConns, tsdb.Section.MaxIdle, tsdb.Section.ConnTimeout, tsdb.Section.CallTimeout,
 		tsdbInstances.ToSlice(),
 	)
 
 	// init queues
 	tsdb.TsdbQueues = make(map[string]*list.SafeListLimited)
-	for node, item := range tsdb.section.ClusterList {
+	for node, item := range tsdb.Section.ClusterList {
 		for _, addr := range item.Addrs {
-			tsdb.TsdbQueues[node+addr] = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+			tsdb.TsdbQueues[node+addr] = list.NewSafeListLimited(tsdb.SendQueueMaxSize)
 		}
 	}
 
 	// start task
-	tsdbConcurrent := tsdb.section.WorkerNum
+	tsdbConcurrent := tsdb.Section.WorkerNum
 	if tsdbConcurrent < 1 {
 		tsdbConcurrent = 1
 	}
-	for node, item := range tsdb.section.ClusterList {
+	for node, item := range tsdb.Section.ClusterList {
 		for _, addr := range item.Addrs {
 			queue := tsdb.TsdbQueues[node+addr]
 			go tsdb.Send2TsdbTask(queue, node, addr, tsdbConcurrent)
@@ -67,8 +89,6 @@ func (tsdb *TsdbStorage) Init() {
 	}
 
 	go GetIndexLoop()
-
-	RegisterStorage(tsdb.section.Name, tsdb)
 }
 
 // Push2TsdbSendQueue pushes data to a TSDB instance which depends on the consistent ring.
@@ -84,7 +104,7 @@ func (tsdb *TsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 			continue
 		}
 
-		cnode := tsdb.section.ClusterList[node]
+		cnode := tsdb.Section.ClusterList[node]
 		for _, addr := range cnode.Addrs {
 			Q := tsdb.TsdbQueues[node+addr]
 			// 队列已满
@@ -102,7 +122,7 @@ func (tsdb *TsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 }
 
 func (tsdb *TsdbStorage) Send2TsdbTask(Q *list.SafeListLimited, node, addr string, concurrent int) {
-	batch := tsdb.section.Batch // 一次发送,最多batch条数据
+	batch := tsdb.Section.Batch // 一次发送,最多batch条数据
 	Q = tsdb.TsdbQueues[node+addr]
 
 	sema := semaphore.NewSemaphore(concurrent)
@@ -111,7 +131,7 @@ func (tsdb *TsdbStorage) Send2TsdbTask(Q *list.SafeListLimited, node, addr strin
 		items := Q.PopBackBy(batch)
 		count := len(items)
 		if count == 0 {
-			time.Sleep(DefaultSendTaskSleepInterval)
+			time.Sleep(tsdb.SendTaskSleepInterval)
 			continue
 		}
 

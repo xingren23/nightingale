@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/didi/nightingale/src/modules/transfer/backend"
+	"github.com/didi/nightingale/src/modules/transfer/backend/tsdb"
 	"github.com/didi/nightingale/src/toolkits/logger"
 
 	"github.com/spf13/viper"
@@ -45,13 +46,13 @@ var (
 	Config *ConfYaml
 )
 
-func NewClusterNode(addrs []string) *backend.ClusterNode {
-	return &backend.ClusterNode{Addrs: addrs}
+func NewClusterNode(addrs []string) *tsdb.ClusterNode {
+	return &tsdb.ClusterNode{Addrs: addrs}
 }
 
 // map["node"]="host1,host2" --> map["node"]=["host1", "host2"]
-func formatClusterItems(cluster map[string]string) map[string]*backend.ClusterNode {
-	ret := make(map[string]*backend.ClusterNode)
+func formatClusterItems(cluster map[string]string) map[string]*tsdb.ClusterNode {
+	ret := make(map[string]*tsdb.ClusterNode)
 	for node, clusterStr := range cluster {
 		items := strings.Split(clusterStr, ",")
 		nitems := make([]string, 0)
