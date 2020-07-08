@@ -14,9 +14,21 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
+type KafkaSection struct {
+	Enabled      bool   `yaml:"enabled"`
+	Name         string `yaml:"name"`
+	Topic        string `yaml:"topic"`
+	BrokersPeers string `yaml:"brokersPeers"`
+	ConnTimeout  int    `yaml:"connTimeout"`
+	CallTimeout  int    `yaml:"callTimeout"`
+	MaxRetry     int    `yaml:"maxRetry"`
+	KeepAlive    int64  `yaml:"keepAlive"`
+	SaslUser     string `yaml:"saslUser"`
+	SaslPasswd   string `yaml:"saslPasswd"`
+}
 type KafkaPushEndpoint struct {
 	// config
-	section KafkaSection
+	Section KafkaSection
 
 	// 发送缓存队列 node -> queue_of_data
 	KafkaQueue chan KafkaData
@@ -31,7 +43,7 @@ func (kafka *KafkaPushEndpoint) Init() {
 	go kafka.send2KafkaTask()
 
 	// register
-	RegisterPushEndpoint(kafka.section.Name, kafka)
+	RegisterPushEndpoint(kafka.Section.Name, kafka)
 }
 
 func (kafka *KafkaPushEndpoint) Push2Queue(items []*dataobj.MetricValue) {
@@ -53,7 +65,7 @@ func (kafka *KafkaPushEndpoint) convert2KafkaItem(d *dataobj.MetricValue) KafkaD
 }
 
 func (kafka *KafkaPushEndpoint) send2KafkaTask() {
-	kf, err := NewKfClient(kafka.section)
+	kf, err := NewKfClient(kafka.Section)
 	if err != nil {
 		logger.Errorf("init kafka client fail: %v", err)
 		return
@@ -65,7 +77,7 @@ func (kafka *KafkaPushEndpoint) send2KafkaTask() {
 		err = kf.Send(kafkaItem)
 		if err != nil {
 			stats.Counter.Set("points.out.kafka.err", 1)
-			logger.Errorf("send %v to kafka %s fail: %v", kafkaItem, kafka.section.BrokersPeers, err)
+			logger.Errorf("send %v to kafka %s fail: %v", kafkaItem, kafka.Section.BrokersPeers, err)
 		}
 	}
 }

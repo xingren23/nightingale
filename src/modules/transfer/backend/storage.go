@@ -10,8 +10,8 @@ import (
 // send
 const (
 	DefaultSendTaskSleepInterval = time.Millisecond * 50 //默认睡眠间隔为50ms
+	DefaultSendQueueMaxSize      = 102400                //10.24w
 	MaxSendRetry                 = 10
-	DefaultSendQueueMaxSize      = 102400 //10.24w
 )
 
 var (

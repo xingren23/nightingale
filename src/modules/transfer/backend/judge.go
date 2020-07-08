@@ -16,6 +16,16 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
+type JudgeSection struct {
+	Batch       int    `yaml:"batch"`
+	ConnTimeout int    `yaml:"connTimeout"`
+	CallTimeout int    `yaml:"callTimeout"`
+	WorkerNum   int    `yaml:"workerNum"`
+	MaxConns    int    `yaml:"maxConns"`
+	MaxIdle     int    `yaml:"maxIdle"`
+	HbsMod      string `yaml:"hbsMod"`
+}
+
 var (
 	// config
 	Judge JudgeSection

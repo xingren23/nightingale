@@ -1,4 +1,4 @@
-package backend
+package influxdb
 
 import (
 	"time"
@@ -11,9 +11,25 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
+type InfluxdbSection struct {
+	Enabled   bool   `yaml:"enabled"`
+	Name      string `yaml:"name"`
+	Batch     int    `yaml:"batch"`
+	MaxRetry  int    `yaml:"maxRetry"`
+	WorkerNum int    `yaml:"workerNum"`
+	Timeout   int    `yaml:"timeout"`
+	Address   string `yaml:"address"`
+	Database  string `yaml:"database"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	Precision string `yaml:"precision"`
+}
+
 type InfluxdbStorage struct {
 	// config
-	section InfluxdbSection
+	Section               InfluxdbSection
+	SendQueueMaxSize      int
+	SendTaskSleepInterval time.Duration
 
 	// 发送缓存队列 node -> queue_of_data
 	InfluxdbQueue *list.SafeListLimited
@@ -22,18 +38,16 @@ type InfluxdbStorage struct {
 func (influxdb *InfluxdbStorage) Init() {
 
 	// init queue
-	if influxdb.section.Enabled {
-		influxdb.InfluxdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
+	if influxdb.Section.Enabled {
+		influxdb.InfluxdbQueue = list.NewSafeListLimited(influxdb.SendQueueMaxSize)
 	}
 
 	// init task
-	influxdbConcurrent := influxdb.section.WorkerNum
+	influxdbConcurrent := influxdb.Section.WorkerNum
 	if influxdbConcurrent < 1 {
 		influxdbConcurrent = 1
 	}
 	go influxdb.send2InfluxdbTask(influxdbConcurrent)
-
-	RegisterStorage(influxdb.section.Name, influxdb)
 }
 
 // 将原始数据插入到influxdb缓存队列
@@ -51,13 +65,13 @@ func (influxdb *InfluxdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 }
 
 func (influxdb *InfluxdbStorage) send2InfluxdbTask(concurrent int) {
-	batch := influxdb.section.Batch // 一次发送,最多batch条数据
-	retry := influxdb.section.MaxRetry
-	addr := influxdb.section.Address
+	batch := influxdb.Section.Batch // 一次发送,最多batch条数据
+	retry := influxdb.Section.MaxRetry
+	addr := influxdb.Section.Address
 	sema := semaphore.NewSemaphore(concurrent)
 
 	var err error
-	c, err := NewInfluxdbClient(influxdb.section)
+	c, err := NewInfluxdbClient(influxdb.Section)
 	defer c.Client.Close()
 
 	if err != nil {
@@ -69,7 +83,7 @@ func (influxdb *InfluxdbStorage) send2InfluxdbTask(concurrent int) {
 		items := influxdb.InfluxdbQueue.PopBackBy(batch)
 		count := len(items)
 		if count == 0 {
-			time.Sleep(DefaultSendTaskSleepInterval)
+			time.Sleep(influxdb.SendTaskSleepInterval)
 			continue
 		}
 

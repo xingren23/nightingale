@@ -12,9 +12,22 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
+type OpenTsdbSection struct {
+	Enabled     bool   `yaml:"enabled"`
+	Name        string `yaml:"name"`
+	Batch       int    `yaml:"batch"`
+	ConnTimeout int    `yaml:"connTimeout"`
+	CallTimeout int    `yaml:"callTimeout"`
+	WorkerNum   int    `yaml:"workerNum"`
+	MaxConns    int    `yaml:"maxConns"`
+	MaxIdle     int    `yaml:"maxIdle"`
+	MaxRetry    int    `yaml:"maxRetry"`
+	Address     string `yaml:"address"`
+}
+
 type OpenTsdbStorage struct {
 	// config
-	section OpenTsdbSection
+	Section OpenTsdbSection
 
 	OpenTsdbConnPoolHelper *pools.OpenTsdbConnPoolHelper
 
@@ -24,25 +37,25 @@ type OpenTsdbStorage struct {
 
 func (opentsdb *OpenTsdbStorage) Init() {
 	// init connPool
-	if opentsdb.section.Enabled {
-		opentsdb.OpenTsdbConnPoolHelper = pools.NewOpenTsdbConnPoolHelper(opentsdb.section.Address,
-			opentsdb.section.MaxConns, opentsdb.section.MaxIdle, opentsdb.section.ConnTimeout,
-			opentsdb.section.CallTimeout)
+	if opentsdb.Section.Enabled {
+		opentsdb.OpenTsdbConnPoolHelper = pools.NewOpenTsdbConnPoolHelper(opentsdb.Section.Address,
+			opentsdb.Section.MaxConns, opentsdb.Section.MaxIdle, opentsdb.Section.ConnTimeout,
+			opentsdb.Section.CallTimeout)
 	}
 
 	// init queue
-	if opentsdb.section.Enabled {
+	if opentsdb.Section.Enabled {
 		opentsdb.OpenTsdbQueue = list.NewSafeListLimited(DefaultSendQueueMaxSize)
 	}
 
 	// start task
-	openTsdbConcurrent := opentsdb.section.WorkerNum
+	openTsdbConcurrent := opentsdb.Section.WorkerNum
 	if openTsdbConcurrent < 1 {
 		openTsdbConcurrent = 1
 	}
 	go opentsdb.send2OpenTsdbTask(openTsdbConcurrent)
 
-	RegisterPushEndpoint(opentsdb.section.Name, opentsdb)
+	RegisterPushEndpoint(opentsdb.Section.Name, opentsdb)
 }
 
 // 将原始数据入到tsdb发送缓存队列
@@ -60,9 +73,9 @@ func (opentsdb *OpenTsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 }
 
 func (opentsdb *OpenTsdbStorage) send2OpenTsdbTask(concurrent int) {
-	batch := opentsdb.section.Batch // 一次发送,最多batch条数据
-	retry := opentsdb.section.MaxRetry
-	addr := opentsdb.section.Address
+	batch := opentsdb.Section.Batch // 一次发送,最多batch条数据
+	retry := opentsdb.Section.MaxRetry
+	addr := opentsdb.Section.Address
 	sema := semaphore.NewSemaphore(concurrent)
 
 	for {

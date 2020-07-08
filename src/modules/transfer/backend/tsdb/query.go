@@ -1,4 +1,4 @@
-package backend
+package tsdb
 
 import (
 	"errors"
@@ -73,7 +73,7 @@ func (tsdb *TsdbStorage) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj
 
 	for _, endpoint := range input.Endpoints {
 		if len(input.Tags) == 0 {
-			counter, err := GetCounter(input.Metric, "", nil)
+			counter, err := dataobj.GetCounter(input.Metric, "", nil)
 			if err != nil {
 				logger.Warningf("get counter error: %+v", err)
 				continue
@@ -83,7 +83,7 @@ func (tsdb *TsdbStorage) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj
 				dataChan)
 		} else {
 			for _, tag := range input.Tags {
-				counter, err := GetCounter(input.Metric, tag, nil)
+				counter, err := dataobj.GetCounter(input.Metric, tag, nil)
 				if err != nil {
 					logger.Warningf("get counter error: %+v", err)
 					continue
@@ -244,7 +244,7 @@ func (tsdb *TsdbStorage) QueryOne(para dataobj.TsdbQueryParam) (resp *dataobj.Ts
 		}()
 
 		select {
-		case <-time.After(time.Duration(tsdb.section.CallTimeout) * time.Millisecond):
+		case <-time.After(time.Duration(tsdb.Section.CallTimeout) * time.Millisecond):
 			onePool.ForceClose(conn)
 			logger.Errorf("%s, call timeout. proc: %s", addr, onePool.Proc())
 			break
@@ -288,7 +288,7 @@ func (tsdb *TsdbStorage) SelectPoolByPK(pk string) ([]Pool, error) {
 		return []Pool{}, err
 	}
 
-	nodeAddrs, found := tsdb.section.ClusterList[node]
+	nodeAddrs, found := tsdb.Section.ClusterList[node]
 	if !found {
 		return []Pool{}, errors.New("node not found")
 	}
@@ -317,7 +317,7 @@ type IndexMetricsResp struct {
 
 func (tsdb *TsdbStorage) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp {
 	var result IndexMetricsResp
-	err := PostIndex("/api/index/metrics", int64(tsdb.section.CallTimeout), recv, &result)
+	err := PostIndex("/api/index/metrics", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
 		logger.Errorf("post index failed, %+v", err)
 		return nil
@@ -338,7 +338,7 @@ type IndexTagPairsResp struct {
 
 func (tsdb *TsdbStorage) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
 	var result IndexTagPairsResp
-	err := PostIndex("/api/index/tagkv", int64(tsdb.section.CallTimeout), recv, &result)
+	err := PostIndex("/api/index/tagkv", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
 		logger.Errorf("post index failed, %+v", err)
 		return nil
@@ -359,7 +359,7 @@ type IndexCludeResp struct {
 
 func (tsdb *TsdbStorage) QueryIndexByClude(recv []dataobj.CludeRecv) []dataobj.XcludeResp {
 	var result IndexCludeResp
-	err := PostIndex("/api/index/counter/clude", int64(tsdb.section.CallTimeout), recv, &result)
+	err := PostIndex("/api/index/counter/clude", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
 		logger.Errorf("post index failed, %+v", err)
 		return nil
@@ -380,7 +380,7 @@ type IndexByFullTagsResp struct {
 
 func (tsdb *TsdbStorage) QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp {
 	var result IndexByFullTagsResp
-	err := PostIndex("/api/index/counter/fullmatch", int64(tsdb.section.CallTimeout),
+	err := PostIndex("/api/index/counter/fullmatch", int64(tsdb.Section.CallTimeout),
 		recv, &result)
 	if err != nil {
 		logger.Errorf("post index failed, %+v", err)
