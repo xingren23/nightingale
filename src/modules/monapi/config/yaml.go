@@ -20,6 +20,7 @@ type Config struct {
 	Link    linkSection         `yaml:"link"`
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
+	SrvTree srvTree             `yaml:"srvTree"`
 }
 
 type linkSection struct {
@@ -83,6 +84,10 @@ type ldapAttributes struct {
 	Phone    string `yaml:"phone"`
 	Email    string `yaml:"email"`
 	Im       string `yaml:"im"`
+}
+
+type srvTree struct {
+	Addr string `yaml:"addr"`
 }
 
 var (

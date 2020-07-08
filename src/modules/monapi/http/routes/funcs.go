@@ -194,7 +194,7 @@ func mustUser(id int64) *model.User {
 }
 
 func mustNode(id int64) *model.Node {
-	node, err := model.NodeGet("id", id)
+	node, err := model.GetNodeById(id)
 	if err != nil {
 		errors.Bomb("cannot retrieve node[%d]: %v", id, err)
 	}
