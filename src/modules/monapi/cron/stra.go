@@ -60,7 +60,7 @@ func CleanStra() {
 	}
 
 	for _, stra := range list {
-		node, err := model.NodeGet("id", stra.Nid)
+		node, err := model.GetNodeById(stra.Nid)
 		if err != nil {
 			logger.Warningf("get node failed, node id: %d, err: %v", stra.Nid, err)
 			continue
