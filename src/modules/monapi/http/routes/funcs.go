@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 	"strconv"
 
 	"github.com/gin-contrib/sessions"
@@ -159,11 +160,11 @@ func loginUsername(c *gin.Context) string {
 }
 
 func loginUser(c *gin.Context) *model.User {
-	username := loginUsername(c)
-
-	user, err := model.UserGet("username", username)
-	errors.Dangerous(err)
-
+	//username := loginUsername(c)
+	//
+	//user, err := model.UserGet("username", username)
+	//errors.Dangerous(err)
+	user := middleware.GetUser(c)
 	if user == nil {
 		errors.Bomb("login first please")
 	}

@@ -98,38 +98,6 @@ func popEvent(queues []interface{}) (*model.Event, bool) {
 	}
 
 	nodePath = node.Path
-	//TODO
-	//leafIds, err := node.LeafIds()
-	//if err != nil {
-	//	logger.Errorf("get node leaf ids failed, node id: %v, event: %+v, err: %v", stra.Nid, event, err)
-	//	return nil, true
-	//}
-	//
-	//nodeIds, err := model.NodeIdsGetByEndpointId(endpoint.Id)
-	//if err != nil {
-	//	logger.Errorf("get node_endpoint by endpoint_id fail: %v, event: %+v", err, event)
-	//	return nil, true
-	//}
-	//
-	//if nodeIds == nil || len(nodeIds) == 0 {
-	//	logger.Errorf("endpoint[%s] not bind any node, event: %+v", event.Endpoint, event)
-	//	return nil, false
-	//}
-	//
-	//has = false
-	//for i := 0; i < len(nodeIds); i++ {
-	//	for j := 0; j < len(leafIds); j++ {
-	//		if nodeIds[i] == leafIds[j] {
-	//			has = true
-	//			break
-	//		}
-	//	}
-	//}
-	//
-	//if !has {
-	//	logger.Errorf("endpoint(%s) not match nid(%v), event: %+v", event.Endpoint, stra.Nid, event)
-	//	return nil, false
-	//}
 
 	users, err := json.Marshal(stra.NotifyUser)
 	if err != nil {

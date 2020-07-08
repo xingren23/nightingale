@@ -45,19 +45,6 @@ func syncStras() {
 	}
 	strasMap := make(map[string][]*model.Stra)
 	for _, stra := range stras {
-		//增加叶子节点nid
-		//stra.LeafNids, err = GetLeafNids(stra.Nid, stra.ExclNid)
-		//if err != nil {
-		//	logger.Warningf("get LeafNids err:%v %v", err, stra)
-		//	continue
-		//}
-		//
-		//endpoints, err := model.EndpointUnderLeafs(stra.LeafNids)
-		//if err != nil {
-		//	logger.Warningf("get endpoints err:%v %v", err, stra)
-		//	continue
-		//}
-
 		endpoints, err := GetEndpointsByStra(stra)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, stra)
@@ -103,17 +90,6 @@ func syncCollects() {
 	}
 
 	for _, p := range ports {
-		//leafNids, err := GetLeafNids(p.Nid, []int64{})
-		//if err != nil {
-		//	logger.Warningf("get LeafNids err:%v %v", err, p)
-		//	continue
-		//}
-		//
-		//endpoints, err := model.EndpointUnderLeafs(leafNids)
-		//if err != nil {
-		//	logger.Warningf("get endpoints err:%v %v", err, p)
-		//	continue
-		//}
 
 		endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
 		if err != nil {
@@ -139,18 +115,6 @@ func syncCollects() {
 	}
 
 	for _, p := range procs {
-		//leafNids, err := GetLeafNids(p.Nid, []int64{})
-		//if err != nil {
-		//	logger.Warningf("get LeafNids err:%v %v", err, p)
-		//	continue
-		//}
-		//
-		//endpoints, err := model.EndpointUnderLeafs(leafNids)
-		//if err != nil {
-		//	logger.Warningf("get endpoints err:%v %v", err, p)
-		//	continue
-		//}
-
 		endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
@@ -175,17 +139,6 @@ func syncCollects() {
 
 	for _, l := range logConfigs {
 		l.Decode()
-		//leafNids, err := GetLeafNids(l.Nid, []int64{})
-		//if err != nil {
-		//	logger.Warningf("get LeafNids err:%v %v", err, l)
-		//	continue
-		//}
-		//
-		//Endpoints, err := model.EndpointUnderLeafs(leafNids)
-		//if err != nil {
-		//	logger.Warningf("get endpoints err:%v %v", err, l)
-		//	continue
-		//}
 
 		Endpoints, err := GetEndpointsByNid(l.Nid, "HOST")
 		if err != nil {
@@ -210,17 +163,6 @@ func syncCollects() {
 	}
 
 	for _, p := range pluginConfigs {
-		//leafNids, err := GetLeafNids(p.Nid, []int64{})
-		//if err != nil {
-		//	logger.Warningf("get LeafNids err:%v %v", err, p)
-		//	continue
-		//}
-		//
-		//Endpoints, err := model.EndpointUnderLeafs(leafNids)
-		//if err != nil {
-		//	logger.Warningf("get endpoints err:%v %v", err, p)
-		//	continue
-		//}
 
 		Endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
 		if err != nil {
