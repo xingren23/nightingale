@@ -180,3 +180,8 @@ func (c *InfluxClient) Send(items []*dataobj.InfluxdbItem) error {
 
 	return c.Client.Write(bp)
 }
+
+func (influxdb *InfluxdbStorage) GetInstance(metric, endpoint string, tags map[string]string) []string {
+	// influxdb 单实例 或 influx-proxy
+	return []string{influxdb.Section.Address}
+}

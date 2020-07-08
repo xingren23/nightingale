@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/toolkits/pkg/errors"
+
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/toolkits/pools"
 	"github.com/didi/nightingale/src/toolkits/stats"
@@ -95,7 +97,7 @@ func (tsdb *TsdbStorage) Init() {
 func (tsdb *TsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
-		tsdbItem := tsdb.convert2TsdbItem(item)
+		tsdbItem := convert2TsdbItem(item)
 		stats.Counter.Set("tsdb.queue.push", 1)
 
 		node, err := tsdb.TsdbNodeRing.GetNode(item.PK())
@@ -169,8 +171,21 @@ func (tsdb *TsdbStorage) Send2TsdbTask(Q *list.SafeListLimited, node, addr strin
 	}
 }
 
+func (tsdb *TsdbStorage) GetInstance(metric, endpoint string, tags map[string]string) []string {
+	counter, err := dataobj.GetCounter(metric, "", tags)
+	errors.Dangerous(err)
+
+	pk := dataobj.PKWithCounter(endpoint, counter)
+	pools, err := tsdb.SelectPoolByPK(pk)
+	addrs := make([]string, len(pools))
+	for i, pool := range pools {
+		addrs[i] = pool.Addr
+	}
+	return addrs
+}
+
 // 打到 Tsdb 的数据,要根据 rrdtool 的特定 来限制 step、counterType、timestamp
-func (tsdb *TsdbStorage) convert2TsdbItem(d *dataobj.MetricValue) *dataobj.TsdbItem {
+func convert2TsdbItem(d *dataobj.MetricValue) *dataobj.TsdbItem {
 	item := &dataobj.TsdbItem{
 		Endpoint:  d.Endpoint,
 		Metric:    d.Metric,
