@@ -35,8 +35,9 @@ func Init(cfg BackendSection) {
 	// init tsdb storage
 	if cfg.Tsdb.Enabled {
 		tsdbStorage = &tsdb.TsdbStorage{
-			Section:          cfg.Tsdb,
-			SendQueueMaxSize: DefaultSendQueueMaxSize,
+			Section:               cfg.Tsdb,
+			SendQueueMaxSize:      DefaultSendQueueMaxSize,
+			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
 		}
 		tsdbStorage.Init()
 		RegisterStorage(tsdbStorage.Section.Name, tsdbStorage)
@@ -45,8 +46,9 @@ func Init(cfg BackendSection) {
 	// init influxdb storage
 	if cfg.Influxdb.Enabled {
 		influxdbStorage = &influxdb.InfluxdbStorage{
-			Section:          cfg.Influxdb,
-			SendQueueMaxSize: DefaultSendQueueMaxSize,
+			Section:               cfg.Influxdb,
+			SendQueueMaxSize:      DefaultSendQueueMaxSize,
+			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
 		}
 		influxdbStorage.Init()
 		RegisterStorage(influxdbStorage.Section.Name, influxdbStorage)
