@@ -20,6 +20,12 @@ type Config struct {
 	Link    linkSection         `yaml:"link"`
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
+	Api     apiSection          `yaml:"api"`
+}
+
+type apiSection struct {
+	Timeout int    `yaml:"timeout"`
+	Ops     string `yaml:"ops"`
 }
 
 type linkSection struct {
