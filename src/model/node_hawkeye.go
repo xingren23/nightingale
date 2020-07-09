@@ -10,7 +10,7 @@ import (
 )
 
 func GetNodeById(nid int64) (*Node, error) {
-	url := config.Get().SrvTree.Addr + "/srv_tree/" + strconv.FormatInt(nid, 10)
+	url := config.Get().Api.Ops + "/srv_tree/" + strconv.FormatInt(nid, 10)
 
 	var result SrvResultDetail
 	err := httplib.Get(url).SetTimeout(3 * time.Second).ToJSON(&result)

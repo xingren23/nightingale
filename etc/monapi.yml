@@ -63,6 +63,6 @@ redis:
 tokens:
   - 7dcd606e0462f9df2fea0bf505c9e622
 
-srvTree:
-  addr: "http://192.168.248.180:8089"
-
+api:
+  ops: http://
+  timeout: 1000
