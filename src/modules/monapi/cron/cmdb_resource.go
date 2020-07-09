@@ -22,6 +22,7 @@ func SyncCmdbResourceLoop() error {
 }
 
 func SyncCmdbResource() error {
+	// todo
 	// 应用
 	//if apps, err := dataobj.GetAppByPage(); err == nil {
 	//	ecache.AppCache.SetAll(apps)
@@ -32,5 +33,5 @@ func SyncCmdbResource() error {
 	//
 	//	logger.Infof("cache cmdb application size %d.", ecache.AppCache.Len())
 	//}
-	//return nil
+	return nil
 }
