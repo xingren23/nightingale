@@ -1,13 +1,12 @@
 backend:
-  maxConns: 20000
-  # in ms
-  # connTimeout: 1000
-  # callTimeout: 3000
-  cluster:
-    tsdb01: 127.0.0.1:5821
+  storage: "tsdb"
+  tsdb:
+    enable: true
+    name: "tsdb"
+    cluster:
+      tsdb01: 127.0.0.1:5821
   influxdb:
     enabled: false
-    username: "influx"
     password: "admin123"
     precision: "s"
     database: "n9e"

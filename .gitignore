@@ -50,4 +50,6 @@ _test
 /web/.cache-loader
 /web/yarn.lock
 
+go.sum
+
 

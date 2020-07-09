@@ -76,7 +76,7 @@ func CleanCollect() {
 			collectType = collect.(*model.PluginCollect).CollectType
 		}
 
-		node, err := model.NodeGet("id", nid)
+		node, err := model.GetNodeById(nid)
 		if err != nil {
 			logger.Warningf("get node failed, node id: %d, err: %v", nid, err)
 			continue
