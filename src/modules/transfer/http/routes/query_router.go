@@ -18,16 +18,16 @@ type QueryDataReq struct {
 func QueryData(c *gin.Context) {
 	stats.Counter.Set("data.api.qp10s", 1)
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
 
 	var queryDataReq QueryDataReq
 	errors.Dangerous(c.ShouldBindJSON(&queryDataReq))
-	resp := storage.QueryData(queryDataReq.queryData)
+	resp := dataSource.QueryData(queryDataReq.queryData)
 	render.Data(c, resp, nil)
 }
 
@@ -39,13 +39,13 @@ func QueryDataForUI(c *gin.Context) {
 	start := input.Start
 	end := input.End
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
-	resp := storage.QueryDataForUI(input)
+	resp := dataSource.QueryDataForUI(input)
 	for _, d := range resp {
 		data := &dataobj.QueryDataForUIResp{
 			Start:    d.Start,
@@ -64,7 +64,7 @@ func QueryDataForUI(c *gin.Context) {
 			comparison := input.Comparisons[i]
 			input.Start = start - comparison
 			input.End = end - comparison
-			res := storage.QueryDataForUI(input)
+			res := dataSource.QueryDataForUI(input)
 			for _, d := range res {
 				for j := range d.Values {
 					d.Values[j].Timestamp += comparison
@@ -93,14 +93,14 @@ func GetMetrics(c *gin.Context) {
 	recv := dataobj.EndpointsRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
 
-	resp := storage.QueryMetrics(recv)
+	resp := dataSource.QueryMetrics(recv)
 
 	render.Data(c, resp, nil)
 }
@@ -110,14 +110,14 @@ func GetTagPairs(c *gin.Context) {
 	recv := dataobj.EndpointMetricRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
 
-	resp := storage.QueryTagPairs(recv)
+	resp := dataSource.QueryTagPairs(recv)
 	render.Data(c, resp, nil)
 }
 
@@ -126,14 +126,14 @@ func GetIndexByClude(c *gin.Context) {
 	recvs := make([]dataobj.CludeRecv, 0)
 	errors.Dangerous(c.ShouldBindJSON(&recvs))
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
 
-	resp := storage.QueryIndexByClude(recvs)
+	resp := dataSource.QueryIndexByClude(recvs)
 	render.Data(c, resp, nil)
 }
 
@@ -142,13 +142,13 @@ func GetIndexByFullTags(c *gin.Context) {
 	recvs := make([]dataobj.IndexByFullTagsRecv, 0)
 	errors.Dangerous(c.ShouldBindJSON(&recvs))
 
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, err)
 		return
 	}
 
-	resp := storage.QueryIndexByFullTags(recvs)
+	resp := dataSource.QueryIndexByFullTags(recvs)
 	render.Data(c, resp, nil)
 }
