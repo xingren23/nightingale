@@ -19,9 +19,9 @@ type BackendSection struct {
 var (
 	defaultStorage    string
 	StraPath          string
-	tsdbStorage       *tsdb.TsdbStorage
-	openTSDBStorage   *OpenTsdbStorage
-	influxdbStorage   *influxdb.InfluxdbStorage
+	tsdbStorage       *tsdb.TsdbDatasource
+	openTSDBStorage   *OpenTsdbPushEndpoint
+	influxdbStorage   *influxdb.InfluxdbDatasource
 	kafkaPushEndpoint *KafkaPushEndpoint
 )
 
@@ -34,7 +34,7 @@ func Init(cfg BackendSection) {
 
 	// init tsdb storage
 	if cfg.Tsdb.Enabled {
-		tsdbStorage = &tsdb.TsdbStorage{
+		tsdbStorage = &tsdb.TsdbDatasource{
 			Section:               cfg.Tsdb,
 			SendQueueMaxSize:      DefaultSendQueueMaxSize,
 			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
@@ -45,7 +45,7 @@ func Init(cfg BackendSection) {
 
 	// init influxdb storage
 	if cfg.Influxdb.Enabled {
-		influxdbStorage = &influxdb.InfluxdbStorage{
+		influxdbStorage = &influxdb.InfluxdbDatasource{
 			Section:               cfg.Influxdb,
 			SendQueueMaxSize:      DefaultSendQueueMaxSize,
 			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
@@ -56,7 +56,7 @@ func Init(cfg BackendSection) {
 	}
 	// init opentsdb storage
 	if cfg.OpenTsdb.Enabled {
-		openTSDBStorage = &OpenTsdbStorage{
+		openTSDBStorage = &OpenTsdbPushEndpoint{
 			Section: cfg.OpenTsdb,
 		}
 		openTSDBStorage.Init()
