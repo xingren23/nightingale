@@ -51,14 +51,14 @@ func tsdbInstance(c *gin.Context) {
 	var input tsdbInstanceRecv
 	errors.Dangerous(c.ShouldBindJSON(&input))
 
-	storage, error := backend.GetDataSourceFor("tsdb")
+	dataSource, error := backend.GetDataSourceFor("tsdb")
 	if error != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		render.Message(c, error)
 		return
 	}
 
-	addrs := storage.GetInstance(input.Metric, input.Endpoint, input.TagMap)
+	addrs := dataSource.GetInstance(input.Metric, input.Endpoint, input.TagMap)
 	render.Data(c, addrs, nil)
 }
 

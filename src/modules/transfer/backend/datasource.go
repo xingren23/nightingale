@@ -49,15 +49,15 @@ func init() {
 	registryPushEndpoints = make(map[string]PushEndpoint)
 }
 
-// get default backend storage
+// get default backend datasource
 func GetDataSourceFor(pluginId string) (DataSource, error) {
 	if pluginId == "" {
 		pluginId = defaultDataSource
 	}
-	if storage, exists := registryDataSources[pluginId]; exists {
-		return storage, nil
+	if source, exists := registryDataSources[pluginId]; exists {
+		return source, nil
 	}
-	return nil, fmt.Errorf("Could not find storage for plugin: %s ", pluginId)
+	return nil, fmt.Errorf("Could not find source for plugin: %s ", pluginId)
 }
 
 // get all push endpoints

@@ -32,7 +32,7 @@ func Init(cfg BackendSection) {
 	// init judge
 	InitJudge(cfg.Judge)
 
-	// init tsdb storage
+	// init tsdb
 	if cfg.Tsdb.Enabled {
 		tsdbDataSource = &tsdb.TsdbDataSource{
 			Section:               cfg.Tsdb,
@@ -43,7 +43,7 @@ func Init(cfg BackendSection) {
 		RegisterDataSource(tsdbDataSource.Section.Name, tsdbDataSource)
 	}
 
-	// init influxdb storage
+	// init influxdb
 	if cfg.Influxdb.Enabled {
 		influxdbDataSource = &influxdb.InfluxdbDataSource{
 			Section:               cfg.Influxdb,
@@ -54,7 +54,7 @@ func Init(cfg BackendSection) {
 		RegisterDataSource(influxdbDataSource.Section.Name, influxdbDataSource)
 
 	}
-	// init opentsdb storage
+	// init opentsdb
 	if cfg.OpenTsdb.Enabled {
 		openTSDBPushEndpoint = &OpenTsdbPushEndpoint{
 			Section: cfg.OpenTsdb,
