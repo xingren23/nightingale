@@ -18,7 +18,7 @@ type QueryDataReq struct {
 func QueryData(c *gin.Context) {
 	stats.Counter.Set("data.api.qp10s", 1)
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)
@@ -39,7 +39,7 @@ func QueryDataForUI(c *gin.Context) {
 	start := input.Start
 	end := input.End
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)
@@ -93,7 +93,7 @@ func GetMetrics(c *gin.Context) {
 	recv := dataobj.EndpointsRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)
@@ -110,7 +110,7 @@ func GetTagPairs(c *gin.Context) {
 	recv := dataobj.EndpointMetricRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)
@@ -126,7 +126,7 @@ func GetIndexByClude(c *gin.Context) {
 	recvs := make([]dataobj.CludeRecv, 0)
 	errors.Dangerous(c.ShouldBindJSON(&recvs))
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)
@@ -142,7 +142,7 @@ func GetIndexByFullTags(c *gin.Context) {
 	recvs := make([]dataobj.IndexByFullTagsRecv, 0)
 	errors.Dangerous(c.ShouldBindJSON(&recvs))
 
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, err)

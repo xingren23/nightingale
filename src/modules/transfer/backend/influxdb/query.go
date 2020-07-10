@@ -14,7 +14,7 @@ import (
 )
 
 // select value from metric where ...
-func (influxdb *InfluxdbDatasource) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
+func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
 	logger.Debugf("query data, inputs: %+v", inputs)
 
 	c, err := NewInfluxdbClient(influxdb.Section)
@@ -77,7 +77,7 @@ func (influxdb *InfluxdbDatasource) QueryData(inputs []dataobj.QueryData) []*dat
 
 // todo : 支持 comparison
 // select value from metric where ...
-func (influxdb *InfluxdbDatasource) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
+func (influxdb *InfluxdbDataSource) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
 
 	logger.Debugf("query data for ui, input: %+v", input)
 
@@ -141,7 +141,7 @@ func (influxdb *InfluxdbDatasource) QueryDataForUI(input dataobj.QueryDataForUI)
 }
 
 // show measurements on n9e
-func (influxdb *InfluxdbDatasource) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp {
+func (influxdb *InfluxdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp {
 	logger.Debugf("query metric, recv: %+v", recv)
 
 	c, err := NewInfluxdbClient(influxdb.Section)
@@ -172,7 +172,7 @@ func (influxdb *InfluxdbDatasource) QueryMetrics(recv dataobj.EndpointsRecv) *da
 }
 
 // show tag keys / values from metric ...
-func (influxdb *InfluxdbDatasource) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
+func (influxdb *InfluxdbDataSource) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
 	logger.Debugf("query tag pairs, recv: %+v", recv)
 
 	c, err := NewInfluxdbClient(influxdb.Section)
@@ -256,7 +256,7 @@ func showTagValues(c *InfluxClient, keys []string, metric, database string) []*d
 }
 
 // show series from metric where ...
-func (influxdb *InfluxdbDatasource) QueryIndexByClude(recvs []dataobj.CludeRecv) []dataobj.XcludeResp {
+func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv) []dataobj.XcludeResp {
 	logger.Debugf("query IndexByClude , recv: %+v", recvs)
 
 	c, err := NewInfluxdbClient(influxdb.Section)
@@ -329,7 +329,7 @@ func (influxdb *InfluxdbDatasource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 }
 
 // show series from metric where ...
-func (influxdb *InfluxdbDatasource) QueryIndexByFullTags(recvs []dataobj.IndexByFullTagsRecv) []dataobj.
+func (influxdb *InfluxdbDataSource) QueryIndexByFullTags(recvs []dataobj.IndexByFullTagsRecv) []dataobj.
 	IndexByFullTagsResp {
 	logger.Debugf("query IndexByFullTags , recv: %+v", recvs)
 

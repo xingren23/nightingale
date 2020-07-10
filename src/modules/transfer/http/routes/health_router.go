@@ -51,7 +51,7 @@ func tsdbInstance(c *gin.Context) {
 	var input tsdbInstanceRecv
 	errors.Dangerous(c.ShouldBindJSON(&input))
 
-	storage, error := backend.GetStorageFor("tsdb")
+	storage, error := backend.GetDataSourceFor("tsdb")
 	if error != nil {
 		logger.Warningf("Could not find storage ")
 		render.Message(c, error)

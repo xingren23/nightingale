@@ -36,7 +36,7 @@ type ClusterNode struct {
 	Addrs []string `json:"addrs"`
 }
 
-type TsdbDatasource struct {
+type TsdbDataSource struct {
 	//config
 	Section               TsdbSection
 	SendQueueMaxSize      int
@@ -52,7 +52,7 @@ type TsdbDatasource struct {
 	TsdbConnPools *pools.ConnPools
 }
 
-func (tsdb *TsdbDatasource) Init() {
+func (tsdb *TsdbDataSource) Init() {
 
 	// init hash ring
 	tsdb.TsdbNodeRing = NewConsistentHashRing(int32(tsdb.Section.Replicas),
@@ -94,7 +94,7 @@ func (tsdb *TsdbDatasource) Init() {
 }
 
 // Push2TsdbSendQueue pushes data to a TSDB instance which depends on the consistent ring.
-func (tsdb *TsdbDatasource) Push2Queue(items []*dataobj.MetricValue) {
+func (tsdb *TsdbDataSource) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
 		tsdbItem := convert2TsdbItem(item)
@@ -123,7 +123,7 @@ func (tsdb *TsdbDatasource) Push2Queue(items []*dataobj.MetricValue) {
 	}
 }
 
-func (tsdb *TsdbDatasource) Send2TsdbTask(Q *list.SafeListLimited, node, addr string, concurrent int) {
+func (tsdb *TsdbDataSource) Send2TsdbTask(Q *list.SafeListLimited, node, addr string, concurrent int) {
 	batch := tsdb.Section.Batch // 一次发送,最多batch条数据
 	Q = tsdb.TsdbQueues[node+addr]
 
@@ -171,7 +171,7 @@ func (tsdb *TsdbDatasource) Send2TsdbTask(Q *list.SafeListLimited, node, addr st
 	}
 }
 
-func (tsdb *TsdbDatasource) GetInstance(metric, endpoint string, tags map[string]string) []string {
+func (tsdb *TsdbDataSource) GetInstance(metric, endpoint string, tags map[string]string) []string {
 	counter, err := dataobj.GetCounter(metric, "", tags)
 	errors.Dangerous(err)
 

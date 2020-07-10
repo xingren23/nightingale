@@ -16,7 +16,7 @@ import (
 	"github.com/toolkits/pkg/pool"
 )
 
-func (tsdb *TsdbDatasource) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
+func (tsdb *TsdbDataSource) QueryData(inputs []dataobj.QueryData) []*dataobj.TsdbQueryResponse {
 	logger.Debugf("query data, inputs: %+v", inputs)
 
 	workerNum := 100
@@ -54,7 +54,7 @@ func (tsdb *TsdbDatasource) QueryData(inputs []dataobj.QueryData) []*dataobj.Tsd
 	return resp
 }
 
-func (tsdb *TsdbDatasource) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
+func (tsdb *TsdbDataSource) QueryDataForUI(input dataobj.QueryDataForUI) []*dataobj.TsdbQueryResponse {
 
 	logger.Debugf("query data for ui, input: %+v", input)
 
@@ -158,7 +158,7 @@ func (tsdb *TsdbDatasource) QueryDataForUI(input dataobj.QueryDataForUI) []*data
 	return resp
 }
 
-func (tsdb *TsdbDatasource) fetchDataSync(start, end int64, consolFun, endpoint, counter string, step int, worker chan struct{}, dataChan chan *dataobj.TsdbQueryResponse) {
+func (tsdb *TsdbDataSource) fetchDataSync(start, end int64, consolFun, endpoint, counter string, step int, worker chan struct{}, dataChan chan *dataobj.TsdbQueryResponse) {
 	defer func() {
 		<-worker
 	}()
@@ -175,7 +175,7 @@ func (tsdb *TsdbDatasource) fetchDataSync(start, end int64, consolFun, endpoint,
 	dataChan <- data
 }
 
-func (tsdb *TsdbDatasource) fetchData(start, end int64, consolFun, endpoint, counter string, step int) (*dataobj.TsdbQueryResponse, error) {
+func (tsdb *TsdbDataSource) fetchData(start, end int64, consolFun, endpoint, counter string, step int) (*dataobj.TsdbQueryResponse, error) {
 	var resp *dataobj.TsdbQueryResponse
 
 	qparm := genQParam(start, end, consolFun, endpoint, counter, step)
@@ -201,7 +201,7 @@ func genQParam(start, end int64, consolFunc, endpoint, counter string, step int)
 	}
 }
 
-func (tsdb *TsdbDatasource) QueryOne(para dataobj.TsdbQueryParam) (resp *dataobj.TsdbQueryResponse, err error) {
+func (tsdb *TsdbDataSource) QueryOne(para dataobj.TsdbQueryParam) (resp *dataobj.TsdbQueryResponse, err error) {
 	start, end := para.Start, para.End
 	resp = &dataobj.TsdbQueryResponse{}
 
@@ -282,7 +282,7 @@ type Pool struct {
 	Addr string
 }
 
-func (tsdb *TsdbDatasource) SelectPoolByPK(pk string) ([]Pool, error) {
+func (tsdb *TsdbDataSource) SelectPoolByPK(pk string) ([]Pool, error) {
 	node, err := tsdb.TsdbNodeRing.GetNode(pk)
 	if err != nil {
 		return []Pool{}, err
@@ -315,7 +315,7 @@ type IndexMetricsResp struct {
 	Err  string              `json:"err"`
 }
 
-func (tsdb *TsdbDatasource) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp {
+func (tsdb *TsdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp {
 	var result IndexMetricsResp
 	err := PostIndex("/api/index/metrics", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
@@ -336,7 +336,7 @@ type IndexTagPairsResp struct {
 	Err  string                   `json:"err"`
 }
 
-func (tsdb *TsdbDatasource) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
+func (tsdb *TsdbDataSource) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
 	var result IndexTagPairsResp
 	err := PostIndex("/api/index/tagkv", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
@@ -357,7 +357,7 @@ type IndexCludeResp struct {
 	Err  string               `json:"err"`
 }
 
-func (tsdb *TsdbDatasource) QueryIndexByClude(recv []dataobj.CludeRecv) []dataobj.XcludeResp {
+func (tsdb *TsdbDataSource) QueryIndexByClude(recv []dataobj.CludeRecv) []dataobj.XcludeResp {
 	var result IndexCludeResp
 	err := PostIndex("/api/index/counter/clude", int64(tsdb.Section.CallTimeout), recv, &result)
 	if err != nil {
@@ -378,7 +378,7 @@ type IndexByFullTagsResp struct {
 	Err  string                        `json:"err"`
 }
 
-func (tsdb *TsdbDatasource) QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp {
+func (tsdb *TsdbDataSource) QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp {
 	var result IndexByFullTagsResp
 	err := PostIndex("/api/index/counter/fullmatch", int64(tsdb.Section.CallTimeout),
 		recv, &result)

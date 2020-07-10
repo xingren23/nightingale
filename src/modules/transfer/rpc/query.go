@@ -7,7 +7,7 @@ import (
 )
 
 func (t *Transfer) Query(args []dataobj.QueryData, reply *dataobj.QueryDataResp) error {
-	storage, err := backend.GetStorageFor("")
+	storage, err := backend.GetDataSourceFor("")
 	if err != nil {
 		logger.Warningf("Could not find storage ")
 		return err

@@ -25,7 +25,7 @@ type InfluxdbSection struct {
 	Precision string `yaml:"precision"`
 }
 
-type InfluxdbDatasource struct {
+type InfluxdbDataSource struct {
 	// config
 	Section               InfluxdbSection
 	SendQueueMaxSize      int
@@ -35,7 +35,7 @@ type InfluxdbDatasource struct {
 	InfluxdbQueue *list.SafeListLimited
 }
 
-func (influxdb *InfluxdbDatasource) Init() {
+func (influxdb *InfluxdbDataSource) Init() {
 
 	// init queue
 	if influxdb.Section.Enabled {
@@ -51,7 +51,7 @@ func (influxdb *InfluxdbDatasource) Init() {
 }
 
 // 将原始数据插入到influxdb缓存队列
-func (influxdb *InfluxdbDatasource) Push2Queue(items []*dataobj.MetricValue) {
+func (influxdb *InfluxdbDataSource) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
 		influxdbItem := influxdb.convert2InfluxdbItem(item)
@@ -64,7 +64,7 @@ func (influxdb *InfluxdbDatasource) Push2Queue(items []*dataobj.MetricValue) {
 	stats.Counter.Set("influxdb.queue.err", errCnt)
 }
 
-func (influxdb *InfluxdbDatasource) send2InfluxdbTask(concurrent int) {
+func (influxdb *InfluxdbDataSource) send2InfluxdbTask(concurrent int) {
 	batch := influxdb.Section.Batch // 一次发送,最多batch条数据
 	retry := influxdb.Section.MaxRetry
 	addr := influxdb.Section.Address
@@ -120,7 +120,7 @@ func (influxdb *InfluxdbDatasource) send2InfluxdbTask(concurrent int) {
 	}
 }
 
-func (influxdb *InfluxdbDatasource) convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
+func (influxdb *InfluxdbDataSource) convert2InfluxdbItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
 	t := dataobj.InfluxdbItem{Tags: make(map[string]string), Fields: make(map[string]interface{})}
 
 	for k, v := range d.TagsMap {
@@ -181,7 +181,7 @@ func (c *InfluxClient) Send(items []*dataobj.InfluxdbItem) error {
 	return c.Client.Write(bp)
 }
 
-func (influxdb *InfluxdbDatasource) GetInstance(metric, endpoint string, tags map[string]string) []string {
+func (influxdb *InfluxdbDataSource) GetInstance(metric, endpoint string, tags map[string]string) []string {
 	// influxdb 单实例 或 influx-proxy
 	return []string{influxdb.Section.Address}
 }

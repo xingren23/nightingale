@@ -6,8 +6,8 @@ import (
 )
 
 type BackendSection struct {
-	Storage  string `yaml:"storage"`
-	StraPath string `yaml:"straPath"`
+	DataSource string `yaml:"datasource"`
+	StraPath   string `yaml:"straPath"`
 
 	Judge    JudgeSection             `yaml:"judge"`
 	Tsdb     tsdb.TsdbSection         `yaml:"tsdb"`
@@ -17,16 +17,16 @@ type BackendSection struct {
 }
 
 var (
-	defaultStorage    string
-	StraPath          string
-	tsdbStorage       *tsdb.TsdbDatasource
-	openTSDBStorage   *OpenTsdbPushEndpoint
-	influxdbStorage   *influxdb.InfluxdbDatasource
-	kafkaPushEndpoint *KafkaPushEndpoint
+	defaultDataSource    string
+	StraPath             string
+	tsdbDataSource       *tsdb.TsdbDataSource
+	openTSDBPushEndpoint *OpenTsdbPushEndpoint
+	influxdbDataSource   *influxdb.InfluxdbDataSource
+	kafkaPushEndpoint    *KafkaPushEndpoint
 )
 
 func Init(cfg BackendSection) {
-	defaultStorage = cfg.Storage
+	defaultDataSource = cfg.DataSource
 	StraPath = cfg.StraPath
 
 	// init judge
@@ -34,32 +34,32 @@ func Init(cfg BackendSection) {
 
 	// init tsdb storage
 	if cfg.Tsdb.Enabled {
-		tsdbStorage = &tsdb.TsdbDatasource{
+		tsdbDataSource = &tsdb.TsdbDataSource{
 			Section:               cfg.Tsdb,
 			SendQueueMaxSize:      DefaultSendQueueMaxSize,
 			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
 		}
-		tsdbStorage.Init()
-		RegisterStorage(tsdbStorage.Section.Name, tsdbStorage)
+		tsdbDataSource.Init()
+		RegisterDataSource(tsdbDataSource.Section.Name, tsdbDataSource)
 	}
 
 	// init influxdb storage
 	if cfg.Influxdb.Enabled {
-		influxdbStorage = &influxdb.InfluxdbDatasource{
+		influxdbDataSource = &influxdb.InfluxdbDataSource{
 			Section:               cfg.Influxdb,
 			SendQueueMaxSize:      DefaultSendQueueMaxSize,
 			SendTaskSleepInterval: DefaultSendTaskSleepInterval,
 		}
-		influxdbStorage.Init()
-		RegisterStorage(influxdbStorage.Section.Name, influxdbStorage)
+		influxdbDataSource.Init()
+		RegisterDataSource(influxdbDataSource.Section.Name, influxdbDataSource)
 
 	}
 	// init opentsdb storage
 	if cfg.OpenTsdb.Enabled {
-		openTSDBStorage = &OpenTsdbPushEndpoint{
+		openTSDBPushEndpoint = &OpenTsdbPushEndpoint{
 			Section: cfg.OpenTsdb,
 		}
-		openTSDBStorage.Init()
+		openTSDBPushEndpoint.Init()
 	}
 	// init kafka
 	if cfg.Kafka.Enabled {
