@@ -113,6 +113,9 @@ func Config(r *gin.Engine) {
 		login.GET("/event/his", eventHisGets)
 		login.GET("/event/his/:id", eventHisGetById)
 		login.POST("/event/curs/claim", eventCurClaim)
+		//替换原始事件相关接口
+		login.GET("/event/cur", eventCurGets)
+		login.GET("/event/his", eventHisGets)
 
 		login.POST("/collect", collectPost)
 		login.GET("/collect/list", collectsGet)

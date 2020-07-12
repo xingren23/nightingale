@@ -329,6 +329,10 @@ func (s *Stra) Encode() error {
 		return fmt.Errorf("encode alert_upgrade err:%v", err)
 	}
 
+	if s.Priority > 3 || s.Priority < 1 {
+		return fmt.Errorf("priority: must be between p1 to p3")
+	}
+
 	if s.NeedUpgrade == 1 {
 		if len(s.AlertUpgrade.Users) == 0 && len(s.AlertUpgrade.Groups) == 0 {
 			return fmt.Errorf("alert upgrade: users and groups is blank")
@@ -393,7 +397,7 @@ func (s *Stra) Encode() error {
 	}
 
 	for _, day := range s.EnableDaysOfWeek {
-		if day > 7 || day < 0 {
+		if day > 6 || day < 0 {
 			return fmt.Errorf("illegal period_days_of_week %v", s.EnableDaysOfWeek)
 		}
 	}
@@ -417,7 +421,11 @@ func (s *Stra) Encode() error {
 	if err != nil {
 		return err
 	}
+
 	s.NotifyGroupStr = string(notifyGroup)
+	if len(s.NotifyGroup) == 0 {
+		return fmt.Errorf("groups is blank,stra name is %v", s.Name)
+	}
 
 	notifyUser, err := json.Marshal(s.NotifyUser)
 	if err != nil {
@@ -542,4 +550,10 @@ func AlertUpgradeUnMarshal(str string) (AlertUpgrade, error) {
 
 	err := json.Unmarshal([]byte(str), &obj)
 	return obj, err
+}
+
+func StraCountByNidAndName(nid int64, name string) (int64, error) {
+	session := DB["mon"].Where("nid = ? and name = ?", nid, name)
+	total, err := session.Count(new(Stra))
+	return total, err
 }

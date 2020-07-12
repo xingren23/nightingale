@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/didi/nightingale/src/model"
@@ -55,14 +54,17 @@ func GetUser(c *gin.Context) *model.User {
 		errors.Bomb("login first please")
 	}
 
-	id, _ := strconv.ParseInt(userCookie.Data.Id, 10, 64)
-	user := &model.User{
-		Id:       id,
-		Username: userCookie.Data.Email,
-		Dispname: userCookie.Data.Name,
-		Phone:    userCookie.Data.Phone,
-		Email:    userCookie.Data.Email,
-		IsRoot:   1,
+	user, _ := model.UserGet("username", strings.Split(userCookie.Data.Email, "@")[0])
+	if user == nil {
+		user = &model.User{
+			Username: userCookie.Data.Email,
+			Dispname: userCookie.Data.Name,
+			Phone:    userCookie.Data.Phone,
+			Email:    userCookie.Data.Email,
+			IsRoot:   1,
+		}
+
+		user.Save()
 	}
 
 	return user
