@@ -21,6 +21,7 @@ type Config struct {
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
 	SrvTree srvTree             `yaml:"srvTree"`
+	SSO     sso                 `yaml:"sso"`
 }
 
 type linkSection struct {
@@ -87,6 +88,10 @@ type ldapAttributes struct {
 }
 
 type srvTree struct {
+	Addr string `yaml:"addr"`
+}
+
+type sso struct {
 	Addr string `yaml:"addr"`
 }
 

@@ -16,6 +16,8 @@ type Team struct {
 	Mgmt       int    `json:"mgmt"`
 	AdminObjs  []User `json:"admin_objs" xorm:"-"`
 	MemberObjs []User `json:"member_objs" xorm:"-"`
+	Nid        int64  `json:"nid"`
+	NodeCode   string `json:"nodeCode" xorm:"-"`
 }
 
 func (t *Team) Del() error {

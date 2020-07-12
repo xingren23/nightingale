@@ -51,7 +51,7 @@ link:
 
 # for alarm event and message queue
 redis:
-  addr: "127.0.0.1:6379"
+  addr: "192.168.42.201:6379"
   db: 0
   pass: ""
   # in ms
@@ -65,4 +65,7 @@ tokens:
 
 srvTree:
   addr: "http://192.168.248.180:8089"
+
+sso:
+  addr: "http://192.168.253.65:10001"
 

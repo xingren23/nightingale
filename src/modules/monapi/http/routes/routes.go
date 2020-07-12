@@ -52,6 +52,10 @@ func Config(r *gin.Engine) {
 		login.POST("/team", teamAddPost)
 		login.PUT("/team/:id", teamPut)
 		login.DELETE("/team/:id", teamDel)
+		//替换原始team接口
+		login.GET("/teamHawkeye", teamHawkeyeListGet)
+		login.POST("/teamHawkeye", teamHawkeyeAddPost)
+		login.PUT("/teamHawkeye/:id", teamHawkeyePut)
 
 		login.GET("/endpoint", endpointGets)
 		login.POST("/endpoint", endpointImport)
