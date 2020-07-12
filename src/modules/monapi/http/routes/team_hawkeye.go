@@ -9,9 +9,9 @@ import (
 )
 
 func teamHawkeyeListGet(c *gin.Context) {
-	limit := queryInt(c, "limit", 1000)
+	limit := queryInt(c, "limit", 10000)
 	query := queryStr(c, "query", "")
-	nid := int64(queryInt(c, "nid", -1))
+	nid := mustQueryInt64(c, "nid")
 	edit := queryInt(c, "edit", 1)
 	var nids []int64
 	m := make(map[int64]string)
@@ -55,7 +55,6 @@ func teamHawkeyeListGet(c *gin.Context) {
 
 	for _, team := range list {
 		team.NodeCode = m[nid]
-		println(m[nid])
 	}
 
 	renderData(c, gin.H{

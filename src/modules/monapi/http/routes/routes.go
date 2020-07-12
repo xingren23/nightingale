@@ -77,6 +77,8 @@ func Config(r *gin.Engine) {
 		login.GET("/node/:id/maskconf", maskconfGets)
 		login.GET("/node/:id/screen", screenGets)
 		login.POST("/node/:id/screen", screenPost)
+		//屏蔽策略替换接口
+		login.GET("/node/:id/maskconf/hawkeye", maskconfGetsHawkeye)
 
 		login.GET("/nodes/search", nodeSearchGet)
 		login.GET("/nodes/leafids", nodeLeafIdsGet)

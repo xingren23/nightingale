@@ -4,11 +4,7 @@ func EventCurTotalHawkeye(stime, etime int64, userId int64, metric, endpoint str
 	session := DB["mon"].Where("FIND_IN_SET( ? ,alert_users) and ignore_alert=0", userId)
 
 	if stime != 0 {
-		session = DB["mon"].Where("etime > ?", stime)
-	}
-
-	if etime != 0 {
-		session = DB["mon"].Where("etime < ?", etime)
+		session = DB["mon"].Where("etime > ? and etime < ?", stime, etime)
 	}
 
 	if metric != "" {
@@ -37,11 +33,7 @@ func EventCurGetsHawkeye(stime, etime int64, userId int64, metric, endpoint stri
 	session := DB["mon"].Where("FIND_IN_SET( ? ,alert_users) and ignore_alert=0", userId)
 
 	if stime != 0 {
-		session = DB["mon"].Where("etime > ?", stime)
-	}
-
-	if etime != 0 {
-		session = DB["mon"].Where("etime < ?", etime)
+		session = DB["mon"].Where("etime > ? and etime < ?", stime, etime)
 	}
 
 	if metric != "" {
