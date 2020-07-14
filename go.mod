@@ -15,6 +15,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/mux v1.6.2
+	github.com/grafana/grafana v6.1.6+incompatible
 	github.com/hpcloud/tail v1.0.0
 	github.com/influxdata/influxdb v1.8.0
 	github.com/json-iterator/go v1.1.9

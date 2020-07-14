@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/didi/nightingale/src/modules/monapi/config"
-	"log"
+	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
 )
 
 type Network struct {
@@ -14,12 +14,12 @@ type Network struct {
 	DataCenterCode string `json:"dataCenterCode"`
 	EnvCode        string `json:"envCode"`
 	Type           string `json:"type"`
-	SerialNo       bool   `json:"serialNo"`
+	SerialNo       string `json:"serialNo"`
 }
 
 type NetworkPageResult struct {
 	Pagination Pagination `json:"pagination"`
-	Result     []*Network `json:"result"`
+	Networks   []*Network `json:"result"`
 }
 
 type NetworkResult struct {
@@ -31,7 +31,7 @@ func getNetworks(url string, pageNo, pageSize int) (*NetworkResult, error) {
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
-	params["sourceType"] = SourceNet
+	params["sourceType"] = CmdbSourceNet
 
 	data, err := RequestByPost(url, params)
 	if err != nil {
@@ -41,7 +41,7 @@ func getNetworks(url string, pageNo, pageSize int) (*NetworkResult, error) {
 	var m NetworkResult
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		log.Printf("Error : Cache Instance Parse JSON %v.\n", err)
+		logger.Errorf("Error: Parse network JSON %v.", err)
 		return nil, err
 	}
 
@@ -53,7 +53,7 @@ func GetNetByPage() ([]*Network, error) {
 	res := []*Network{}
 	url := config.Get().Api.Ops + "/api/resource/query"
 	pageNo := 1
-	pageSize := 10
+	pageSize := 100
 	pageTotal := 999
 	for pageNo <= pageTotal {
 		page, err := getNetworks(url, pageNo, pageSize)
@@ -65,7 +65,7 @@ func GetNetByPage() ([]*Network, error) {
 		}
 		pageNo++
 		pageTotal = page.Result.Pagination.TotalPage
-		res = append(res, page.Result.Result...)
+		res = append(res, page.Result.Networks...)
 	}
 
 	return res, nil

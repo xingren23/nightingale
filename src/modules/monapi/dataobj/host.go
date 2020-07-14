@@ -3,9 +3,8 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
-	"log"
-
 	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/toolkits/pkg/logger"
 )
 
 type CmdbHost struct {
@@ -19,7 +18,7 @@ type CmdbHost struct {
 
 type CmdbHostPageResult struct {
 	Pagination Pagination  `json:"pagination"`
-	Result     []*CmdbHost `json:"result"`
+	Hosts      []*CmdbHost `json:"result"`
 }
 
 type CmdbHostResult struct {
@@ -27,21 +26,20 @@ type CmdbHostResult struct {
 	Result  *CmdbHostPageResult `json:"result"`
 }
 
-func getHosts(url string, pageNo, pageSize int) (*CmdbHostResult, error) {
+func getHosts(url string, pageNo, pageSize int) (*CmdbHostPageResult, error) {
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
-	params["sourceType"] = SourceHost
 
 	data, err := RequestByPost(url, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var m CmdbHostResult
+	var m CmdbHostPageResult
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		log.Printf("Error : Cache Instance Parse JSON %v.\n", err)
+		logger.Errorf("Error: Parse cmdbHost JSON %v.", err)
 		return nil, err
 	}
 
@@ -51,21 +49,21 @@ func getHosts(url string, pageNo, pageSize int) (*CmdbHostResult, error) {
 // 获取实例
 func GetHostByPage() ([]*CmdbHost, error) {
 	res := []*CmdbHost{}
-	url := config.Get().Api.Ops + "/api/resource/query"
+	url := config.Get().Api.Ops + "/host/search"
 	pageNo := 1
-	pageSize := 10
+	pageSize := 100
 	pageTotal := 999
 	for pageNo <= pageTotal {
 		page, err := getHosts(url, pageNo, pageSize)
 		if err != nil {
 			return res, err
 		}
-		if page.Result == nil {
-			return res, errors.New("page result is nil")
+		if page == nil {
+			return res, errors.New("get host page result is nil")
 		}
 		pageNo++
-		pageTotal = page.Result.Pagination.TotalPage
-		res = append(res, page.Result.Result...)
+		pageTotal = page.Pagination.TotalPage
+		res = append(res, page.Hosts...)
 	}
 
 	return res, nil

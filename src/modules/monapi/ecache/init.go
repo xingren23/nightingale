@@ -1,8 +1,13 @@
 package ecache
 
 func Init() {
-	EndpointCache = NewEndpointCache()
+	// 服务树缓存
 	SrvTreeCache = NewSrvTreeCache()
-	SrvTagEndpointCache = NewSrvTagEndpointCache()
+	EndpointCache = NewEndpointCache()
+
+	// 元数据缓存
 	MonitorItemCache = NewMonitorItemCache()
+	// 资源缓存
+	HostCache = NewHostCache()
+	AppCache = NewAppCache()
 }

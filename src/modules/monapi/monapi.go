@@ -17,6 +17,7 @@ import (
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/cron"
+	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/http"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
@@ -70,6 +71,7 @@ func main() {
 
 	scache.Init()
 	mcache.Init()
+	ecache.Init()
 
 	if err := cron.SyncMaskconf(); err != nil {
 		log.Fatalf("sync maskconf fail: %v", err)
@@ -82,9 +84,29 @@ func main() {
 	if err := cron.CheckJudge(); err != nil {
 		log.Fatalf("check judge fail: %v", err)
 	}
+	// 指标元数据
+	if err := cron.SyncMonitorItem(); err != nil {
+		log.Fatalf("sync monitor item fail: %v", err)
+	}
 
 	redisc.InitRedis()
+	// cmdb缓存
+	if err := cron.SyncCmdbResource(); err != nil {
+		log.Fatalf("sync cmdb resource fail: %v", err)
+	}
+	// 服务树缓存
+	if err := cron.SyncSrvTree(); err != nil {
+		log.Fatalf("sync srvtree fail: %v", err)
+	}
+	// 全量endpoint缓存
+	if err := cron.SyncEndpoints(); err != nil {
+		log.Fatalf("sync endpoints fail: %v", err)
+	}
 
+	go cron.SyncMonitorItemLoop()
+	go cron.SyncCmdbResourceLoop()
+	go cron.SyncSrvTreeLoop()
+	go cron.SyncEndpointsLoop()
 	go cron.SyncMaskconfLoop()
 	go cron.SyncStraLoop()
 	go cron.CleanStraLoop()
