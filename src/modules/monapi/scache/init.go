@@ -248,7 +248,7 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 		return nil, fmt.Errorf("nodePath is not exists: srvTreeId:%v", stra.Nid)
 	}
 
-	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(item.EndpointType, "1111")
+	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(item.EndpointType, nodePath)
 	if err != nil {
 		return nil, fmt.Errorf("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, item.EndpointType, err)
 	}
@@ -275,7 +275,7 @@ func GetEndpointsByNid(nid int64, endpointType string) ([]model.Endpoint, error)
 		return nil, fmt.Errorf("GetEndpointsByNid nodePath is not exists: srvTreeId:%v", nid)
 	}
 
-	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, "nodePath")
+	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, nodePath)
 	if err != nil {
 		return nil, fmt.Errorf("GetEndpointsByNid endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, endpointType, err)
 	}
@@ -325,7 +325,7 @@ func filterNodeIds(endpointSets *set.StringSet, stra *model.Stra, endpointType s
 	for _, nid := range nids {
 		expression, exists := ecache.SrvTreeCache.Get(nid)
 		if exists {
-			tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, "expression")
+			tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, expression)
 			if err != nil {
 				logger.Error("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", expression, endpointType, err)
 				continue
@@ -366,7 +366,7 @@ func filterNodePath(endpointSets *set.StringSet, stra *model.Stra, endpointType 
 
 	hosts := set.NewStringSet()
 	for _, nodePath := range nodePaths.ToSlice() {
-		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, "nodePath")
+		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, nodePath)
 		if err != nil {
 			logger.Error("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, endpointType, err)
 			continue
