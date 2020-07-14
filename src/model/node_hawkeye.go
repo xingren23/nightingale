@@ -10,7 +10,7 @@ import (
 )
 
 func GetNodeById(nid int64) (*Node, error) {
-	url := config.Get().SrvTree.Addr + "/srv_tree/" + strconv.FormatInt(nid, 10)
+	url := config.Get().Api.Ops + "/srv_tree/" + strconv.FormatInt(nid, 10)
 
 	var result SrvResultDetail
 	err := httplib.Get(url).SetTimeout(3 * time.Second).ToJSON(&result)
@@ -42,7 +42,7 @@ func GetNodeById(nid int64) (*Node, error) {
 
 //根据服务树id获取子孙节点
 func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
-	url := config.Get().SrvTree.Addr + "/srv_tree/descendants"
+	url := config.Get().Api.Ops + "/srv_tree/descendants"
 
 	m := map[string]int64{
 		"currentNodeId": nid,

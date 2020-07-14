@@ -72,7 +72,7 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 		}
 
 		if user == nil {
-			url := config.Get().SSO.Addr + "/adminuser/searchadmin"
+			url := config.Get().Api.SSO + "/adminuser/searchadmin"
 
 			m := map[string]string{
 				"email": userName,

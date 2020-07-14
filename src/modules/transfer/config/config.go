@@ -81,8 +81,8 @@ func Parse(conf string) error {
 	viper.SetDefault("minStep", 1)
 
 	viper.SetDefault("backend", map[string]interface{}{
-		"storage":  "tsdb",
-		"straPath": "/api/portal/stras/effective?all=1",
+		"datasource": "tsdb",
+		"straPath":   "/api/portal/stras/effective?all=1",
 	})
 
 	viper.SetDefault("backend.judge", map[string]interface{}{

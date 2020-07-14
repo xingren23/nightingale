@@ -25,7 +25,7 @@ type OpenTsdbSection struct {
 	Address     string `yaml:"address"`
 }
 
-type OpenTsdbStorage struct {
+type OpenTsdbPushEndpoint struct {
 	// config
 	Section OpenTsdbSection
 
@@ -35,7 +35,7 @@ type OpenTsdbStorage struct {
 	OpenTsdbQueue *list.SafeListLimited
 }
 
-func (opentsdb *OpenTsdbStorage) Init() {
+func (opentsdb *OpenTsdbPushEndpoint) Init() {
 	// init connPool
 	if opentsdb.Section.Enabled {
 		opentsdb.OpenTsdbConnPoolHelper = pools.NewOpenTsdbConnPoolHelper(opentsdb.Section.Address,
@@ -59,7 +59,7 @@ func (opentsdb *OpenTsdbStorage) Init() {
 }
 
 // 将原始数据入到tsdb发送缓存队列
-func (opentsdb *OpenTsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
+func (opentsdb *OpenTsdbPushEndpoint) Push2Queue(items []*dataobj.MetricValue) {
 	errCnt := 0
 	for _, item := range items {
 		tsdbItem := opentsdb.convert2OpenTsdbItem(item)
@@ -72,7 +72,7 @@ func (opentsdb *OpenTsdbStorage) Push2Queue(items []*dataobj.MetricValue) {
 	stats.Counter.Set("opentsdb.queue.err", errCnt)
 }
 
-func (opentsdb *OpenTsdbStorage) send2OpenTsdbTask(concurrent int) {
+func (opentsdb *OpenTsdbPushEndpoint) send2OpenTsdbTask(concurrent int) {
 	batch := opentsdb.Section.Batch // 一次发送,最多batch条数据
 	retry := opentsdb.Section.MaxRetry
 	addr := opentsdb.Section.Address
@@ -123,7 +123,7 @@ func (opentsdb *OpenTsdbStorage) send2OpenTsdbTask(concurrent int) {
 	}
 }
 
-func (opentsdb *OpenTsdbStorage) convert2OpenTsdbItem(d *dataobj.MetricValue) *dataobj.OpenTsdbItem {
+func (opentsdb *OpenTsdbPushEndpoint) convert2OpenTsdbItem(d *dataobj.MetricValue) *dataobj.OpenTsdbItem {
 	t := dataobj.OpenTsdbItem{Tags: make(map[string]string)}
 
 	for k, v := range d.TagsMap {

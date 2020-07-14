@@ -75,6 +75,14 @@ func IsMaskEvent(event *model.Event) bool {
 		}
 		key := eventMetric + "#" + event.Endpoint
 		endpointKey := "#" + event.Endpoint
+
+		if strings.Contains(event.Info, "nodata") {
+			_, exists := mcache.MaskCache.GetByKey("all.alive")
+			if exists {
+				return false
+			}
+		}
+
 		maskTagsList, exists := mcache.MaskCache.GetByKey(endpointKey)
 		if !exists {
 			maskTagsList, exists = mcache.MaskCache.GetByKey(key)

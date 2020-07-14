@@ -18,7 +18,7 @@ var (
 	MinStep int //最小上报周期,单位sec
 )
 
-type Storage interface {
+type DataSource interface {
 	PushEndpoint
 
 	// query data for judge
@@ -41,23 +41,23 @@ type PushEndpoint interface {
 	Push2Queue(items []*dataobj.MetricValue)
 }
 
-var registryStorages map[string]Storage
+var registryDataSources map[string]DataSource
 var registryPushEndpoints map[string]PushEndpoint
 
 func init() {
-	registryStorages = make(map[string]Storage)
+	registryDataSources = make(map[string]DataSource)
 	registryPushEndpoints = make(map[string]PushEndpoint)
 }
 
-// get default backend storage
-func GetStorageFor(pluginId string) (Storage, error) {
+// get default backend datasource
+func GetDataSourceFor(pluginId string) (DataSource, error) {
 	if pluginId == "" {
-		pluginId = defaultStorage
+		pluginId = defaultDataSource
 	}
-	if storage, exists := registryStorages[pluginId]; exists {
-		return storage, nil
+	if source, exists := registryDataSources[pluginId]; exists {
+		return source, nil
 	}
-	return nil, fmt.Errorf("Could not find storage for plugin: %s ", pluginId)
+	return nil, fmt.Errorf("Could not find source for plugin: %s ", pluginId)
 }
 
 // get all push endpoints
@@ -72,10 +72,10 @@ func GetPushEndpoints() ([]PushEndpoint, error) {
 	return nil, fmt.Errorf("Could not find pushendpoint ")
 }
 
-func RegisterStorage(pluginId string, storage Storage) {
+func RegisterDataSource(pluginId string, datasource DataSource) {
 
-	registryStorages[pluginId] = storage
-	registryPushEndpoints[pluginId] = storage
+	registryDataSources[pluginId] = datasource
+	registryPushEndpoints[pluginId] = datasource
 }
 
 func RegisterPushEndpoint(pluginId string, push PushEndpoint) {

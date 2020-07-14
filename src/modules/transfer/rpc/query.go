@@ -7,11 +7,11 @@ import (
 )
 
 func (t *Transfer) Query(args []dataobj.QueryData, reply *dataobj.QueryDataResp) error {
-	storage, err := backend.GetStorageFor("")
+	dataSource, err := backend.GetDataSourceFor("")
 	if err != nil {
-		logger.Warningf("Could not find storage ")
+		logger.Warningf("Could not find dataSource ")
 		return err
 	}
-	reply.Data = storage.QueryData(args)
+	reply.Data = dataSource.QueryData(args)
 	return nil
 }
