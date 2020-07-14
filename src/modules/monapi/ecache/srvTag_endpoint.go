@@ -15,7 +15,7 @@ func GetEndpointKeysFromRedis() ([]string, error) {
 	var cursor int
 	batch := 20
 	for {
-		key := fmt.Sprintf("%s_*", dataobj.EndpointKeyPrefix)
+		key := fmt.Sprintf("%s%s*", dataobj.EndpointKeyPrefix, dataobj.EndpointKeyDot)
 		data, err := redisc.SCAN(cursor, key, batch)
 		if err != nil {
 			return ret, nil
