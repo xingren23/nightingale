@@ -69,9 +69,23 @@ func main() {
 	model.InitRoot()
 	model.InitNode()
 
+	redisc.InitRedis()
+	ecache.Init()
+	// cmdb缓存
+	if err := cron.SyncCmdbResource(); err != nil {
+		log.Fatalf("sync cmdb resource fail: %v", err)
+	}
+	// 服务树缓存
+	if err := cron.SyncSrvTree(); err != nil {
+		log.Fatalf("sync srvtree fail: %v", err)
+	}
+	// 全量endpoint缓存
+	if err := cron.SyncEndpoints(); err != nil {
+		log.Fatalf("sync endpoints fail: %v", err)
+	}
+
 	scache.Init()
 	mcache.Init()
-	ecache.Init()
 
 	if err := cron.SyncMaskconf(); err != nil {
 		log.Fatalf("sync maskconf fail: %v", err)
@@ -87,20 +101,6 @@ func main() {
 	// 指标元数据
 	if err := cron.SyncMonitorItem(); err != nil {
 		log.Fatalf("sync monitor item fail: %v", err)
-	}
-
-	redisc.InitRedis()
-	// cmdb缓存
-	if err := cron.SyncCmdbResource(); err != nil {
-		log.Fatalf("sync cmdb resource fail: %v", err)
-	}
-	// 服务树缓存
-	if err := cron.SyncSrvTree(); err != nil {
-		log.Fatalf("sync srvtree fail: %v", err)
-	}
-	// 全量endpoint缓存
-	if err := cron.SyncEndpoints(); err != nil {
-		log.Fatalf("sync endpoints fail: %v", err)
 	}
 
 	go cron.SyncMonitorItemLoop()
