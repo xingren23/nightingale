@@ -16,7 +16,6 @@ func eventCurGetsHawkeye(c *gin.Context) {
 	user := middleware.GetUser(c)
 	stime := queryInt64(c, "stime", 0)
 	etime := queryInt64(c, "etime", 0)
-	//nodePath := mustQueryStr(c, "nodepath")
 	metric := queryStr(c, "metric", "")
 	endpoint := queryStr(c, "endpoint", "")
 
