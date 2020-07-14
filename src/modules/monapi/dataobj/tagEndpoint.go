@@ -18,11 +18,11 @@ type TagEndpoint struct {
 }
 
 func BuildKey(srvType, srvTag string) string {
-	return fmt.Sprintf("%s_%s_%s", EndpointKeyPrefix, srvType, srvTag)
+	return fmt.Sprintf("%s#%s#%s", EndpointKeyPrefix, srvType, srvTag)
 }
 
 func SplitKey(key string) (string, string) {
-	if arr := strings.Split(key, "_"); len(arr) != 0 {
+	if arr := strings.Split(key, "#"); len(arr) != 0 {
 		return arr[1], arr[2] // srvType, srvTag
 	}
 	return "", ""
