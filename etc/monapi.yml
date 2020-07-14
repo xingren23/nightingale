@@ -51,7 +51,7 @@ link:
 
 # for alarm event and message queue
 redis:
-  addr: "127.0.0.1:6379"
+  addr: "192.168.42.201:6379"
   db: 0
   pass: ""
   # in ms
@@ -64,5 +64,6 @@ tokens:
   - 7dcd606e0462f9df2fea0bf505c9e622
 
 api:
-  ops: http://
+  ops: http://192.168.248.180:8089
+  sso: http://192.168.253.65:10001
   timeout: 1000

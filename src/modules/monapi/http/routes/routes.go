@@ -52,6 +52,10 @@ func Config(r *gin.Engine) {
 		login.POST("/team", teamAddPost)
 		login.PUT("/team/:id", teamPut)
 		login.DELETE("/team/:id", teamDel)
+		//替换原始team接口
+		login.GET("/teamHawkeye", teamHawkeyeListGet)
+		login.POST("/teamHawkeye", teamHawkeyeAddPost)
+		login.PUT("/teamHawkeye/:id", teamHawkeyePut)
 
 		login.GET("/endpoint", endpointGets)
 		login.POST("/endpoint", endpointImport)
@@ -73,6 +77,8 @@ func Config(r *gin.Engine) {
 		login.GET("/node/:id/maskconf", maskconfGets)
 		login.GET("/node/:id/screen", screenGets)
 		login.POST("/node/:id/screen", screenPost)
+		//屏蔽策略替换接口
+		login.GET("/node/:id/maskconf/hawkeye", maskconfGetsHawkeye)
 
 		login.GET("/nodes/search", nodeSearchGet)
 		login.GET("/nodes/leafids", nodeLeafIdsGet)
@@ -109,6 +115,9 @@ func Config(r *gin.Engine) {
 		login.GET("/event/his", eventHisGets)
 		login.GET("/event/his/:id", eventHisGetById)
 		login.POST("/event/curs/claim", eventCurClaim)
+		//替换原始事件相关接口
+		login.GET("/event/cur/hawkeye", eventCurGetsHawkeye)
+		login.GET("/event/his/hawkeye", eventHisGetsHawkeye)
 
 		login.POST("/collect", collectPost)
 		login.GET("/collect/list", collectsGet)

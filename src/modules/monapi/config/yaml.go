@@ -26,6 +26,7 @@ type Config struct {
 type apiSection struct {
 	Timeout int    `yaml:"timeout"`
 	Ops     string `yaml:"ops"`
+	SSO     string `yaml:"sso"`
 }
 
 type linkSection struct {
@@ -89,6 +90,14 @@ type ldapAttributes struct {
 	Phone    string `yaml:"phone"`
 	Email    string `yaml:"email"`
 	Im       string `yaml:"im"`
+}
+
+type srvTree struct {
+	Addr string `yaml:"addr"`
+}
+
+type sso struct {
+	Addr string `yaml:"addr"`
 }
 
 var (
