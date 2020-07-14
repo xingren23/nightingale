@@ -83,7 +83,7 @@ func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,
-		PageSize:  10,
+		PageSize:  100,
 		TotalPage: 999,
 	}
 	params["sourceType"] = cmdbSourceType

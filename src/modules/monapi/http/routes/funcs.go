@@ -8,6 +8,7 @@ import (
 	"github.com/toolkits/pkg/errors"
 
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 )
 
 func urlParamStr(c *gin.Context, field string) string {
@@ -163,13 +164,12 @@ func loginUser(c *gin.Context) *model.User {
 	//
 	//user, err := model.UserGet("username", username)
 	//errors.Dangerous(err)
-	//user := middleware.GetUser(c)
-	//if user == nil {
-	//	errors.Bomb("login first please")
-	//}
+	user := middleware.GetUser(c)
+	if user == nil {
+		errors.Bomb("login first please")
+	}
 
-	//return user
-	return nil
+	return user
 }
 
 func loginRoot(c *gin.Context) *model.User {
