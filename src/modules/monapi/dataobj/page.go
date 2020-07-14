@@ -4,18 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
-)
-
-const (
-	SourceInst = "instance"
-	SourceApp  = "app"
-	SourceNet  = "network"
-	SourceHost = "host"
+	"github.com/toolkits/pkg/logger"
 )
 
 type Pagination struct {
@@ -43,14 +36,14 @@ func RequestByPost(url string, params map[string]interface{}) ([]byte, error) {
 
 	resp, err := c.Do(req)
 	if err != nil {
-		log.Printf("Error :Cache Instance Request %v.\n", err)
+		logger.Errorf("Request post error %v.", err)
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error :Cache Instance Read Resp %v.\n", err)
+		logger.Errorf("Request post Read Resp %v.", err)
 		return nil, err
 	}
 
@@ -68,14 +61,14 @@ func RequestByGet(url string) ([]byte, error) {
 
 	resp, err := c.Do(req)
 	if err != nil {
-		log.Printf("Error :Cache Instance Request %v.\n", err)
+		logger.Errorf("Request Get %v", err)
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error :Cache Instance Read Resp %v.\n", err)
+		logger.Errorf("Request Get Read Resp %v", err)
 		return nil, err
 	}
 

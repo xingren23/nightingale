@@ -3,9 +3,8 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
-	"log"
-
 	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/toolkits/pkg/logger"
 )
 
 type Instance struct {
@@ -30,21 +29,20 @@ type InstResult struct {
 	Result  *InstPageResult `json:"result"`
 }
 
-func getInstances(url string, pageNo, pageSize int) (*InstResult, error) {
+func getInstances(url string, pageNo, pageSize int) (*InstPageResult, error) {
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
-	params["sourceType"] = SourceInst
 
 	data, err := RequestByPost(url, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var m InstResult
+	var m InstPageResult
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		log.Printf("Error : Cache Instance Parse JSON %v.\n", err)
+		logger.Errorf("Error:Parse Instance JSON %v.", err)
 		return nil, err
 	}
 
@@ -54,21 +52,21 @@ func getInstances(url string, pageNo, pageSize int) (*InstResult, error) {
 // 获取实例
 func GetInstByPage() ([]*Instance, error) {
 	res := []*Instance{}
-	url := config.Get().Api.Ops + "/api/resource/query"
+	url := config.Get().Api.Ops + "/instance/search"
 	pageNo := 1
-	pageSize := 10
+	pageSize := 100
 	pageTotal := 999
 	for pageNo <= pageTotal {
 		page, err := getInstances(url, pageNo, pageSize)
 		if err != nil {
 			return res, err
 		}
-		if page.Result == nil {
-			return res, errors.New("page result is nil")
+		if page == nil {
+			return res, errors.New("page instance result is nil")
 		}
 		pageNo++
-		pageTotal = page.Result.Pagination.TotalPage
-		res = append(res, page.Result.Result...)
+		pageTotal = page.Pagination.TotalPage
+		res = append(res, page.Result...)
 	}
 
 	return res, nil

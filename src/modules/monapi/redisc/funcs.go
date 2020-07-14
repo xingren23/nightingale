@@ -82,3 +82,37 @@ func HDEL(keys []interface{}) (int64, error) {
 
 	return redis.Int64(rc.Do("HDEL", keys...))
 }
+
+func SADD(key string, values []interface{}) error {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+
+	ret := []interface{}{key}
+	for _, val := range values {
+		ret = append(ret, val)
+	}
+	_, err := rc.Do("SADD", ret...)
+	return err
+}
+
+func SMEMBERS(key string) ([][]byte, error) {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+
+	return redis.ByteSlices(rc.Do("SMEMBERS", key))
+}
+
+func SCAN(cursor int, match string, count int) ([]interface{}, error) {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+
+	return redis.Values(rc.Do("SCAN", cursor, "MATCH", match, "COUNT", count))
+}
+
+func SETNX(key, value string, expireTime int) (bool, error) {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+	ret, err := redis.String(rc.Do("SET", key, value, "NX", "EX", expireTime))
+
+	return ret == "OK", err
+}

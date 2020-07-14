@@ -3,9 +3,8 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
-	"log"
-
 	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
 )
 
 type App struct {
@@ -27,45 +26,44 @@ type AppResult struct {
 	Result  *AppPageResult `json:"result"`
 }
 
-func getApps(url string, pageNo, pageSize int) (*AppResult, error) {
+func getApps(url string, pageNo, pageSize int) (*AppPageResult, error) {
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
-	params["sourceType"] = SourceApp
 
 	data, err := RequestByPost(url, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var m AppResult
+	var m AppPageResult
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		log.Printf("Error : Cache Instance Parse JSON %v.\n", err)
+		logger.Errorf("Error: Parse app JSON %v.", err)
 		return nil, err
 	}
 
 	return &m, nil
 }
 
-// 获取实例
+// 获取应用
 func GetAppByPage() ([]*App, error) {
 	res := []*App{}
-	url := config.Get().Api.Ops + "/api/resource/query"
+	url := config.Get().Api.Ops + "/app/search"
 	pageNo := 1
-	pageSize := 10
+	pageSize := 100
 	pageTotal := 999
 	for pageNo <= pageTotal {
 		page, err := getApps(url, pageNo, pageSize)
 		if err != nil {
 			return res, err
 		}
-		if page.Result == nil {
-			return res, errors.New("page result is nil")
+		if page == nil {
+			return res, errors.New("get app page result is nil")
 		}
 		pageNo++
-		pageTotal = page.Result.Pagination.TotalPage
-		res = append(res, page.Result.Result...)
+		pageTotal = page.Pagination.TotalPage
+		res = append(res, page.Result...)
 	}
 
 	return res, nil
