@@ -8,6 +8,7 @@ import (
 	"github.com/didi/nightingale/src/modules/collector/log/strategy"
 	"github.com/didi/nightingale/src/modules/collector/log/worker"
 	"github.com/didi/nightingale/src/modules/collector/stra"
+	"github.com/didi/nightingale/src/modules/collector/sys/falcon"
 	"github.com/didi/nightingale/src/modules/collector/sys/funcs"
 	"github.com/didi/nightingale/src/toolkits/http/render"
 
@@ -38,6 +39,18 @@ func pushData(c *gin.Context) {
 
 	err := funcs.Push(recvMetricValues)
 	render.Message(c, err)
+}
+
+func pushData2Falcon(c *gin.Context) {
+	if c.Request.ContentLength == 0 {
+		render.Message(c, "blank body")
+		return
+	}
+
+	var recvMetricValues []*dataobj.MetricValue
+	errors.Dangerous(c.ShouldBindJSON(&recvMetricValues))
+
+	falcon.Push(recvMetricValues)
 }
 
 func getStrategy(c *gin.Context) {
