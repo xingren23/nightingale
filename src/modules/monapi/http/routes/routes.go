@@ -68,6 +68,8 @@ func Config(r *gin.Engine) {
 		login.GET("/tree", treeGet)
 		login.GET("/tree/search", treeSearchGet)
 
+		login.GET("/resource/:nid", resourceGet)
+
 		login.POST("/node", nodePost)
 		login.PUT("/node/:id/name", nodeNamePut)
 		login.DELETE("/node/:id", nodeDel)

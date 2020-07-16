@@ -29,6 +29,10 @@ func GetNodeById(nid int64) (*Node, error) {
 		return nil, err
 	}
 
+	if result.SrvTree == nil {
+		return nil, fmt.Errorf("request srvTree detail is nil: nid:%v", nid)
+	}
+
 	return &Node{
 		Id:   result.SrvTree.Id,
 		Pid:  0,

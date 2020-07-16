@@ -68,19 +68,18 @@ type teamHawkeyeForm struct {
 	Name      string   `json:"name"`
 	Mgmt      int      `json:"mgmt"`
 	Admins    []int64  `json:"admins"`
-	Members   []int64  `json:"members"`
 	Nid       int64    `json:"nid"`
-	userNames []string `json:"userNames"`
+	UserNames []string `json:"userNames"`
 }
 
 func teamHawkeyeAddPost(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
-	_, err := model.SaveSSOUser(f.userNames)
+	userIds, err := model.SaveSSOUser(f.UserNames)
 	if err != nil {
-		errors.Bomb("teamHawkeyeAddPost SaveSSOUser err,userNames:%v", f.userNames)
+		errors.Bomb("teamHawkeyeAddPost SaveSSOUser err,userNames:%v", f.UserNames)
 	}
-	renderMessage(c, model.TeamHawkeyeAdd(f.Ident, f.Name, 0, f.Members, f.Nid))
+	renderMessage(c, model.TeamHawkeyeAdd(f.Ident, f.Name, 0, userIds, f.Nid))
 }
 
 func teamHawkeyePut(c *gin.Context) {
@@ -89,9 +88,9 @@ func teamHawkeyePut(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	_, err := model.SaveSSOUser(f.userNames)
+	userIds, err := model.SaveSSOUser(f.UserNames)
 	if err != nil {
-		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.userNames)
+		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.UserNames)
 	}
 
 	t, err := model.TeamGet("id", urlParamInt64(c, "id"))
@@ -107,5 +106,5 @@ func teamHawkeyePut(c *gin.Context) {
 		errors.Bomb("no privilege")
 	}
 
-	renderMessage(c, t.Modify(f.Ident, f.Name, f.Mgmt, f.Admins, f.Members))
+	renderMessage(c, t.ModifyHawkeye(f.Ident, f.Name, f.Mgmt, f.Admins, userIds))
 }

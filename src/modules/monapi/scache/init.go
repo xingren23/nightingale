@@ -249,7 +249,7 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 		return nil, fmt.Errorf("nodePath is not exists: srvTreeId:%v", stra.Nid)
 	}
 
-	srvType := buildSrvType(item)
+	srvType := BuildSrvType(item)
 	if srvType == "" {
 		return nil, fmt.Errorf("MonitorItem buildSrvType error: metric:%v", item.Metric)
 	}
@@ -275,7 +275,7 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 	return endpointList, nil
 }
 
-func buildSrvType(item *model.MonitorItem) string {
+func BuildSrvType(item *model.MonitorItem) string {
 	if item.EndpointType == "NETWORK" {
 		return dataobj.EndpointKeyNetwork
 	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {

@@ -33,7 +33,7 @@ func TeamHawkeyeAdd(ident, name string, mgmt int, members []int64, nid int64) er
 	session := DB["uic"].NewSession()
 	defer session.Close()
 
-	cnt, err := session.Where("ident=?", ident).Count(new(Team))
+	cnt, err := session.Where("ident=? and nid=?", ident, nid).Count(new(Team))
 	if err != nil {
 		return err
 	}
@@ -88,9 +88,13 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 				return nil, err
 			}
 
+			if len(result.AuthUser) == 0 {
+				errors.Bomb("用户[%v]不存在: %v", userName)
+			}
+
 			authUser := result.AuthUser[0]
 			if authUser.Status == "0" {
-				errors.Bomb("cannot retrieve user[%d]: %v", userName, err)
+				errors.Bomb("用户[%v]为禁用状态: %v", userName)
 			}
 
 			user = &User{
