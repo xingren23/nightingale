@@ -30,6 +30,16 @@ type SrvTreeNodeResult struct {
 	Status  int          `json:"status"`
 }
 
+type NetworkPageResult struct {
+	Pagination Pagination `json:"pagination"`
+	Networks   []*Network `json:"result"`
+}
+
+type NetworkResult struct {
+	Message string             `json:"message"`
+	Result  *NetworkPageResult `json:"result"`
+}
+
 type CommonResult struct {
 	Apps     []*App      `json:"result"`
 	Networks []*Network  `json:"result"`

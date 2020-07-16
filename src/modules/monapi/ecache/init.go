@@ -7,7 +7,10 @@ func Init() {
 
 	// 元数据缓存
 	MonitorItemCache = NewMonitorItemCache()
-	// 资源缓存
+
+	// cmdb资源缓存
 	HostCache = NewHostCache()
 	AppCache = NewAppCache()
+	InstanceCache = NewInstanceCache()
+	NetworkCache = NewNetworkCache()
 }
