@@ -35,7 +35,7 @@ func SyncCmdbResource() error {
 		ecache.HostCache.SetAll(hosts)
 		logger.Infof("cache cmdb host size %d.", ecache.HostCache.Len())
 	}
-	// 主机
+	// 实例
 	if insts, err := dataobj.GetInstByPage(); err == nil {
 		ecache.InstanceCache.SetAll(insts)
 		logger.Infof("cache cmdb instance size %d.", ecache.InstanceCache.Len())
