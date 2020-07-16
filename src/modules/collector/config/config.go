@@ -59,7 +59,7 @@ func Parse(conf string) error {
 		"portPath": "./etc/port",
 		"procPath": "./etc/proc",
 		"logPath":  "./etc/log",
-		"api":      "/api/ /collects/",
+		"api":      "/api/portal/collects/",
 	})
 
 	viper.SetDefault("sys", map[string]interface{}{
