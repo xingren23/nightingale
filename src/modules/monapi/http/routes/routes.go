@@ -131,6 +131,12 @@ func Config(r *gin.Engine) {
 		login.DELETE("/stra", strasDel)
 		login.GET("/stra", strasGet)
 		login.GET("/stra/:sid", straGet)
+
+		login.POST("/config", cfgPost)
+		login.PUT("/config/:id", cfgPut)
+		login.DELETE("/config:id", cfgDel)
+		login.GET("/config", cfgListGet)
+		login.GET("/config/:id", cfgGet)
 	}
 
 	v1 := r.Group("/v1/portal").Use(middleware.CheckHeaderToken())
