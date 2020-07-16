@@ -28,8 +28,11 @@ type AppResult struct {
 
 func getApps(url string, pageNo, pageSize int) (*AppPageResult, error) {
 	params := make(map[string]interface{})
-	params["pageNo"] = pageNo
-	params["pageSize"] = pageSize
+
+	params["pagination"] = map[string]int{
+		"pageNo":   pageNo,
+		"pageSize": pageSize,
+	}
 
 	data, err := RequestByPost(url, params)
 	if err != nil {

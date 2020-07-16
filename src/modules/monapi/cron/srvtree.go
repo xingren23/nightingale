@@ -25,6 +25,7 @@ func SyncSrvTreeLoop() {
 }
 
 func SyncSrvTree() error {
+	start := time.Now()
 	nodeMap, err := getTreeNodes()
 	if err != nil {
 		return err
@@ -35,6 +36,7 @@ func SyncSrvTree() error {
 	if err = InitSrvTagEndpoint(); err != nil {
 		return err
 	}
+	logger.Infof("sync srvTree cache elapsed %s ms", time.Since(start))
 	return nil
 }
 
@@ -100,8 +102,6 @@ func InitSrvTagEndpoint() error {
 					EnvCode:  host.EnvCode,
 					Endpoint: host.Ip,
 				}
-				// TODO 切换接口，先用这个测试
-				host, _ = ecache.HostCache.Get(host.Ip)
 				if host.Type == "DOCKER" {
 					dockers = append(dockers, e)
 				} else {

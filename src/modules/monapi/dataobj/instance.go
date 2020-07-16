@@ -8,6 +8,7 @@ import (
 )
 
 type Instance struct {
+	Id             int64  `json:"id"`
 	AppCode        string `json:"appCode"`
 	AppId          int    `json:"appId"`
 	DataCenterCode string `json:"dataCenterCode"`

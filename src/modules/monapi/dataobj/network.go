@@ -17,28 +17,23 @@ type Network struct {
 	SerialNo       string `json:"serialNo"`
 }
 
-type NetworkPageResult struct {
+type NetworkSearchResult struct {
+	Message    string     `json:"message"`
 	Pagination Pagination `json:"pagination"`
-	Networks   []*Network `json:"result"`
+	Result     []*Network `json:"result"`
 }
 
-type NetworkResult struct {
-	Message string             `json:"message"`
-	Result  *NetworkPageResult `json:"result"`
-}
-
-func getNetworks(url string, pageNo, pageSize int) (*NetworkResult, error) {
+func getNetworks(url string, pageNo, pageSize int) (*NetworkSearchResult, error) {
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
-	params["sourceType"] = CmdbSourceNet
 
 	data, err := RequestByPost(url, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var m NetworkResult
+	var m NetworkSearchResult
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		logger.Errorf("Error: Parse network JSON %v.", err)
@@ -51,7 +46,7 @@ func getNetworks(url string, pageNo, pageSize int) (*NetworkResult, error) {
 // 获取实例
 func GetNetByPage() ([]*Network, error) {
 	res := []*Network{}
-	url := config.Get().Api.Ops + "/api/resource/query"
+	url := config.Get().Api.Ops + "/network_device/search"
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999
@@ -60,12 +55,12 @@ func GetNetByPage() ([]*Network, error) {
 		if err != nil {
 			return res, err
 		}
-		if page.Result == nil {
+		if page == nil {
 			return res, errors.New("page result is nil")
 		}
 		pageNo++
-		pageTotal = page.Result.Pagination.TotalPage
-		res = append(res, page.Result.Networks...)
+		pageTotal = page.Pagination.TotalPage
+		res = append(res, page.Result...)
 	}
 
 	return res, nil
