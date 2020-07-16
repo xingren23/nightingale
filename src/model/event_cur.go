@@ -36,6 +36,7 @@ type EventCur struct {
 	Claimants     string    `json:"claimants"`
 	NeedUpgrade   int       `json:"need_upgrade"`
 	AlertUpgrade  string    `json:"alert_upgrade"`
+	AlertUsers    string    `json:"alert_users"`
 }
 
 func UpdateEventCurPriority(hashid uint64, priority int) error {
@@ -159,6 +160,12 @@ func SaveEventCurStatus(hashid uint64, status string) error {
 	sql := "update event_cur set status = status | ? where hashid = ?"
 	_, err := DB["mon"].Exec(sql, GetStatus(status), hashid)
 
+	return err
+}
+
+func SaveEventCurAlertUsers(hashid uint64, users string) error {
+	sql := "update event_cur set alert_users = ? where hashid = ?"
+	_, err := DB["mon"].Exec(sql, users, hashid)
 	return err
 }
 

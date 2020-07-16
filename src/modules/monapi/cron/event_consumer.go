@@ -1,8 +1,10 @@
 package cron
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,6 +122,8 @@ func fillRecvs(event *model.Event) error {
 			userIds = append(userIds, upgradeUserIds...)
 		}
 	}
+	// 设置alteruser字段
+	SetEventAlertUsers(event, userIds)
 
 	event.RecvUserIDs = userIds
 	userObjs, err := model.UserGetByIds(userIds)
@@ -319,6 +323,28 @@ func SetEventStatus(event *model.Event, status string) {
 			logger.Errorf("set event_cur status fail, event: %+v, status: %v, err:%v", event, status, err)
 		} else {
 			logger.Infof("set event_cur status succ, event hashid: %v, status: %v", event.HashId, status)
+		}
+	}
+}
+
+func SetEventAlertUsers(event *model.Event, userIds []int64) {
+	var users string
+	if len(userIds) > 0 {
+		var buf bytes.Buffer
+		for i, uid := range userIds {
+			buf.WriteString(strconv.FormatInt(uid, 10))
+			if i < len(userIds)-1 {
+				buf.WriteString(",")
+			}
+		}
+		users = buf.String()
+	}
+
+	if event.EventType == config.ALERT {
+		if err := model.SaveEventCurAlertUsers(event.HashId, users); err != nil {
+			logger.Errorf("set event_cur alertUsers fail, event: %+v, userIds: %v, err:%v", event, userIds, err)
+		} else {
+			logger.Infof("set event_cur alertUsers succ, event hashid: %v, userIds: %v", event.HashId, userIds)
 		}
 	}
 }
