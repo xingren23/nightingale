@@ -30,3 +30,13 @@ func (this *HostCacheList) Len() int {
 	defer this.RUnlock()
 	return len(this.Data)
 }
+
+func (this *HostCacheList) GetAll() []*dataobj.CmdbHost {
+	this.RLock()
+	defer this.RUnlock()
+	var hosts []*dataobj.CmdbHost
+	for _, host := range this.Data {
+		hosts = append(hosts, host)
+	}
+	return hosts
+}
