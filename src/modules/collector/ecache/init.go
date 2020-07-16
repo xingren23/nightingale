@@ -2,6 +2,7 @@ package ecache
 
 import (
 	"fmt"
+	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/toolkits/pkg/logger"
@@ -19,6 +20,7 @@ func Init(res ResourceSection) {
 	HostCache = NewHostCache()
 	InstanceCache = NewInstanceCache()
 	NetworkCache = NewNetworkCache()
+	SieveCache = NewSievesCache()
 
 	if err := syncResource(); err != nil {
 		log.Fatalf("build resourceCache fail: %v", err)
@@ -65,6 +67,11 @@ func buildResourceCache() error {
 	if err != nil {
 		return err
 	}
+	sievesResp, err := getSievesRetry()
+	if err != nil {
+		return err
+	}
+	SieveCache.SetAll(sievesResp)
 
 	appMap := make(map[int64]*dataobj.App)
 	for _, app := range appResp.Dat {
@@ -99,6 +106,7 @@ type ResourceSection struct {
 	InstanceApi string `yaml:"instanceApi"`
 	NetworkApi  string `yaml:"networkApi"`
 	HostApi     string `yaml:"hostApi"`
+	SieveApi    string `yaml:"sieveApi"`
 	Timeout     int    `yaml:"timeout"`
 }
 
@@ -204,4 +212,44 @@ type InstanceResp struct {
 type NetworkResp struct {
 	Dat []*dataobj.Network `json:"dat"`
 	Err string             `json:"err"`
+}
+
+type SievesResp struct {
+	Dat []model.ConfigInfo `json:"dat"`
+	Err string             `json:"err"`
+}
+
+func getSievesRetry() ([]model.ConfigInfo, error) {
+	count := len(address.GetHTTPAddresses("monapi"))
+	var resp SievesResp
+	var err error
+	for i := 0; i < count; i++ {
+		resp, err = getSieves()
+		if err == nil {
+			if resp.Err != "" {
+				err = fmt.Errorf(resp.Err)
+				continue
+			}
+			return resp.Dat, err
+		}
+	}
+
+	return resp.Dat, err
+}
+
+func getSieves() (SievesResp, error) {
+	addrs := address.GetHTTPAddresses("monapi")
+	i := rand.Intn(len(addrs))
+	addr := addrs[i]
+
+	var res SievesResp
+	var err error
+
+	url := fmt.Sprintf("http://%s%s", addr, Resource.SieveApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	if err != nil {
+		err = fmt.Errorf("get sieve config from remote:%s failed, error:%v", url, err)
+	}
+
+	return res, err
 }

@@ -3,6 +3,7 @@ package funcs
 import (
 	"bufio"
 	"fmt"
+	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"io"
 	"math/rand"
 	"net"
@@ -23,7 +24,7 @@ func Push(metricItems []*dataobj.MetricValue) error {
 	var err error
 	var items []*dataobj.MetricValue
 	now := time.Now().Unix()
-	filterStr := cache.SieveCache.Get()
+	filterStr := ecache.SieveCache.Get()
 
 	for _, item := range metricItems {
 		logger.Debug("->recv: ", item)

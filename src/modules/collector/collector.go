@@ -75,7 +75,6 @@ func main() {
 
 	ecache.Init(cfg.Resource)
 	sys.Init(cfg.Sys)
-	cache.InitSieves()
 	stra.Init(cfg.Stra)
 
 	funcs.InitRpcClients()

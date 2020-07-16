@@ -1,4 +1,4 @@
-package cache
+package ecache
 
 import (
 	"github.com/didi/nightingale/src/model"
@@ -7,10 +7,6 @@ import (
 )
 
 var SieveCache *SievesCache
-
-func InitSieves() {
-	SieveCache = NewSievesCache()
-}
 
 type SievesCache struct {
 	sync.RWMutex

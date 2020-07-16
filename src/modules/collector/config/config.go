@@ -60,7 +60,6 @@ func Parse(conf string) error {
 		"procPath": "./etc/proc",
 		"logPath":  "./etc/log",
 		"api":      "/api/portal/collects/",
-		"sieveApi": "/api/portal/collects_sieve",
 	})
 
 	viper.SetDefault("sys", map[string]interface{}{
@@ -75,6 +74,7 @@ func Parse(conf string) error {
 		"instanceApi": "/api/portal/instance",
 		"networkApi":  "/api/portal/network",
 		"hostApi":     "/api/portal/host",
+		"sieveApi":    "/api/portal/sieve",
 		"timeout":     10000,
 	})
 

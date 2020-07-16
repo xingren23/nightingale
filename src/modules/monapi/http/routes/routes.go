@@ -30,7 +30,6 @@ func Config(r *gin.Engine) {
 		nolog.POST("/users/invite", userInvitePost)
 
 		nolog.GET("/collects/:endpoint", collectGetByEndpoint)
-		nolog.GET("/collects_sieve", collectGetSieve)
 
 		nolog.GET("/stras/effective", effectiveStrasGet)
 		nolog.GET("/stras", strasAll)
@@ -38,6 +37,7 @@ func Config(r *gin.Engine) {
 		nolog.GET("/host", hostGet)
 		nolog.GET("/instance", instanceGet)
 		nolog.GET("/network", networkGet)
+		nolog.GET("/sieve", collectGetSieve)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())
