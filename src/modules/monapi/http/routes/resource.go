@@ -13,15 +13,13 @@ type resourceForm struct {
 	Metric string `json:"metric"`
 }
 
-func resourceGet(c *gin.Context) {
+func resourcePost(c *gin.Context) {
 	var f resourceForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	nid := urlParamInt64(c, "nid")
-
-	nodePath, exists := ecache.SrvTreeCache.Get(nid)
+	nodePath, exists := ecache.SrvTreeCache.Get(f.Nid)
 	if !exists {
-		errors.Bomb("nodePath is not exists: srvTreeId:%v", nid)
+		errors.Bomb("nodePath is not exists: srvTreeId:%v", f.Nid)
 	}
 
 	srvTypes := make([]string, 0)
@@ -55,6 +53,22 @@ func resourceGet(c *gin.Context) {
 	}
 
 	renderData(c, list, nil)
+}
+
+func appGet(c *gin.Context) {
+	renderData(c, ecache.AppCache.GetAll(), nil)
+}
+
+func hostGet(c *gin.Context) {
+	renderData(c, ecache.HostCache.GetAll(), nil)
+}
+
+func instanceGet(c *gin.Context) {
+	renderData(c, ecache.InstanceCache.GetAll(), nil)
+}
+
+func networkGet(c *gin.Context) {
+	renderData(c, ecache.NetworkCache.GetAll(), nil)
 }
 
 func getType(srvType string) string {

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"log"
 	"os"
 	"os/signal"
@@ -72,6 +73,7 @@ func main() {
 		log.Println("endpoint:", identity.Identity)
 	}
 
+	ecache.Init(cfg.Resource)
 	sys.Init(cfg.Sys)
 	cache.InitSieves()
 	stra.Init(cfg.Stra)
