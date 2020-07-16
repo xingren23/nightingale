@@ -68,6 +68,8 @@ func Config(r *gin.Engine) {
 		login.GET("/tree", treeGet)
 		login.GET("/tree/search", treeSearchGet)
 
+		login.GET("/resource/:nid", resourceGet)
+
 		login.POST("/node", nodePost)
 		login.PUT("/node/:id/name", nodeNamePut)
 		login.DELETE("/node/:id", nodeDel)
@@ -116,8 +118,8 @@ func Config(r *gin.Engine) {
 		login.GET("/event/his/:id", eventHisGetById)
 		login.POST("/event/curs/claim", eventCurClaim)
 		//替换原始事件相关接口
-		login.GET("/event/cur/hawkeye", eventCurGetsHawkeye)
-		login.GET("/event/his/hawkeye", eventHisGetsHawkeye)
+		login.GET("/event/hawkeye/cur", eventCurGetsHawkeye)
+		login.GET("/event/hawkeye/his", eventHisGetsHawkeye)
 
 		login.POST("/collect", collectPost)
 		login.GET("/collect/list", collectsGet)

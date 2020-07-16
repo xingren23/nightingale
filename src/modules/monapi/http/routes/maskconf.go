@@ -75,6 +75,7 @@ func maskconfPut(c *gin.Context) {
 
 	var f MaskconfForm
 	errors.Dangerous(c.ShouldBind(&f))
+	f.Nid = mc.Nid
 	f.Validate()
 
 	mc.Metric = f.Metric

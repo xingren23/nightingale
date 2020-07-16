@@ -6,6 +6,7 @@ import (
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/toolkits/pkg/container/set"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/toolkits/pkg/logger"
@@ -91,7 +92,7 @@ func syncCollects() {
 
 	for _, p := range ports {
 
-		endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
+		endpoints, err := GetEndpointsByNid(p.Nid, dataobj.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -115,7 +116,7 @@ func syncCollects() {
 	}
 
 	for _, p := range procs {
-		endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
+		endpoints, err := GetEndpointsByNid(p.Nid, dataobj.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -140,7 +141,7 @@ func syncCollects() {
 	for _, l := range logConfigs {
 		l.Decode()
 
-		Endpoints, err := GetEndpointsByNid(l.Nid, "HOST")
+		Endpoints, err := GetEndpointsByNid(l.Nid, dataobj.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, l.Nid)
 			continue
@@ -164,7 +165,7 @@ func syncCollects() {
 
 	for _, p := range pluginConfigs {
 
-		Endpoints, err := GetEndpointsByNid(p.Nid, "HOST")
+		Endpoints, err := GetEndpointsByNid(p.Nid, dataobj.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -248,14 +249,19 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 		return nil, fmt.Errorf("nodePath is not exists: srvTreeId:%v", stra.Nid)
 	}
 
-	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(item.EndpointType, nodePath)
-	if err != nil {
-		return nil, fmt.Errorf("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, item.EndpointType, err)
+	srvType := BuildSrvType(item)
+	if srvType == "" {
+		return nil, fmt.Errorf("MonitorItem buildSrvType error: metric:%v", item.Metric)
 	}
 
-	endpointSets := filterEnvs(tagEndpoints, stra, item.EndpointType)
-	endpointSets = filterNodeIds(endpointSets, stra, item.EndpointType)
-	endpointSets = filterNodePath(endpointSets, stra, item.EndpointType)
+	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, nodePath)
+	if err != nil {
+		return nil, fmt.Errorf("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
+	}
+
+	endpointSets := filterEnvs(tagEndpoints, stra)
+	endpointSets = filterNodeIds(endpointSets, stra, srvType)
+	endpointSets = filterNodePath(endpointSets, stra, srvType)
 	endpointSets = filterHost(endpointSets, stra)
 
 	endpointList := make([]model.Endpoint, 0)
@@ -269,15 +275,28 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 	return endpointList, nil
 }
 
-func GetEndpointsByNid(nid int64, endpointType string) ([]model.Endpoint, error) {
+func BuildSrvType(item *model.MonitorItem) string {
+	if item.EndpointType == "NETWORK" {
+		return dataobj.EndpointKeyNetwork
+	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {
+		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
+			return dataobj.EndpointKeyDocker
+		} else {
+			return dataobj.EndpointKeyPM
+		}
+	}
+	return ""
+}
+
+func GetEndpointsByNid(nid int64, srvType string) ([]model.Endpoint, error) {
 	nodePath, exists := ecache.SrvTreeCache.Get(nid)
 	if !exists {
 		return nil, fmt.Errorf("GetEndpointsByNid nodePath is not exists: srvTreeId:%v", nid)
 	}
 
-	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, nodePath)
+	tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, nodePath)
 	if err != nil {
-		return nil, fmt.Errorf("GetEndpointsByNid endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, endpointType, err)
+		return nil, fmt.Errorf("GetEndpointsByNid endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
 	}
 
 	endpointList := make([]model.Endpoint, 0)
@@ -291,7 +310,7 @@ func GetEndpointsByNid(nid int64, endpointType string) ([]model.Endpoint, error)
 	return endpointList, nil
 }
 
-func filterEnvs(tagEndpoints []*dataobj.TagEndpoint, stra *model.Stra, endpointType string) *set.StringSet {
+func filterEnvs(tagEndpoints []*dataobj.TagEndpoint, stra *model.Stra) *set.StringSet {
 	isContain, envCodes := analysisTag(stra, "env")
 
 	endpointSets := set.NewStringSet()
@@ -315,7 +334,7 @@ func filterEnvs(tagEndpoints []*dataobj.TagEndpoint, stra *model.Stra, endpointT
 	return buildEndpointSet(endpointSets, hosts, isContain)
 }
 
-func filterNodeIds(endpointSets *set.StringSet, stra *model.Stra, endpointType string) *set.StringSet {
+func filterNodeIds(endpointSets *set.StringSet, stra *model.Stra, srvType string) *set.StringSet {
 	nids := stra.ExclNid
 	if nids == nil || len(nids) == 0 {
 		return endpointSets
@@ -325,9 +344,9 @@ func filterNodeIds(endpointSets *set.StringSet, stra *model.Stra, endpointType s
 	for _, nid := range nids {
 		expression, exists := ecache.SrvTreeCache.Get(nid)
 		if exists {
-			tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, expression)
+			tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, expression)
 			if err != nil {
-				logger.Error("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", expression, endpointType, err)
+				logger.Error("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", expression, srvType, err)
 				continue
 			}
 			for _, tagEndpoint := range tagEndpoints {
@@ -358,7 +377,7 @@ func buildEndpointSet(endpointSets *set.StringSet, hostSet *set.StringSet, isCon
 	return endpointSets
 }
 
-func filterNodePath(endpointSets *set.StringSet, stra *model.Stra, endpointType string) *set.StringSet {
+func filterNodePath(endpointSets *set.StringSet, stra *model.Stra, srvType string) *set.StringSet {
 	isContain, nodePaths := analysisTag(stra, "nodePath")
 	if len(nodePaths.M) == 0 {
 		return endpointSets
@@ -366,9 +385,9 @@ func filterNodePath(endpointSets *set.StringSet, stra *model.Stra, endpointType 
 
 	hosts := set.NewStringSet()
 	for _, nodePath := range nodePaths.ToSlice() {
-		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(endpointType, nodePath)
+		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, nodePath)
 		if err != nil {
-			logger.Error("endpoints is not exists: nodePath:%v, endpointType:%v, err:%v", nodePath, endpointType, err)
+			logger.Error("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
 			continue
 		}
 		for _, tagEndpoint := range tagEndpoints {
