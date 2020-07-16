@@ -62,3 +62,18 @@ func ConfigInfoTotal(query string) (int64, error) {
 	}
 	return DB["mon"].Count(new(ConfigInfo))
 }
+
+func ConfigInfoGetByQ(group, key string) ([]*ConfigInfo, error) {
+	session := DB["mon"].Where("status > -1 ").OrderBy("id")
+	if group != "" {
+		session = session.Where("cfg_group = ?", group)
+	}
+
+	if key != "" {
+		session = session.Where("cfg_key = ?", key)
+	}
+
+	var items []*ConfigInfo
+	err := session.Find(&items)
+	return items, err
+}

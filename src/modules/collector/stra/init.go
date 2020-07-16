@@ -9,6 +9,7 @@ type StraSection struct {
 	Enable   bool   `yaml:"enable"`
 	Interval int    `yaml:"interval"`
 	Api      string `yaml:"api"`
+	SieveApi string `yaml:"sieveApi"`
 	Timeout  int    `yaml:"timeout"`
 	PortPath string `yaml:"portPath"`
 	ProcPath string `yaml:"procPath"`
@@ -21,4 +22,5 @@ func Init(stra StraSection) {
 	StraConfig = stra
 
 	GetCollects()
+	GetSieves()
 }

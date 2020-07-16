@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/toolkits/pkg/logger"
 )
@@ -410,7 +411,215 @@ func (bm BuiltinMetricSlice) Swap(i, j int) {
 func (bm BuiltinMetricSlice) Less(i, j int) bool {
 	return bm[i].String() < bm[j].String()
 }
-
 func alignTs(ts int64, period int64) int64 {
 	return ts - ts%period
+}
+
+func filterSeviceTag(key, val string) string {
+	if !strings.HasPrefix(key, "service.") {
+		return val
+	}
+	length := len(val)
+	if length == 1 {
+		return val
+	}
+	builder := bufferPool.Get().(*bytes.Buffer)
+	builder.Reset()
+	defer bufferPool.Put(builder)
+
+	for i, j := 0, 1; i < length && j < length; {
+		for string(val[i]) != "/" && i < length && j < length {
+			builder.WriteByte(val[i])
+			i++
+			j++
+		}
+		builder.WriteByte(val[i])
+		flag := true
+		tmp := new(bytes.Buffer)
+		for j < length && string(val[j]) != "/" {
+			// 不是一个数字
+			flag = unicode.IsDigit(rune(val[j]))
+			builder.WriteByte(val[j])
+			j++
+		}
+		if j-i != 1 {
+			if flag {
+				builder.WriteString("_id")
+			} else {
+				builder.WriteString(tmp.String())
+			}
+		}
+		i = j
+		j++
+		if j == length {
+			builder.WriteByte(val[i])
+		}
+	}
+
+	res := builder.String()
+	if length != len(res) {
+		logger.Debugf("parse metric filter [%s] to [%s].", val, res)
+	}
+	return val
+}
+
+func (m *MetricValue) CheckedValidity(filterStr []string, now int64) (err error) {
+	if m == nil {
+		err = fmt.Errorf("item is nil")
+		return
+	}
+
+	if m.Metric == "" || m.Endpoint == "" {
+		err = fmt.Errorf("metric or endpoint should not be empty")
+		return
+	}
+
+	// 检测保留字
+	reservedWords := "[\\t] [\\r] [\\n] [,] [ ] [=]"
+	if HasReservedWords(m.Metric) {
+		err = fmt.Errorf("metric:%s contains reserved words: %s", m.Metric, reservedWords)
+		return
+	}
+	if HasReservedWords(m.Endpoint) {
+		err = fmt.Errorf("endpoint:%s contains reserved words: %s", m.Endpoint, reservedWords)
+		return
+	}
+
+	if m.CounterType == "" {
+		m.CounterType = GAUGE
+	}
+
+	if m.CounterType != GAUGE && m.CounterType != COUNTER && m.CounterType != SUBTRACT {
+		err = fmt.Errorf("wrong counter type")
+		return
+	}
+
+	if m.ValueUntyped == "" {
+		err = fmt.Errorf("value is nil")
+		return
+	}
+
+	if m.Step <= 0 {
+		err = fmt.Errorf("step sholud larger than 0")
+		return
+	}
+
+	if len(m.TagsMap) == 0 {
+		m.TagsMap, err = SplitTagsString(m.Tags)
+		if err != nil {
+			return
+		}
+	}
+
+	if len(m.TagsMap) > 12 {
+		err = fmt.Errorf("tagkv count is too large > 12")
+	}
+
+	if len(m.Metric) > 128 {
+		err = fmt.Errorf("len(m.Metric) is too large")
+		return
+	}
+
+	for k, v := range m.TagsMap {
+		delete(m.TagsMap, k)
+		k, need := filterBySieveCache(filterStr, k)
+		if !need {
+			continue
+		}
+		v, need := filterBySieveCache(filterStr, v)
+		if !need {
+			continue
+		}
+		// 过滤service接口
+		v = filterSeviceTag(k, v)
+		if len(k) == 0 || len(v) == 0 {
+			err = fmt.Errorf("tag key and value should not be empty")
+			return
+		}
+
+		m.TagsMap[k] = v
+	}
+
+	m.Tags = SortedTags(m.TagsMap)
+	if len(m.Tags) > 512 {
+		err = fmt.Errorf("len(m.Tags) is too large")
+		return
+	}
+
+	//时间超前5分钟则报错
+	if m.Timestamp-now > 300 {
+		err = fmt.Errorf("point timestamp:%d is ahead of now:%d", m.Timestamp, now)
+		return
+	}
+
+	if m.Timestamp <= 0 {
+		m.Timestamp = now
+	}
+
+	m.Timestamp = alignTs(m.Timestamp, int64(m.Step))
+
+	valid := true
+	var vv float64
+
+	switch cv := m.ValueUntyped.(type) {
+	case string:
+		vv, err = strconv.ParseFloat(cv, 64)
+		if err != nil {
+			valid = false
+		}
+	case float64:
+		vv = cv
+	case uint64:
+		vv = float64(cv)
+	case int64:
+		vv = float64(cv)
+	case int:
+		vv = float64(cv)
+	default:
+		valid = false
+	}
+
+	if !valid {
+		err = fmt.Errorf("value [%v] is illegal", m.Value)
+		return
+	}
+
+	m.Value = vv
+	return
+}
+
+func filterBySieveCache(filterStr []string, str string) (string, bool) {
+	if len(filterStr) > 0 {
+		for _, s := range filterStr {
+			if strings.Contains(str, s) {
+				return str, false
+			}
+		}
+	}
+	if -1 == strings.IndexFunc(str,
+		func(r rune) bool {
+			return r == '\t' ||
+				r == '\r' ||
+				r == '\n' ||
+				r == ',' ||
+				r == ' ' ||
+				r == ':' ||
+				r == '='
+		}) {
+
+		return str, true
+	}
+
+	return strings.Map(func(r rune) rune {
+		if r == '\t' ||
+			r == '\r' ||
+			r == '\n' ||
+			r == ',' ||
+			r == ' ' ||
+			r == ':' ||
+			r == '=' {
+			return '_'
+		}
+		return r
+	}, str), true
 }
