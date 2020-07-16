@@ -33,6 +33,10 @@ func Config(r *gin.Engine) {
 
 		nolog.GET("/stras/effective", effectiveStrasGet)
 		nolog.GET("/stras", strasAll)
+		nolog.GET("/app", appGet)
+		nolog.GET("/host", hostGet)
+		nolog.GET("/instance", instanceGet)
+		nolog.GET("/network", networkGet)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())
@@ -68,7 +72,7 @@ func Config(r *gin.Engine) {
 		login.GET("/tree", treeGet)
 		login.GET("/tree/search", treeSearchGet)
 
-		login.GET("/resource/:nid", resourceGet)
+		login.POST("/resource", resourcePost)
 
 		login.POST("/node", nodePost)
 		login.PUT("/node/:id/name", nodeNamePut)

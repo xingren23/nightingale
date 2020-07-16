@@ -30,3 +30,13 @@ func (this *InstanceCacheList) Len() int {
 	defer this.RUnlock()
 	return len(this.Data)
 }
+
+func (this *InstanceCacheList) GetAll() []*dataobj.Instance {
+	this.RLock()
+	defer this.RUnlock()
+	var instances []*dataobj.Instance
+	for _, instance := range this.Data {
+		instances = append(instances, instance)
+	}
+	return instances
+}

@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"github.com/didi/nightingale/src/modules/collector/log/worker"
 	"github.com/didi/nightingale/src/modules/collector/stra"
 	"github.com/didi/nightingale/src/modules/collector/sys"
@@ -18,6 +19,7 @@ type ConfYaml struct {
 	Stra     stra.StraSection         `yaml:"stra"`
 	Worker   worker.WorkerSection     `yaml:"worker"`
 	Sys      sys.SysSection           `yaml:"sys"`
+	Resource ecache.ResourceSection   `yaml:"resource"`
 }
 
 var (
@@ -57,7 +59,7 @@ func Parse(conf string) error {
 		"portPath": "./etc/port",
 		"procPath": "./etc/proc",
 		"logPath":  "./etc/log",
-		"api":      "/api/portal/collects/",
+		"api":      "/api/ /collects/",
 	})
 
 	viper.SetDefault("sys", map[string]interface{}{
@@ -65,6 +67,14 @@ func Parse(conf string) error {
 		"interval":     10,   //基础指标上报周期
 		"pluginRemote": true, //从monapi获取插件采集配置
 		"plugin":       "./plugin",
+	})
+
+	viper.SetDefault("resource", map[string]interface{}{
+		"appApi":      "/api/portal/app",
+		"instanceApi": "/api/portal/instance",
+		"networkApi":  "/api/portal/network",
+		"hostApi":     "/api/portal/host",
+		"timeout":     10000,
 	})
 
 	err = viper.Unmarshal(&Config)

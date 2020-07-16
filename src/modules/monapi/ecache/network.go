@@ -30,3 +30,13 @@ func (this *NetworkCacheList) Len() int {
 	defer this.RUnlock()
 	return len(this.Data)
 }
+
+func (this *NetworkCacheList) GetAll() []*dataobj.Network {
+	this.RLock()
+	defer this.RUnlock()
+	var networks []*dataobj.Network
+	for _, network := range this.Data {
+		networks = append(networks, network)
+	}
+	return networks
+}
