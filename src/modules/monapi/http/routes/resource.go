@@ -71,6 +71,10 @@ func networkGet(c *gin.Context) {
 	renderData(c, ecache.NetworkCache.GetAll(), nil)
 }
 
+func monitorItemGet(c *gin.Context) {
+	renderData(c, ecache.MonitorItemCache.GetAll(), nil)
+}
+
 func getType(srvType string) string {
 	if srvType == dataobj.EndpointKeyDocker {
 		return "容器"
