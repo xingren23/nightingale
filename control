@@ -6,6 +6,8 @@ version=2.7.2
 CWD=$(cd $(dirname $0)/; pwd)
 cd $CWD
 
+packdir=release
+
 usage()
 {
 	echo $"Usage: $0 {start|stop|restart|status|build|pack} <module>"
@@ -215,8 +217,7 @@ function deploy() {
     rm -rf $packdir
     mkdir -p $packdir
 
-    file_list="public control cfg.example.json $app"
-    file_list="control n9e-$v control sql plugin pub etc/log etc/port etc/service etc/nginx.conf etc/mysql.yml etc/address.yml \
+    file_list="control n9e-$v sql plugin pub etc/log etc/port etc/service etc/nginx.conf etc/mysql.yml etc/address.yml \
     n9e-collector etc/collector.yml \
     n9e-tsdb etc/tsdb.yml \
     n9e-index etc/index.yml \
