@@ -61,7 +61,9 @@ func SaveEventCur(eventCur *EventCur) error {
 	}
 
 	if has {
-		if _, err := session.Where("hashid=?", eventCur.HashId).Cols("sid", "sname", "node_path", "endpoint", "priority", "category", "status", "etime", "detail", "value", "info", "users", "groups", "nid", "alert_upgrade", "need_upgrade", "endpoint_alias").Update(eventCur); err != nil {
+		if _, err := session.Where("hashid=?", eventCur.HashId).Cols("sid", "sname", "node_path",
+			"endpoint", "priority", "category", "status", "etime", "detail", "value", "info", "users", "groups",
+			"nid", "alert_upgrade", "need_upgrade", "endpoint_alias").Update(eventCur); err != nil {
 			session.Rollback()
 			return err
 		}

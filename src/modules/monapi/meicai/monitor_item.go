@@ -1,7 +1,12 @@
-package model
+package meicai
 
-import "time"
+import (
+	"time"
 
+	"github.com/didi/nightingale/src/model"
+)
+
+// TODO : 去掉不用的字段
 type MonitorItem struct {
 	Id           int64     `json:"id"`
 	Name         string    `json:"name"`
@@ -25,7 +30,7 @@ type MonitorItem struct {
 func MonitorItemAll() ([]*MonitorItem, error) {
 	objs := make([]*MonitorItem, 0)
 
-	err := DB["mon"].Where("status > -1").Find(&objs)
+	err := model.DB["mon"].Where("status > -1").Find(&objs)
 	if err != nil {
 		return objs, err
 	}

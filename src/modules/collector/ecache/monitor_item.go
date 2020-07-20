@@ -1,25 +1,26 @@
 package ecache
 
 import (
-	"github.com/didi/nightingale/src/model"
 	"sync"
+
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 // 指标名称 -> 元数据信息
 type MonitorItemCacheMap struct {
 	sync.RWMutex
-	Data map[string]*model.MonitorItem
+	Data map[string]*meicai.MonitorItem
 }
 
 var MonitorItemCache *MonitorItemCacheMap
 
 func NewMonitorItemCache() *MonitorItemCacheMap {
 	return &MonitorItemCacheMap{
-		Data: make(map[string]*model.MonitorItem),
+		Data: make(map[string]*meicai.MonitorItem),
 	}
 }
 
-func (this *MonitorItemCacheMap) Get(key string) (*model.MonitorItem, bool) {
+func (this *MonitorItemCacheMap) Get(key string) (*meicai.MonitorItem, bool) {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -27,17 +28,17 @@ func (this *MonitorItemCacheMap) Get(key string) (*model.MonitorItem, bool) {
 	return value, exists
 }
 
-func (this *MonitorItemCacheMap) SetAll(items map[string]*model.MonitorItem) {
+func (this *MonitorItemCacheMap) SetAll(items map[string]*meicai.MonitorItem) {
 	this.Lock()
 	defer this.Unlock()
 
 	this.Data = items
 }
 
-func (this *MonitorItemCacheMap) GetAll() map[string]*model.MonitorItem {
+func (this *MonitorItemCacheMap) GetAll() map[string]*meicai.MonitorItem {
 	this.RLock()
 	defer this.RUnlock()
-	var monitorItemMap map[string]*model.MonitorItem
+	var monitorItemMap map[string]*meicai.MonitorItem
 	for _, monitorItem := range this.Data {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}

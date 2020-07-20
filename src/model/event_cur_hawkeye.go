@@ -1,6 +1,7 @@
 package model
 
 func EventCurTotalHawkeye(stime, etime int64, userId int64, metric, endpoint string, priorities, sendTypes []string) (int64, error) {
+	// fixme : find_in_set 不能使用索引
 	session := DB["mon"].Where("FIND_IN_SET( ? ,alert_users) and ignore_alert=0", userId)
 
 	if stime != 0 {
@@ -30,6 +31,7 @@ func EventCurTotalHawkeye(stime, etime int64, userId int64, metric, endpoint str
 func EventCurGetsHawkeye(stime, etime int64, userId int64, metric, endpoint string, priorities, sendTypes []string, limit, offset int) ([]EventCur, error) {
 	var obj []EventCur
 
+	// fixme : find_in_set 不能使用索引
 	session := DB["mon"].Where("FIND_IN_SET( ? ,alert_users) and ignore_alert=0", userId)
 
 	if stime != 0 {
