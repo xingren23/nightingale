@@ -18,9 +18,12 @@ func straPost(c *gin.Context) {
 
 	errors.Dangerous(stra.Encode())
 
-	count, _ := model.StraCountByNidAndName(stra.Nid, 0, stra.Name)
-	if count > 0 {
-		errors.Bomb("同节点下策略名称 %s 已存在", stra.Name)
+	exist, err := model.StraExist(stra.Nid, 0, stra.Name)
+	if err != nil {
+		errors.Bomb("StraExist error, nid %s name %s %s", stra.Nid, stra.Name, err)
+	}
+	if exist {
+		errors.Bomb("同节点下策略名称 %d %s 已存在", stra.Nid, stra.Name)
 	}
 
 	errors.Dangerous(stra.Save())
@@ -42,9 +45,12 @@ func straPut(c *gin.Context) {
 	stra.LastUpdator = me.Username
 	errors.Dangerous(stra.Encode())
 
-	count, _ := model.StraCountByNidAndName(stra.Nid, stra.Id, stra.Name)
-	if count > 0 {
-		errors.Bomb("同节点下策略名称 %s 已存在", stra.Name)
+	exist, err := model.StraExist(stra.Nid, stra.Id, stra.Name)
+	if err != nil {
+		errors.Bomb("StraExist error, nid %s name %s %s", stra.Nid, stra.Name, err)
+	}
+	if exist {
+		errors.Bomb("同节点下策略名称 %d %s 已存在", stra.Nid, stra.Name)
 	}
 
 	s, err := model.StraGet("id", stra.Id)
