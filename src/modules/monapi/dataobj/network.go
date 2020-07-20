@@ -3,8 +3,9 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
-	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
+	"github.com/toolkits/pkg/logger"
 )
 
 type Network struct {
