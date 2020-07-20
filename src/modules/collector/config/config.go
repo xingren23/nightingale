@@ -70,12 +70,12 @@ func Parse(conf string) error {
 	})
 
 	viper.SetDefault("resource", map[string]interface{}{
-		"appApi":      "/api/portal/app",
-		"instanceApi": "/api/portal/instance",
-		"networkApi":  "/api/portal/network",
-		"hostApi":     "/api/portal/host",
-		"sieveApi":    "/api/portal/sieve",
-		"timeout":     10000,
+		"appApi":         "/api/portal/app",
+		"instanceApi":    "/api/portal/instance",
+		"networkApi":     "/api/portal/network",
+		"hostApi":        "/api/portal/host",
+		"monitorItemApi": "/api/portal/monitorItem",
+		"timeout":        10000,
 	})
 
 	err = viper.Unmarshal(&Config)

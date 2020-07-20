@@ -38,6 +38,7 @@ func Config(r *gin.Engine) {
 		nolog.GET("/instance", instanceGet)
 		nolog.GET("/network", networkGet)
 		nolog.GET("/sieve", collectGetSieve)
+		nolog.GET("/monitorItem", monitorItemGet)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())

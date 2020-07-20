@@ -20,6 +20,7 @@ func Init(res ResourceSection) {
 	HostCache = NewHostCache()
 	InstanceCache = NewInstanceCache()
 	NetworkCache = NewNetworkCache()
+	MonitorItemCache = NewMonitorItemCache()
 	SieveCache = NewSievesCache()
 
 	if err := syncResource(); err != nil {
@@ -67,6 +68,10 @@ func buildResourceCache() error {
 	if err != nil {
 		return err
 	}
+	monitorItemResp, err := getMonitorItem()
+	if err != nil {
+		return err
+	}
 	sievesResp, err := getSievesRetry()
 	if err != nil {
 		return err
@@ -97,17 +102,24 @@ func buildResourceCache() error {
 	}
 	InstanceCache.SetAll(instanceMap)
 
+	monitorItemMap := make(map[string]*model.MonitorItem)
+	for _, monitorItem := range monitorItemResp.Dat {
+		monitorItemMap[monitorItem.Metric] = monitorItem
+	}
+	MonitorItemCache.SetAll(monitorItemMap)
+
 	return nil
 
 }
 
 type ResourceSection struct {
-	AppApi      string `yaml:"appApi"`
-	InstanceApi string `yaml:"instanceApi"`
-	NetworkApi  string `yaml:"networkApi"`
-	HostApi     string `yaml:"hostApi"`
-	SieveApi    string `yaml:"sieveApi"`
-	Timeout     int    `yaml:"timeout"`
+	AppApi         string `yaml:"appApi"`
+	InstanceApi    string `yaml:"instanceApi"`
+	NetworkApi     string `yaml:"networkApi"`
+	HostApi        string `yaml:"hostApi"`
+	MonitorItemApi string `yaml:"monitorItemApi"`
+	SieveApi       string `yaml:"sieveApi"`
+	Timeout        int    `yaml:"timeout"`
 }
 
 func getApps() (AppResp, error) {
@@ -194,6 +206,27 @@ func getNetwork() (NetworkResp, error) {
 	return res, err
 }
 
+func getMonitorItem() (MonitorItemResp, error) {
+	addrs := address.GetHTTPAddresses("monapi")
+	i := rand.Intn(len(addrs))
+	addr := addrs[i]
+
+	var res MonitorItemResp
+	var err error
+
+	url := fmt.Sprintf("http://%s%s", addr, Resource.MonitorItemApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	if err != nil {
+		err = fmt.Errorf("get monitorItem from remote:%s failed, error:%v", url, err)
+	}
+
+	if res.Dat == nil || len(res.Dat) == 0 {
+		err = fmt.Errorf("get monitorItem from remote:%s is nil, error:%v", url, err)
+	}
+
+	return res, err
+}
+
 type AppResp struct {
 	Dat []*dataobj.App `json:"dat"`
 	Err string         `json:"err"`
@@ -212,6 +245,10 @@ type InstanceResp struct {
 type NetworkResp struct {
 	Dat []*dataobj.Network `json:"dat"`
 	Err string             `json:"err"`
+}
+type MonitorItemResp struct {
+	Dat map[string]*model.MonitorItem `json:"dat"`
+	Err string                        `json:"err"`
 }
 
 type SievesResp struct {

@@ -38,6 +38,14 @@ func Push(metricItems []*dataobj.MetricValue) error {
 			// 如果数据有问题，直接跳过吧，比如mymon采集的到的数据，其实只有一个有问题，剩下的都没问题
 			continue
 		}
+
+		//指标白名单
+		_, exists := ecache.MonitorItemCache.Get(item.Metric)
+		if !exists {
+			msg := fmt.Errorf("metric:%v not exists in monitorItem", item)
+			logger.Warning(msg)
+			continue
+		}
 		if item.CounterType == dataobj.COUNTER {
 			item = CounterToGauge(item)
 			if item == nil {

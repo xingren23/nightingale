@@ -37,7 +37,7 @@ func (this *MonitorItemCacheMap) SetAll(items map[string]*model.MonitorItem) {
 func (this *MonitorItemCacheMap) GetAll() map[string]*model.MonitorItem {
 	this.RLock()
 	defer this.RUnlock()
-	monitorItemMap := make(map[string]*model.MonitorItem)
+	var monitorItemMap map[string]*model.MonitorItem
 	for _, monitorItem := range this.Data {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}
