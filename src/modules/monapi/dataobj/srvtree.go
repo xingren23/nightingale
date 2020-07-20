@@ -3,6 +3,7 @@ package dataobj
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
@@ -49,7 +50,7 @@ type CommonResult struct {
 
 // 获取整棵服务树
 func GetSrvTree() ([]*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/tree", config.Get().Api.Ops)
+	url := fmt.Sprintf("%s/srv_tree/tree", config.Get().Api.OpsAddr)
 	data, err := RequestByPost(url, map[string]interface{}{})
 	if err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func GetSrvTree() ([]*SrvTreeNode, error) {
 
 // 获取服务树节点信息
 func GetTreeById(nid int64) (*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/%d", config.Get().Api.Ops, nid)
+	url := fmt.Sprintf("%s/srv_tree/%d", config.Get().Api.OpsAddr, nid)
 	data, err := RequestByGet(url)
 	if err != nil {
 		return nil, err
@@ -89,7 +90,7 @@ func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
 		Insts:    []*Instance{},
 		Hosts:    []*CmdbHost{},
 	}
-	url := config.Get().Api.Ops + "/api/resource/query"
+	url := config.Get().Api.OpsAddr + "/api/resource/query"
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,

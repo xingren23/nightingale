@@ -47,7 +47,7 @@ func getNetworks(url string, pageNo, pageSize int) (*NetworkSearchResult, error)
 // 获取实例
 func GetNetByPage() ([]*Network, error) {
 	res := []*Network{}
-	url := config.Get().Api.Ops + "/network_device/search"
+	url := config.Get().Api.OpsAddr + "/network_device/search"
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999
