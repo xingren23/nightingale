@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/toolkits/pkg/logger"
+
 	"github.com/didi/nightingale/src/model"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
@@ -41,16 +43,21 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 			}
 
 			var resp AuthResp
-			err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(3 * time.Second).ToJSON(&resp)
+			err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(time.Duration(config.Get().Api.Timeout) * time.
+				Millisecond).ToJSON(
+				&resp)
 			if err != nil {
+				logger.Errorf("request sso %s error, %s", url, err)
 				return nil, err
 			}
 
 			if resp.AuthUser == nil {
+				logger.Errorf("get authuser is nil, %s", err)
 				return nil, err
 			}
 
 			if len(resp.AuthUser) == 0 {
+				// fixme : 什么情况下使用 bomb（panic）？
 				errors.Bomb("用户[%v]不存在: %v", userName)
 			}
 
