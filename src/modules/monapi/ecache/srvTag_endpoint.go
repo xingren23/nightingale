@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
-	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
+	"github.com/toolkits/pkg/logger"
 	"strconv"
 )
 
@@ -44,7 +44,7 @@ func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, 
 		return ret, err
 	}
 	if len(bs) == 0 {
-		logger.Debugf("key [%s] not in redis cache\n", key)
+		logger.Debugf("key [%s] not in redis cache.", key)
 		// 不存在直接调用服务树接口
 		switch srvType {
 		case dataobj.EndpointKeyDocker:
