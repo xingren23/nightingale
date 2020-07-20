@@ -7,10 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/didi/nightingale/src/dataobj"
 	"github.com/toolkits/net"
 	"github.com/toolkits/pkg/logger"
-
-	"github.com/didi/nightingale/src/dataobj"
 )
 
 type SingleConnRpcClient struct {

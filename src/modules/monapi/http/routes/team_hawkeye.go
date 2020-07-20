@@ -77,7 +77,7 @@ type teamHawkeyeForm struct {
 func teamHawkeyeAddPost(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
-	userIds, err := model.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("teamHawkeyeAddPost SaveSSOUser err,userNames:%v", f.UserNames)
 	}
@@ -90,7 +90,7 @@ func teamHawkeyePut(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	userIds, err := model.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.UserNames)
 	}
