@@ -8,6 +8,7 @@ import (
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 	"github.com/didi/nightingale/src/toolkits/stats"
 )
 
@@ -60,7 +61,7 @@ func CleanStra() {
 	}
 
 	for _, stra := range list {
-		node, err := model.GetNodeById(stra.Nid)
+		node, err := meicai.GetNodeById(stra.Nid)
 		if err != nil {
 			logger.Warningf("get node failed, node id: %d, err: %v", stra.Nid, err)
 			continue

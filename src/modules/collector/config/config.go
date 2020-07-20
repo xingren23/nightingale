@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"github.com/didi/nightingale/src/modules/collector/log/worker"
 	"github.com/didi/nightingale/src/modules/collector/stra"
@@ -69,6 +70,7 @@ func Parse(conf string) error {
 		"plugin":       "./plugin",
 	})
 
+	// fixme : 接口路径很难做到可配置
 	viper.SetDefault("resource", map[string]interface{}{
 		"appApi":           "/api/portal/app",
 		"instanceApi":      "/api/portal/instance",

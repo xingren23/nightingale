@@ -415,6 +415,7 @@ func alignTs(ts int64, period int64) int64 {
 	return ts - ts%period
 }
 
+// fixme : 服务逻辑说明，方法命名（filter？）
 func filterSeviceTag(key, val string) string {
 	if !strings.HasPrefix(key, "service.") {
 		return val
@@ -464,6 +465,7 @@ func filterSeviceTag(key, val string) string {
 }
 
 func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err error) {
+	// fixme : 需要 check nil 么？与外层逻辑不一致
 	if m == nil {
 		err = fmt.Errorf("item is nil")
 		return
@@ -474,7 +476,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 		return
 	}
 
-	// 检测保留字
+	// 检测保留字 fixme : reservedWords
 	reservedWords := "[\\t] [\\r] [\\n] [,] [ ] [=]"
 	if HasReservedWords(m.Metric) {
 		err = fmt.Errorf("metric:%s contains reserved words: %s", m.Metric, reservedWords)
@@ -521,6 +523,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 	}
 
 	for k, v := range m.TagsMap {
+		// fixme: for 循环内部 不要 delete
 		delete(m.TagsMap, k)
 		k, need := filterByCache(filterStr, k)
 		if !need {
@@ -541,6 +544,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 	}
 
 	m.Tags = SortedTags(m.TagsMap)
+	// fixme : tags 多少合适 ？
 	if len(m.Tags) > 512 {
 		err = fmt.Errorf("len(m.Tags) is too large")
 		return
@@ -560,7 +564,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 
 	valid := true
 	var vv float64
-
+	// fixme ： 抽取一个方法
 	switch cv := m.ValueUntyped.(type) {
 	case string:
 		vv, err = strconv.ParseFloat(cv, 64)
