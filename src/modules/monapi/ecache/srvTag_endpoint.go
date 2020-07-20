@@ -45,7 +45,7 @@ func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, 
 		return ret, err
 	}
 	if len(bs) == 0 {
-		logger.Debugf("key [%s] not in redis cache\n", key)
+		logger.Debugf("key [%s] not in redis cache.", key)
 		// 不存在直接调用服务树接口
 		switch srvType {
 		case dataobj.EndpointKeyDocker:
