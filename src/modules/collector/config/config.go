@@ -75,6 +75,7 @@ func Parse(conf string) error {
 		"networkApi":     "/api/portal/network",
 		"hostApi":        "/api/portal/host",
 		"monitorItemApi": "/api/portal/monitorItem",
+		"sieveApi":       "/api/portal/sieve",
 		"timeout":        10000,
 	})
 
