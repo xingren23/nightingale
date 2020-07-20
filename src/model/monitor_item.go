@@ -25,7 +25,7 @@ type MonitorItem struct {
 func MonitorItemAll() ([]*MonitorItem, error) {
 	objs := make([]*MonitorItem, 0)
 
-	err := DB["mon"].Find(&objs)
+	err := DB["mon"].Where("status > -1").Find(&objs)
 	if err != nil {
 		return objs, err
 	}

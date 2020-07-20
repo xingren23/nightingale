@@ -11,7 +11,6 @@ import (
 var MetricHistory *History
 var ProcsCache *ProcessCache
 
-
 func Init() {
 	MetricHistory = NewHistory()
 	ProcsCache = NewProcsCache()
@@ -71,8 +70,7 @@ type ProcessCache struct {
 	Data map[int32]*process.Process
 }
 
-
-func NewProcsCache() *ProcessCache{
+func NewProcsCache() *ProcessCache {
 	pc := ProcessCache{
 		Data: make(map[int32]*process.Process),
 	}
@@ -80,13 +78,13 @@ func NewProcsCache() *ProcessCache{
 	return &pc
 }
 
-func (pc *ProcessCache) Set(pid int32, p *process.Process){
+func (pc *ProcessCache) Set(pid int32, p *process.Process) {
 	pc.Lock()
 	defer pc.Unlock()
 	pc.Data[pid] = p
 }
 
-func (pc *ProcessCache) Get(pid int32)(*process.Process, bool){
+func (pc *ProcessCache) Get(pid int32) (*process.Process, bool) {
 	pc.RLock()
 	defer pc.RUnlock()
 	p, exists := pc.Data[pid]
@@ -108,7 +106,7 @@ func (pc *ProcessCache) clean() {
 	defer pc.Unlock()
 	for pid, procs := range pc.Data {
 		running, _ := procs.IsRunning()
-		if !running{
+		if !running {
 			delete(pc.Data, pid)
 		}
 	}

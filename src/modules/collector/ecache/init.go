@@ -21,6 +21,7 @@ func Init(res ResourceSection) {
 	InstanceCache = NewInstanceCache()
 	NetworkCache = NewNetworkCache()
 	MonitorItemCache = NewMonitorItemCache()
+	GarbageFilterCache = NewGarbageFilterCache()
 
 	if err := syncResource(); err != nil {
 		log.Fatalf("build resourceCache fail: %v", err)
@@ -71,6 +72,11 @@ func buildResourceCache() error {
 	if err != nil {
 		return err
 	}
+	garbageFilterResp, err := getGarbageFiltersRetry()
+	if err != nil {
+		return err
+	}
+	GarbageFilterCache.SetAll(garbageFilterResp)
 
 	appMap := make(map[int64]*dataobj.App)
 	for _, app := range appResp.Dat {
@@ -107,12 +113,13 @@ func buildResourceCache() error {
 }
 
 type ResourceSection struct {
-	AppApi         string `yaml:"appApi"`
-	InstanceApi    string `yaml:"instanceApi"`
-	NetworkApi     string `yaml:"networkApi"`
-	HostApi        string `yaml:"hostApi"`
-	MonitorItemApi string `yaml:"monitorItemApi"`
-	Timeout        int    `yaml:"timeout"`
+	AppApi           string `yaml:"appApi"`
+	InstanceApi      string `yaml:"instanceApi"`
+	NetworkApi       string `yaml:"networkApi"`
+	HostApi          string `yaml:"hostApi"`
+	MonitorItemApi   string `yaml:"monitorItemApi"`
+	GarbageFilterApi string `yaml:"garbageFilterApi"`
+	Timeout          int    `yaml:"timeout"`
 }
 
 func getApps() (AppResp, error) {
@@ -242,4 +249,44 @@ type NetworkResp struct {
 type MonitorItemResp struct {
 	Dat map[string]*model.MonitorItem `json:"dat"`
 	Err string                        `json:"err"`
+}
+
+type GarbageFilterResp struct {
+	Dat []model.ConfigInfo `json:"dat"`
+	Err string             `json:"err"`
+}
+
+func getGarbageFiltersRetry() ([]model.ConfigInfo, error) {
+	count := len(address.GetHTTPAddresses("monapi"))
+	var resp GarbageFilterResp
+	var err error
+	for i := 0; i < count; i++ {
+		resp, err = getGarbageFilter()
+		if err == nil {
+			if resp.Err != "" {
+				err = fmt.Errorf(resp.Err)
+				continue
+			}
+			return resp.Dat, err
+		}
+	}
+
+	return resp.Dat, err
+}
+
+func getGarbageFilter() (GarbageFilterResp, error) {
+	addrs := address.GetHTTPAddresses("monapi")
+	i := rand.Intn(len(addrs))
+	addr := addrs[i]
+
+	var res GarbageFilterResp
+	var err error
+
+	url := fmt.Sprintf("http://%s%s", addr, Resource.GarbageFilterApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	if err != nil {
+		err = fmt.Errorf("get GarbageFilter config from remote:%s failed, error:%v", url, err)
+	}
+
+	return res, err
 }
