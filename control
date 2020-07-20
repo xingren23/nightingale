@@ -204,6 +204,30 @@ pack()
 	n9e-monapi etc/monapi.yml
 }
 
+function deploy() {
+    v=$1
+	if [ "x${v}" = "x" ]; then
+		v=$(date +%Y-%m-%d-%H-%M-%S)
+	fi
+    build
+    git log -1 --pretty=%h > gitversion
+    version=`./$app -v`
+    rm -rf $packdir
+    mkdir -p $packdir
+
+    file_list="public control cfg.example.json $app"
+    file_list="control n9e-$v control sql plugin pub etc/log etc/port etc/service etc/nginx.conf etc/mysql.yml etc/address.yml \
+    n9e-collector etc/collector.yml \
+    n9e-tsdb etc/tsdb.yml \
+    n9e-index etc/index.yml \
+    n9e-judge etc/judge.yml \
+    n9e-transfer etc/transfer.yml \
+    n9e-monapi etc/monapi.yml"
+
+    echo "...cp $file_list to $packdir"
+    cp -r $file_list $packdir
+}
+
 case "$1" in
 	start)
 		start $2
@@ -226,6 +250,9 @@ case "$1" in
 	pack)
 		pack $2
 		;;
+	deploy)
+        deploy $2
+        ;;
 	*)
 		usage
 esac
