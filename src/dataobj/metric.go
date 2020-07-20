@@ -463,7 +463,7 @@ func filterSeviceTag(key, val string) string {
 	return val
 }
 
-func (m *MetricValue) CheckedValidity(filterStr []string, now int64) (err error) {
+func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err error) {
 	if m == nil {
 		err = fmt.Errorf("item is nil")
 		return
@@ -522,11 +522,11 @@ func (m *MetricValue) CheckedValidity(filterStr []string, now int64) (err error)
 
 	for k, v := range m.TagsMap {
 		delete(m.TagsMap, k)
-		k, need := filterBySieveCache(filterStr, k)
+		k, need := filterByCache(filterStr, k)
 		if !need {
 			continue
 		}
-		v, need := filterBySieveCache(filterStr, v)
+		v, need := filterByCache(filterStr, v)
 		if !need {
 			continue
 		}
@@ -588,7 +588,7 @@ func (m *MetricValue) CheckedValidity(filterStr []string, now int64) (err error)
 	return
 }
 
-func filterBySieveCache(filterStr []string, str string) (string, bool) {
+func filterByCache(filterStr []string, str string) (string, bool) {
 	if len(filterStr) > 0 {
 		for _, s := range filterStr {
 			if strings.Contains(str, s) {

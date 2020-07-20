@@ -88,7 +88,7 @@ func cfgGet(c *gin.Context) {
 	renderData(c, target, err)
 }
 
-func collectGetSieve(c *gin.Context) {
+func GarbageFilterGet(c *gin.Context) {
 	cfgs, err := model.ConfigInfoGetByQ("collector", "illegal_chars")
 	renderData(c, cfgs, err)
 }

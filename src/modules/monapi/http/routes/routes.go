@@ -37,7 +37,7 @@ func Config(r *gin.Engine) {
 		nolog.GET("/host", hostGet)
 		nolog.GET("/instance", instanceGet)
 		nolog.GET("/network", networkGet)
-		nolog.GET("/sieve", collectGetSieve)
+		nolog.GET("/garbageFilter", GarbageFilterGet)
 		nolog.GET("/monitorItem", monitorItemGet)
 	}
 

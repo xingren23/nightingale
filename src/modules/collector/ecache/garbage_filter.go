@@ -6,21 +6,21 @@ import (
 	"sync"
 )
 
-var SieveCache *SievesCache
+var GarbageFilterCache *GarbageFilterCacheList
 
-type SievesCache struct {
+type GarbageFilterCacheList struct {
 	sync.RWMutex
 	Data []string
 }
 
-func NewSievesCache() *SievesCache {
-	pc := SievesCache{
+func NewGarbageFilterCache() *GarbageFilterCacheList {
+	pc := GarbageFilterCacheList{
 		Data: make([]string, 0),
 	}
 	return &pc
 }
 
-func (sc *SievesCache) SetAll(vals []model.ConfigInfo) {
+func (sc *GarbageFilterCacheList) SetAll(vals []model.ConfigInfo) {
 	vs := []string{}
 	for _, val := range vals {
 		for _, v := range strings.Split(val.CfgValue, ",") {
@@ -32,7 +32,7 @@ func (sc *SievesCache) SetAll(vals []model.ConfigInfo) {
 	sc.Data = vs
 }
 
-func (sc *SievesCache) Get() []string {
+func (sc *GarbageFilterCacheList) Get() []string {
 	sc.RLock()
 	defer sc.RUnlock()
 	return sc.Data

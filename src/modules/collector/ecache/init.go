@@ -21,7 +21,7 @@ func Init(res ResourceSection) {
 	InstanceCache = NewInstanceCache()
 	NetworkCache = NewNetworkCache()
 	MonitorItemCache = NewMonitorItemCache()
-	SieveCache = NewSievesCache()
+	GarbageFilterCache = NewGarbageFilterCache()
 
 	if err := syncResource(); err != nil {
 		log.Fatalf("build resourceCache fail: %v", err)
@@ -72,11 +72,11 @@ func buildResourceCache() error {
 	if err != nil {
 		return err
 	}
-	sievesResp, err := getSievesRetry()
+	garbageFilterResp, err := getGarbageFiltersRetry()
 	if err != nil {
 		return err
 	}
-	SieveCache.SetAll(sievesResp)
+	GarbageFilterCache.SetAll(garbageFilterResp)
 
 	appMap := make(map[int64]*dataobj.App)
 	for _, app := range appResp.Dat {
@@ -113,13 +113,13 @@ func buildResourceCache() error {
 }
 
 type ResourceSection struct {
-	AppApi         string `yaml:"appApi"`
-	InstanceApi    string `yaml:"instanceApi"`
-	NetworkApi     string `yaml:"networkApi"`
-	HostApi        string `yaml:"hostApi"`
-	MonitorItemApi string `yaml:"monitorItemApi"`
-	SieveApi       string `yaml:"sieveApi"`
-	Timeout        int    `yaml:"timeout"`
+	AppApi           string `yaml:"appApi"`
+	InstanceApi      string `yaml:"instanceApi"`
+	NetworkApi       string `yaml:"networkApi"`
+	HostApi          string `yaml:"hostApi"`
+	MonitorItemApi   string `yaml:"monitorItemApi"`
+	GarbageFilterApi string `yaml:"garbageFilterApi"`
+	Timeout          int    `yaml:"timeout"`
 }
 
 func getApps() (AppResp, error) {
@@ -251,17 +251,17 @@ type MonitorItemResp struct {
 	Err string                        `json:"err"`
 }
 
-type SievesResp struct {
+type GarbageFilterResp struct {
 	Dat []model.ConfigInfo `json:"dat"`
 	Err string             `json:"err"`
 }
 
-func getSievesRetry() ([]model.ConfigInfo, error) {
+func getGarbageFiltersRetry() ([]model.ConfigInfo, error) {
 	count := len(address.GetHTTPAddresses("monapi"))
-	var resp SievesResp
+	var resp GarbageFilterResp
 	var err error
 	for i := 0; i < count; i++ {
-		resp, err = getSieves()
+		resp, err = getGarbageFilter()
 		if err == nil {
 			if resp.Err != "" {
 				err = fmt.Errorf(resp.Err)
@@ -274,18 +274,18 @@ func getSievesRetry() ([]model.ConfigInfo, error) {
 	return resp.Dat, err
 }
 
-func getSieves() (SievesResp, error) {
+func getGarbageFilter() (GarbageFilterResp, error) {
 	addrs := address.GetHTTPAddresses("monapi")
 	i := rand.Intn(len(addrs))
 	addr := addrs[i]
 
-	var res SievesResp
+	var res GarbageFilterResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.SieveApi)
+	url := fmt.Sprintf("http://%s%s", addr, Resource.GarbageFilterApi)
 	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
-		err = fmt.Errorf("get sieve config from remote:%s failed, error:%v", url, err)
+		err = fmt.Errorf("get GarbageFilter config from remote:%s failed, error:%v", url, err)
 	}
 
 	return res, err
