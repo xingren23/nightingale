@@ -3,6 +3,7 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
