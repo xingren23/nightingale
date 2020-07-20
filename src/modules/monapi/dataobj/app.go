@@ -53,7 +53,8 @@ func getApps(url string, pageNo, pageSize int) (*AppPageResult, error) {
 // 获取应用
 func GetAppByPage() ([]*App, error) {
 	res := []*App{}
-	url := config.Get().Api.Ops + "/app/search"
+	// fixme: url 统一管理
+	url := config.Get().Api.OpsAddr + "/app/search"
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999

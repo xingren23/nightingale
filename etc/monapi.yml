@@ -64,6 +64,6 @@ tokens:
   - 7dcd606e0462f9df2fea0bf505c9e622
 
 api:
-  ops: http://192.168.248.180:8089
-  sso: http://192.168.253.65:10001
+  opsAddr: http://192.168.248.180:8089
+  ssoAddr: http://192.168.253.65:10001
   timeout: 1000
