@@ -1,30 +1,31 @@
 package ecache
 
 import (
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"sync"
+
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 type AppCacheMap struct {
 	sync.RWMutex
-	Data map[int64]*dataobj.App
+	Data map[int64]*meicai.App
 }
 
 var AppCache *AppCacheMap
 
 func NewAppCache() *AppCacheMap {
 	return &AppCacheMap{
-		Data: make(map[int64]*dataobj.App),
+		Data: make(map[int64]*meicai.App),
 	}
 }
 
-func (this *AppCacheMap) SetAll(vals map[int64]*dataobj.App) {
+func (this *AppCacheMap) SetAll(vals map[int64]*meicai.App) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
 }
 
-func (this *AppCacheMap) GetById(id int64) (*dataobj.App, bool) {
+func (this *AppCacheMap) GetById(id int64) (*meicai.App, bool) {
 	this.RLock()
 	defer this.RUnlock()
 	value, exists := this.Data[id]

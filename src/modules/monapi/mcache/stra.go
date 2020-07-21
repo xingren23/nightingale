@@ -12,8 +12,6 @@ type StraCacheMap struct {
 	Data map[int64]*model.Stra
 }
 
-var StraCache *StraCacheMap
-
 func NewStraCache() *StraCacheMap {
 	return &StraCacheMap{
 		Data: make(map[int64]*model.Stra),

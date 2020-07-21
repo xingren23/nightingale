@@ -1,4 +1,4 @@
-package dataobj
+package meicai
 
 import (
 	"encoding/json"
@@ -83,7 +83,7 @@ func GetTreeById(nid int64) (*SrvTreeNode, error) {
 }
 
 // 获取服务树资源
-func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
+func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 	commonRet := &CommonResult{
 		Apps:     []*App{},
 		Networks: []*Network{},
@@ -105,6 +105,7 @@ func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
 
 		data, err := RequestByPost(url, params)
 		if err != nil {
+			logger.Printf("%s", params)
 			return nil, err
 		}
 

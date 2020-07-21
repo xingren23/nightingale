@@ -9,7 +9,6 @@ import (
 	"github.com/didi/nightingale/src/modules/monapi/meicai"
 
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
@@ -83,31 +82,31 @@ func buildResourceCache() error {
 	}
 	GarbageFilterCache.SetAll(garbageFilterResp)
 
-	appMap := make(map[int64]*dataobj.App)
+	appMap := make(map[int64]*meicai.App)
 	for _, app := range appResp.Dat {
 		appMap[app.Id] = app
 	}
 	AppCache.SetAll(appMap)
 
-	hostMap := make(map[string]*dataobj.CmdbHost)
+	hostMap := make(map[string]*meicai.CmdbHost)
 	for _, host := range hostResp.Dat {
 		hostMap[host.Ip] = host
 	}
 	HostCache.SetAll(hostMap)
 
-	networkMap := make(map[string]*dataobj.Network)
+	networkMap := make(map[string]*meicai.Network)
 	for _, network := range networkResp.Dat {
 		networkMap[network.ManageIp] = network
 	}
 	NetworkCache.SetAll(networkMap)
 
-	instanceMap := make(map[string]*dataobj.Instance)
+	instanceMap := make(map[string]*meicai.Instance)
 	for _, instance := range instanceResp.Dat {
 		instanceMap[instance.UUID] = instance
 	}
 	InstanceCache.SetAll(instanceMap)
 
-	monitorItemMap := make(map[string]*meicai.MonitorItem)
+	monitorItemMap := make(map[string]*model.MonitorItem)
 	for _, monitorItem := range monitorItemResp.Dat {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}
@@ -233,27 +232,27 @@ func getMonitorItem() (MonitorItemResp, error) {
 }
 
 type AppResp struct {
-	Dat []*dataobj.App `json:"dat"`
-	Err string         `json:"err"`
+	Dat []*meicai.App `json:"dat"`
+	Err string        `json:"err"`
 }
 
 type HostResp struct {
-	Dat []*dataobj.CmdbHost `json:"dat"`
-	Err string              `json:"err"`
+	Dat []*meicai.CmdbHost `json:"dat"`
+	Err string             `json:"err"`
 }
 
 type InstanceResp struct {
-	Dat []*dataobj.Instance `json:"dat"`
-	Err string              `json:"err"`
+	Dat []*meicai.Instance `json:"dat"`
+	Err string             `json:"err"`
 }
 
 type NetworkResp struct {
-	Dat []*dataobj.Network `json:"dat"`
-	Err string             `json:"err"`
+	Dat []*meicai.Network `json:"dat"`
+	Err string            `json:"err"`
 }
 type MonitorItemResp struct {
-	Dat map[string]*meicai.MonitorItem `json:"dat"`
-	Err string                         `json:"err"`
+	Dat map[string]*model.MonitorItem `json:"dat"`
+	Err string                        `json:"err"`
 }
 
 type GarbageFilterResp struct {

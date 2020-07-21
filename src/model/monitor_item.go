@@ -1,9 +1,7 @@
-package meicai
+package model
 
 import (
 	"time"
-
-	"github.com/didi/nightingale/src/model"
 )
 
 // TODO : 去掉不用的字段
@@ -30,7 +28,7 @@ type MonitorItem struct {
 func MonitorItemAll() ([]*MonitorItem, error) {
 	objs := make([]*MonitorItem, 0)
 
-	err := model.DB["mon"].Where("status > -1").Find(&objs)
+	err := DB["mon"].Where("status > -1").Find(&objs)
 	if err != nil {
 		return objs, err
 	}

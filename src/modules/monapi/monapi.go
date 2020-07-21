@@ -72,7 +72,7 @@ func main() {
 	redisc.InitRedis()
 	ecache.Init()
 	// cmdb缓存
-	if err := cron.SyncCmdbResource(); err != nil {
+	if err := cron.SyncResource(); err != nil {
 		log.Fatalf("sync cmdb resource fail: %v", err)
 	}
 	// 服务树缓存
@@ -104,7 +104,7 @@ func main() {
 	}
 
 	go cron.SyncMonitorItemLoop()
-	go cron.SyncCmdbResourceLoop()
+	go cron.SyncResourceLoop()
 	go cron.SyncSrvTreeLoop()
 	go cron.SyncEndpointsLoop()
 	go cron.SyncMaskconfLoop()

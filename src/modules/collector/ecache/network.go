@@ -3,29 +3,29 @@ package ecache
 import (
 	"sync"
 
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 type NetworkCacheMap struct {
 	sync.RWMutex
-	Data map[string]*dataobj.Network
+	Data map[string]*meicai.Network
 }
 
 var NetworkCache *NetworkCacheMap
 
 func NewNetworkCache() *NetworkCacheMap {
 	return &NetworkCacheMap{
-		Data: map[string]*dataobj.Network{},
+		Data: map[string]*meicai.Network{},
 	}
 }
 
-func (this *NetworkCacheMap) SetAll(vals map[string]*dataobj.Network) {
+func (this *NetworkCacheMap) SetAll(vals map[string]*meicai.Network) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
 }
 
-func (this *NetworkCacheMap) GetByIp(ip string) (*dataobj.Network, bool) {
+func (this *NetworkCacheMap) GetByIp(ip string) (*meicai.Network, bool) {
 	this.RLock()
 	defer this.RUnlock()
 	value, exists := this.Data[ip]

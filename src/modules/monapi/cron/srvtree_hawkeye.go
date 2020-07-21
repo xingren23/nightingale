@@ -1,10 +1,12 @@
 package cron
 
 import (
-	"github.com/toolkits/pkg/logger"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
+
+	"github.com/toolkits/pkg/logger"
+
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/toolkits/stats"
 )
@@ -43,7 +45,7 @@ func SyncSrvTree() error {
 func getTreeNodes() (map[int64]string, error) {
 	nodeMap := make(map[int64]string)
 	// 获取服务树
-	nodes, err := dataobj.GetSrvTree()
+	nodes, err := meicai.GetSrvTree()
 	if err != nil {
 		return nodeMap, err
 	}
@@ -51,7 +53,7 @@ func getTreeNodes() (map[int64]string, error) {
 	return nodeMap, nil
 }
 
-func getNodes(nodes []*dataobj.SrvTreeNode, nodeMap map[int64]string) {
+func getNodes(nodes []*meicai.SrvTreeNode, nodeMap map[int64]string) {
 	if nodes == nil || len(nodes) == 0 {
 		return
 	}
@@ -72,7 +74,7 @@ func InitSrvTagEndpoint() error {
 	start := time.Now()
 	// 比较缓存与服务树中节点数量
 	nodeMap := ecache.SrvTreeCache.GetAll()
-	keys, err := ecache.GetEndpointKeysFromRedis()
+	keys, err := ecache.ScanRedisEndpointKeys()
 	if err != nil {
 		return err
 	}
@@ -89,14 +91,14 @@ func InitSrvTagEndpoint() error {
 		// 遍历节点
 		for _, nodeStr := range nodeMap {
 			// 主机资源
-			res, err := dataobj.GetTreeByPage(nodeStr, dataobj.CmdbSourceHost)
+			res, err := meicai.GetTreeResources(nodeStr, meicai.CmdbSourceHost)
 			if err != nil {
 				return err
 			}
-			pms := []*dataobj.TagEndpoint{}
-			dockers := []*dataobj.TagEndpoint{}
+			pms := []*ecache.TagEndpoint{}
+			dockers := []*ecache.TagEndpoint{}
 			for _, host := range res.Hosts {
-				e := &dataobj.TagEndpoint{
+				e := &ecache.TagEndpoint{
 					Ip:       host.Ip,
 					HostName: host.HostName,
 					EnvCode:  host.EnvCode,
@@ -108,23 +110,23 @@ func InitSrvTagEndpoint() error {
 					pms = append(pms, e)
 				}
 			}
-			pmKey := dataobj.BuildKey(dataobj.EndpointKeyPM, nodeStr)
+			pmKey := ecache.RedisSrvTagKey(meicai.EndpointKeyPM, nodeStr)
 			if err = ecache.SetEndpointForRedis(pmKey, pms); err != nil {
 				return err
 			}
-			dockerKey := dataobj.BuildKey(dataobj.EndpointKeyDocker, nodeStr)
+			dockerKey := ecache.RedisSrvTagKey(meicai.EndpointKeyDocker, nodeStr)
 			if err = ecache.SetEndpointForRedis(dockerKey, dockers); err != nil {
 				return err
 			}
 
 			// 网络
-			res, err = dataobj.GetTreeByPage(nodeStr, dataobj.CmdbSourceNet)
+			res, err = meicai.GetTreeResources(nodeStr, meicai.CmdbSourceNet)
 			if err != nil {
 				return err
 			}
-			networks := []*dataobj.TagEndpoint{}
+			networks := []*ecache.TagEndpoint{}
 			for _, net := range res.Networks {
-				e := &dataobj.TagEndpoint{
+				e := &ecache.TagEndpoint{
 					Ip:       net.ManageIp,
 					HostName: net.Name,
 					EnvCode:  net.EnvCode,
@@ -132,7 +134,7 @@ func InitSrvTagEndpoint() error {
 				}
 				networks = append(networks, e)
 			}
-			netKey := dataobj.BuildKey(dataobj.EndpointKeyNetwork, nodeStr)
+			netKey := ecache.RedisSrvTagKey(meicai.EndpointKeyNetwork, nodeStr)
 			if err = ecache.SetEndpointForRedis(netKey, networks); err != nil {
 				return err
 			}

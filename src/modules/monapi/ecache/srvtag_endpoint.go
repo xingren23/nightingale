@@ -1,22 +1,65 @@
 package ecache
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
+	"sync"
 
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
+
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/toolkits/pkg/logger"
 )
 
+const (
+	EndpointKeyPrefix  = "endpoint"
+	EndpointKeyDot     = "#"
+	EndpointKeyForLock = "hawkeye_endpoint_lock"
+)
+
+type TagEndpoint struct {
+	Ip       string `json:"ip"`
+	HostName string `json:"hostname"`
+	EnvCode  string `json:"envCode"`
+	Endpoint string `json:"endpoint"`
+}
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
+
+func RedisSrvTagKey(srvType, srvTag string) string {
+	ret := bufferPool.Get().(*bytes.Buffer)
+	ret.Reset()
+	defer bufferPool.Put(ret)
+
+	ret.WriteString(EndpointKeyPrefix)
+	ret.WriteString(EndpointKeyDot)
+	ret.WriteString(srvType)
+	ret.WriteString(EndpointKeyDot)
+	ret.WriteString(srvTag)
+	return ret.String()
+}
+
+func SplitRedisKey(key string) (string, string) {
+	if arr := strings.Split(key, EndpointKeyDot); len(arr) != 0 {
+		return arr[1], arr[2] // srvType, srvTag
+	}
+	return "", ""
+}
+
 // 服务树节点串 + 资源类型 -> endpoint列表
-func GetEndpointKeysFromRedis() ([]string, error) {
+func ScanRedisEndpointKeys() ([]string, error) {
 	ret := []string{}
 	var cursor int
 	batch := 20
 	for {
-		key := fmt.Sprintf("%s%s*", dataobj.EndpointKeyPrefix, dataobj.EndpointKeyDot)
+		key := fmt.Sprintf("%s%s*", EndpointKeyPrefix, EndpointKeyDot)
 		data, err := redisc.SCAN(cursor, key, batch)
 		if err != nil {
 			return ret, nil
@@ -37,9 +80,9 @@ func GetEndpointKeysFromRedis() ([]string, error) {
 	return ret, nil
 }
 
-func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, error) {
-	ret := []*dataobj.TagEndpoint{}
-	key := dataobj.BuildKey(srvType, srvTag)
+func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
+	ret := []*TagEndpoint{}
+	key := RedisSrvTagKey(srvType, srvTag)
 	bs, err := redisc.SMEMBERS(key)
 	if err != nil {
 		return ret, err
@@ -48,28 +91,28 @@ func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, 
 		logger.Debugf("key [%s] not in redis cache.", key)
 		// 不存在直接调用服务树接口
 		switch srvType {
-		case dataobj.EndpointKeyDocker:
+		case meicai.EndpointKeyDocker:
 			fallthrough
-		case dataobj.EndpointKeyPM:
-			res, err := dataobj.GetTreeByPage(srvTag, dataobj.CmdbSourceHost)
+		case meicai.EndpointKeyPM:
+			res, err := meicai.GetTreeResources(srvTag, meicai.CmdbSourceHost)
 			if err != nil {
 				return ret, err
 			}
 			for _, h := range res.Hosts {
-				tagEndpoint := &dataobj.TagEndpoint{
+				tagEndpoint := &TagEndpoint{
 					Ip:       h.Ip,
 					HostName: h.HostName,
 					EnvCode:  h.EnvCode,
 				}
 				ret = append(ret, tagEndpoint)
 			}
-		case dataobj.EndpointKeyNetwork:
-			res, err := dataobj.GetTreeByPage(srvTag, dataobj.EndpointKeyNetwork)
+		case meicai.EndpointKeyNetwork:
+			res, err := meicai.GetTreeResources(srvTag, meicai.EndpointKeyNetwork)
 			if err != nil {
 				return ret, err
 			}
 			for _, n := range res.Networks {
-				tagEndpoint := &dataobj.TagEndpoint{
+				tagEndpoint := &TagEndpoint{
 					Ip:       n.ManageIp,
 					HostName: n.Name,
 					EnvCode:  n.EnvCode,
@@ -79,7 +122,7 @@ func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, 
 		}
 	}
 	for _, b := range bs {
-		var te dataobj.TagEndpoint
+		var te TagEndpoint
 		err := json.Unmarshal(b, &te)
 		if err != nil {
 			return ret, err
@@ -89,7 +132,7 @@ func GetEndpointByKeyFromRedis(srvType, srvTag string) ([]*dataobj.TagEndpoint, 
 	return ret, nil
 }
 
-func SetEndpointForRedis(key string, endpoints []*dataobj.TagEndpoint) error {
+func SetEndpointForRedis(key string, endpoints []*TagEndpoint) error {
 	batch := 10
 	size := len(endpoints)
 	n := size/batch + 1
@@ -121,16 +164,16 @@ func SetEndpointForRedis(key string, endpoints []*dataobj.TagEndpoint) error {
 }
 
 func SetEndpointLock() (bool, error) {
-	return redisc.SETNX(dataobj.EndpointKeyForLock, "1", 60*60)
+	return redisc.SETNX(EndpointKeyForLock, "1", 60*60)
 }
 
 func SetEndpointUnLock() {
-	if ret := redisc.GET(dataobj.EndpointKeyForLock); ret != 1 {
+	if ret := redisc.GET(EndpointKeyForLock); ret != 1 {
 		logger.Info("%s key is not exists")
 		return
 	}
 
-	if err := redisc.DelKey(dataobj.EndpointKeyForLock); err != nil {
+	if err := redisc.DelKey(EndpointKeyForLock); err != nil {
 		logger.Errorf("unlock EndpointKeyForLock key error %v", err)
 	}
 }
