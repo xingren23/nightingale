@@ -10,8 +10,6 @@ type SrvTreeCacheMap struct {
 	Data map[int64]string
 }
 
-var SrvTreeCache *SrvTreeCacheMap
-
 func NewSrvTreeCache() *SrvTreeCacheMap {
 	return &SrvTreeCacheMap{
 		Data: make(map[int64]string),

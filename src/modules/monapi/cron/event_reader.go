@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/meicai"
 
 	"github.com/garyburd/redigo/redis"
@@ -80,7 +79,7 @@ func popEvent(queues []interface{}) (*model.Event, bool) {
 
 	// 如果nid和endpoint的对应关系不正确，直接丢弃该event
 	// 可能endpoint挪了节点
-	endpoint, exists := ecache.EndpointCache.Get(event.Endpoint)
+	endpoint, exists := mcache.EndpointCache.Get(event.Endpoint)
 	if !exists || endpoint == nil {
 		logger.Errorf("endpoint[%s] not found, event: %+v", event.Endpoint, event)
 		return nil, false

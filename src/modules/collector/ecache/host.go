@@ -3,30 +3,30 @@ package ecache
 import (
 	"sync"
 
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 type HostCacheMap struct {
 	sync.RWMutex
-	Data map[string]*dataobj.CmdbHost
+	Data map[string]*meicai.CmdbHost
 }
 
 var HostCache *HostCacheMap
 
 func NewHostCache() *HostCacheMap {
 	return &HostCacheMap{
-		Data: map[string]*dataobj.CmdbHost{},
+		Data: map[string]*meicai.CmdbHost{},
 	}
 }
 
-func (this *HostCacheMap) GetByIp(ip string) (*dataobj.CmdbHost, bool) {
+func (this *HostCacheMap) GetByIp(ip string) (*meicai.CmdbHost, bool) {
 	this.RLock()
 	defer this.RUnlock()
 	value, exists := this.Data[ip]
 	return value, exists
 }
 
-func (this *HostCacheMap) SetAll(vals map[string]*dataobj.CmdbHost) {
+func (this *HostCacheMap) SetAll(vals map[string]*meicai.CmdbHost) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
