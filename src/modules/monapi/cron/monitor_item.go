@@ -2,11 +2,12 @@ package cron
 
 import (
 	"fmt"
-	"github.com/didi/nightingale/src/model"
+	"time"
+
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/toolkits/pkg/logger"
-	"time"
 )
 
 func SyncMonitorItemLoop() {
@@ -25,12 +26,12 @@ func SyncMonitorItemLoop() {
 }
 
 func SyncMonitorItem() error {
-	items, err := model.MonitorItemAll()
+	items, err := meicai.MonitorItemAll()
 	if err != nil {
 		return fmt.Errorf("get monitorItem fail: %v", err)
 	}
 
-	m := make(map[string]*model.MonitorItem)
+	m := make(map[string]*meicai.MonitorItem)
 	size := len(items)
 	for i := 0; i < size; i++ {
 		m[items[i].Metric] = items[i]

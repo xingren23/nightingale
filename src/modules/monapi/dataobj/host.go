@@ -3,6 +3,7 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
@@ -49,7 +50,7 @@ func getHosts(url string, pageNo, pageSize int) (*CmdbHostPageResult, error) {
 // 获取实例
 func GetHostByPage() ([]*CmdbHost, error) {
 	res := []*CmdbHost{}
-	url := config.Get().Api.Ops + "/host/search"
+	url := config.Get().Api.OpsAddr + "/host/search"
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999

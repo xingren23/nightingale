@@ -2,12 +2,80 @@ package model
 
 import (
 	"fmt"
-	"github.com/didi/nightingale/src/modules/monapi/config"
-	"github.com/toolkits/pkg/errors"
-	"github.com/toolkits/pkg/net/httplib"
-	"strings"
-	"time"
 )
+
+func (t *Team) ModifyHawkeye(ident, name string, mgmt int, admins, members []int64) error {
+	adminIds, err := safeUserIds(admins)
+	if err != nil {
+		return err
+	}
+
+	memberIds, err := safeUserIds(members)
+	if err != nil {
+		return err
+	}
+
+	if len(adminIds) == 0 && len(memberIds) == 0 {
+		return fmt.Errorf("no invalid memeber ids")
+	}
+
+	if mgmt == 1 && len(adminIds) == 0 {
+		return fmt.Errorf("arg[admins] is necessary")
+	}
+
+	// 如果ident有变化，就要检查是否有重名
+	if ident != t.Ident {
+		cnt, err := DB["uic"].Where("ident = ? and nid = ? and id <> ?", ident, t.Nid, t.Id).Count(new(Team))
+		if err != nil {
+			return err
+		}
+
+		if cnt > 0 {
+			return fmt.Errorf("ident[%s] already exists", ident)
+		}
+	}
+
+	t.Ident = ident
+	t.Name = name
+	t.Mgmt = mgmt
+
+	if err = t.CheckFields(); err != nil {
+		return err
+	}
+
+	session := DB["uic"].NewSession()
+	defer session.Close()
+
+	if err = session.Begin(); err != nil {
+		return err
+	}
+
+	if _, err = session.Where("id=?", t.Id).Cols("ident", "name", "mgmt").Update(t); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	if _, err = session.Exec("DELETE FROM team_user WHERE team_id=?", t.Id); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	for i := 0; i < len(adminIds); i++ {
+		if err = teamUserBind(session, t.Id, adminIds[i], 1); err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+
+	for i := 0; i < len(memberIds); i++ {
+		if err = teamUserBind(session, t.Id, memberIds[i], 0); err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+
+	return session.Commit()
+}
 
 func TeamHawkeyeAdd(ident, name string, mgmt int, members []int64, nid int64) error {
 	memberIds, err := safeUserIds(members)
@@ -59,60 +127,6 @@ func TeamHawkeyeAdd(ident, name string, mgmt int, members []int64, nid int64) er
 	}
 
 	return session.Commit()
-}
-
-func SaveSSOUser(userNames []string) ([]int64, error) {
-	cnt := len(userNames)
-	ret := make([]int64, 0, cnt)
-
-	for _, userName := range userNames {
-		user, err := UserGet("username", userName)
-		if err != nil {
-			return nil, err
-		}
-
-		if user == nil {
-			url := config.Get().Api.SSO + config.SSO_SEARCH_USER
-
-			m := map[string]string{
-				"email": userName,
-			}
-
-			var result Result
-			err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(3 * time.Second).ToJSON(&result)
-			if err != nil {
-				return nil, err
-			}
-
-			if result.AuthUser == nil {
-				return nil, err
-			}
-
-			if len(result.AuthUser) == 0 {
-				errors.Bomb("用户[%v]不存在: %v", userName)
-			}
-
-			authUser := result.AuthUser[0]
-			if authUser.Status == "0" {
-				errors.Bomb("用户[%v]为禁用状态: %v", userName)
-			}
-
-			user = &User{
-				Username: strings.Split(authUser.Email, "@")[0],
-				Password: "",
-				Dispname: authUser.Name,
-				Phone:    authUser.Phone,
-				Email:    authUser.Email,
-				IsRoot:   1,
-			}
-
-			user.Save()
-		}
-
-		ret = append(ret, user.Id)
-	}
-
-	return ret, nil
 }
 
 func TeamHawkeyeTotal(nids []int64, ids []int64) (int64, error) {

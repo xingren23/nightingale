@@ -72,7 +72,7 @@ func (mc *Maskconf) FillEndpoints() error {
 }
 
 func MaskconfGets(nodeId int64) ([]Maskconf, error) {
-	node, err := GetNodeById(nodeId)
+	node, err := NodeGet("id", nodeId)
 	if err != nil {
 		return nil, err
 	}

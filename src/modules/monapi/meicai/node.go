@@ -1,25 +1,27 @@
-package model
+package meicai
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/didi/nightingale/src/model"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
-	"strconv"
-	"time"
 )
 
-func GetNodeById(nid int64) (*Node, error) {
-	url := config.Get().Api.Ops + config.OPS_GET_SRVTREE + strconv.FormatInt(nid, 10)
+func GetNodeById(nid int64) (*model.Node, error) {
+	// fixme: url 路径拼接，配置项 要不要带 "/"?
+	url := config.Get().Api.OpsAddr + config.OPS_GET_SRVTREE + strconv.FormatInt(nid, 10)
 
 	var result SrvResultDetail
+	// fixme: 外部请求输出info日志，以及慢请求日志
 	err := httplib.Get(url).SetTimeout(3 * time.Second).ToJSON(&result)
 	if err != nil {
 		err = fmt.Errorf("request srvTree detail fail: nid:%v, err:%v", nid, err)
 		logger.Error(err)
-		return nil, err
-	}
-	if err != nil {
 		return nil, err
 	}
 
@@ -33,7 +35,7 @@ func GetNodeById(nid int64) (*Node, error) {
 		return nil, fmt.Errorf("request srvTree detail is nil: nid:%v", nid)
 	}
 
-	return &Node{
+	return &model.Node{
 		Id:   result.SrvTree.Id,
 		Pid:  0,
 		Name: result.SrvTree.Name,
@@ -46,13 +48,14 @@ func GetNodeById(nid int64) (*Node, error) {
 
 //根据服务树id获取子孙节点
 func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
-	url := config.Get().Api.Ops + config.OPS_SRVTREE_DESCENDANTS
+	url := config.Get().Api.OpsAddr + config.OPS_SRVTREE_DESCENDANTS
 
 	m := map[string]int64{
 		"currentNodeId": nid,
 	}
 
 	var result SrvResult
+	// fixme: 外部请求输出info日志，以及慢请求日志
 	err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(3 * time.Second).ToJSON(&result)
 	if err != nil {
 		err = fmt.Errorf("request srvTree descendants fail: nid:%v, err:%v", nid, err)

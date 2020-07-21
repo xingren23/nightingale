@@ -552,8 +552,8 @@ func AlertUpgradeUnMarshal(str string) (AlertUpgrade, error) {
 	return obj, err
 }
 
-func StraCountByNidAndName(nid, id int64, name string) (int64, error) {
+func StraExist(nid, id int64, name string) (bool, error) {
 	session := DB["mon"].Where("nid = ? and name = ? and id != ?", nid, name, id)
 	total, err := session.Count(new(Stra))
-	return total, err
+	return total > 0, err
 }

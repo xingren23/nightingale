@@ -1,14 +1,16 @@
 package cron
 
 import (
+	"time"
+
 	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/toolkits/pkg/logger"
-	"time"
 )
 
 func SyncCmdbResourceLoop() {
+	// TODO : sync interval config
 	duration := time.Second * time.Duration(60)
 	for {
 		time.Sleep(duration)

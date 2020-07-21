@@ -1,11 +1,13 @@
 package routes
 
 import (
-	"github.com/didi/nightingale/src/model"
-	"github.com/gin-gonic/gin"
-	"github.com/toolkits/pkg/errors"
 	"strconv"
 	"strings"
+
+	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/gin-gonic/gin"
+	"github.com/toolkits/pkg/errors"
 )
 
 func teamHawkeyeListGet(c *gin.Context) {
@@ -17,7 +19,7 @@ func teamHawkeyeListGet(c *gin.Context) {
 	m := make(map[int64]string)
 
 	if edit == 1 {
-		srvTrees, err := model.SrvTreeDescendants(nid)
+		srvTrees, err := meicai.SrvTreeDescendants(nid)
 		if err != nil {
 
 		}
@@ -28,7 +30,7 @@ func teamHawkeyeListGet(c *gin.Context) {
 		}
 	} else {
 		nids = append(nids, nid)
-		srvTree, err := model.GetNodeById(nid)
+		srvTree, err := meicai.GetNodeById(nid)
 		if err != nil {
 
 		}
@@ -75,7 +77,7 @@ type teamHawkeyeForm struct {
 func teamHawkeyeAddPost(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
-	userIds, err := model.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("teamHawkeyeAddPost SaveSSOUser err,userNames:%v", f.UserNames)
 	}
@@ -88,7 +90,7 @@ func teamHawkeyePut(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	userIds, err := model.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.UserNames)
 	}

@@ -138,6 +138,8 @@ github.com/spf13/viper
 github.com/stretchr/testify/assert
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
+# github.com/toolkits/net v0.0.0-20160910085801-3f39ab6fe3ce
+github.com/toolkits/net
 # github.com/toolkits/pkg v1.1.1
 github.com/toolkits/pkg/concurrent/semaphore
 github.com/toolkits/pkg/consistent

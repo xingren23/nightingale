@@ -3,6 +3,7 @@ package dataobj
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
@@ -53,7 +54,7 @@ func getInstances(url string, pageNo, pageSize int) (*InstPageResult, error) {
 // 获取实例
 func GetInstByPage() ([]*Instance, error) {
 	res := []*Instance{}
-	url := config.Get().Api.Ops + "/instance/search"
+	url := config.Get().Api.OpsAddr + "/instance/search"
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999

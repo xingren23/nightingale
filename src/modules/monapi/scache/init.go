@@ -2,12 +2,14 @@ package scache
 
 import (
 	"fmt"
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
-	"github.com/toolkits/pkg/container/set"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/ecache"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/toolkits/pkg/container/set"
 
 	"github.com/toolkits/pkg/logger"
 
@@ -190,7 +192,7 @@ func syncCollects() {
 func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 	leafIds := []int64{}
 	idsMap := make(map[int64]bool)
-	node, err := model.GetNodeById(nid)
+	node, err := meicai.GetNodeById(nid)
 	if err != nil {
 		return leafIds, err
 	}
@@ -275,7 +277,7 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 	return endpointList, nil
 }
 
-func BuildSrvType(item *model.MonitorItem) string {
+func BuildSrvType(item *meicai.MonitorItem) string {
 	if item.EndpointType == "NETWORK" {
 		return dataobj.EndpointKeyNetwork
 	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {

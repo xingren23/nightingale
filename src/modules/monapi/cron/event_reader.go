@@ -2,8 +2,10 @@ package cron
 
 import (
 	"encoding/json"
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/ecache"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/toolkits/pkg/logger"
@@ -86,7 +88,7 @@ func popEvent(queues []interface{}) (*model.Event, bool) {
 
 	nodePath := ""
 
-	node, err := model.GetNodeById(stra.Nid)
+	node, err := meicai.GetNodeById(stra.Nid)
 	if err != nil {
 		logger.Errorf("get node failed, node id: %v, event: %+v, err: %v", stra.Nid, event, err)
 		return nil, true

@@ -9,6 +9,7 @@ import (
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 func urlParamStr(c *gin.Context, field string) string {
@@ -195,7 +196,7 @@ func mustUser(id int64) *model.User {
 }
 
 func mustNode(id int64) *model.Node {
-	node, err := model.GetNodeById(id)
+	node, err := meicai.GetNodeById(id)
 	if err != nil {
 		errors.Bomb("cannot retrieve node[%d]: %v", id, err)
 	}

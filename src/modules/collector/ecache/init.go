@@ -2,20 +2,24 @@ package ecache
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
+	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
+
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
-	"log"
-	"math/rand"
-	"time"
 )
 
 var Resource ResourceSection
 
 func Init(res ResourceSection) {
 	Resource = res
+	// fixme : 缓存构建失败 collector 能不能正常启动 ？
 	AppCache = NewAppCache()
 	HostCache = NewHostCache()
 	InstanceCache = NewInstanceCache()
@@ -52,6 +56,7 @@ func syncResource() error {
 }
 
 func buildResourceCache() error {
+	// fixme : err 输出日志
 	appResp, err := getApps()
 	if err != nil {
 		return err
@@ -102,7 +107,7 @@ func buildResourceCache() error {
 	}
 	InstanceCache.SetAll(instanceMap)
 
-	monitorItemMap := make(map[string]*model.MonitorItem)
+	monitorItemMap := make(map[string]*meicai.MonitorItem)
 	for _, monitorItem := range monitorItemResp.Dat {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}
@@ -247,8 +252,8 @@ type NetworkResp struct {
 	Err string             `json:"err"`
 }
 type MonitorItemResp struct {
-	Dat map[string]*model.MonitorItem `json:"dat"`
-	Err string                        `json:"err"`
+	Dat map[string]*meicai.MonitorItem `json:"dat"`
+	Err string                         `json:"err"`
 }
 
 type GarbageFilterResp struct {
