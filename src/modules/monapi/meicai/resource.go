@@ -53,8 +53,7 @@ func getAppByPage(url string, pageNo, pageSize int) (*AppPageResult, error) {
 // 获取应用
 func GetAllApps() ([]*App, error) {
 	res := []*App{}
-	// fixme: url 统一管理
-	url := config.Get().Api.OpsAddr + "/app/search"
+	url := config.Get().Api.OpsAddr + config.OpsAppSearchPath
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999
@@ -116,7 +115,7 @@ func getHostByPage(url string, pageNo, pageSize int) (*CmdbHostPageResult, error
 // 获取主机
 func GetAllHosts() ([]*CmdbHost, error) {
 	res := []*CmdbHost{}
-	url := config.Get().Api.OpsAddr + "/host/search"
+	url := config.Get().Api.OpsAddr + config.OpsHostSearchPath
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999
@@ -182,7 +181,7 @@ func getInstanceByPage(url string, pageNo, pageSize int) (*InstPageResult, error
 // 获取实例
 func GetAllInstances() ([]*Instance, error) {
 	res := []*Instance{}
-	url := config.Get().Api.OpsAddr + "/instance/search"
+	url := config.Get().Api.OpsAddr + config.OpsInstanceSearchPath
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999
@@ -241,7 +240,7 @@ func getNetworkByPage(url string, pageNo, pageSize int) (*NetworkSearchResult, e
 // 获取网络设备
 func GetAllNetworks() ([]*Network, error) {
 	res := []*Network{}
-	url := config.Get().Api.OpsAddr + "/network_device/search"
+	url := config.Get().Api.OpsAddr + config.OpsNetworkSearchPath
 	pageNo := 1
 	pageSize := 100
 	pageTotal := 999

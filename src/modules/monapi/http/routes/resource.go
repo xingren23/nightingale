@@ -1,9 +1,9 @@
 package routes
 
 import (
+	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
 	"github.com/didi/nightingale/src/modules/monapi/scache"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
@@ -25,9 +25,9 @@ func resourcePost(c *gin.Context) {
 
 	srvTypes := make([]string, 0)
 	if f.Metric == "" {
-		srvTypes = append(srvTypes, meicai.EndpointKeyNetwork)
-		srvTypes = append(srvTypes, meicai.EndpointKeyPM)
-		srvTypes = append(srvTypes, meicai.EndpointKeyDocker)
+		srvTypes = append(srvTypes, config.EndpointKeyNetwork)
+		srvTypes = append(srvTypes, config.EndpointKeyPM)
+		srvTypes = append(srvTypes, config.EndpointKeyDocker)
 	} else {
 		//获取MonitorItem的类型
 		item, exists := mcache.MonitorItemCache.Get(f.Metric)
@@ -77,13 +77,13 @@ func monitorItemGet(c *gin.Context) {
 }
 
 func getType(srvType string) string {
-	if srvType == meicai.EndpointKeyDocker {
+	if srvType == config.EndpointKeyDocker {
 		return "容器"
 	}
-	if srvType == meicai.EndpointKeyPM {
+	if srvType == config.EndpointKeyPM {
 		return "物理机"
 	}
-	if srvType == meicai.EndpointKeyNetwork {
+	if srvType == config.EndpointKeyNetwork {
 		return "网络设备"
 	}
 

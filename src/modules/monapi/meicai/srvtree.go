@@ -50,7 +50,7 @@ type CommonResult struct {
 
 // 获取整棵服务树
 func GetSrvTree() ([]*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/tree", config.Get().Api.OpsAddr)
+	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsSrvtreeRootPath)
 	data, err := RequestByPost(url, map[string]interface{}{})
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func GetSrvTree() ([]*SrvTreeNode, error) {
 
 // 获取服务树节点信息
 func GetTreeById(nid int64) (*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/%d", config.Get().Api.OpsAddr, nid)
+	url := fmt.Sprintf("%s%s/%d", config.Get().Api.OpsAddr, config.OpsSrvtreePath, nid)
 	data, err := RequestByGet(url)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 		Insts:    []*Instance{},
 		Hosts:    []*CmdbHost{},
 	}
-	url := config.Get().Api.OpsAddr + "/api/resource/query"
+	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsApiResourcerPath)
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,
@@ -111,7 +111,7 @@ func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 
 		var pageRet Pagination
 		switch cmdbSourceType {
-		case CmdbSourceHost:
+		case config.CmdbSourceHost:
 			var res CmdbHostResult
 			err = json.Unmarshal(data, &res)
 			if err != nil {
@@ -120,7 +120,7 @@ func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 			}
 			pageRet = res.Result.Pagination
 			commonRet.Hosts = append(commonRet.Hosts, res.Result.Hosts...)
-		case CmdbSourceNet:
+		case config.CmdbSourceNet:
 			var res NetworkResult
 			err = json.Unmarshal(data, &res)
 			if err != nil {

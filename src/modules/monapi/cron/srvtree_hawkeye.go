@@ -3,6 +3,8 @@ package cron
 import (
 	"time"
 
+	"github.com/didi/nightingale/src/modules/monapi/config"
+
 	"github.com/didi/nightingale/src/modules/monapi/meicai"
 
 	"github.com/toolkits/pkg/logger"
@@ -91,7 +93,7 @@ func InitSrvTagEndpoint() error {
 		// 遍历节点
 		for _, nodeStr := range nodeMap {
 			// 主机资源
-			res, err := meicai.GetTreeResources(nodeStr, meicai.CmdbSourceHost)
+			res, err := meicai.GetTreeResources(nodeStr, config.CmdbSourceHost)
 			if err != nil {
 				return err
 			}
@@ -110,17 +112,17 @@ func InitSrvTagEndpoint() error {
 					pms = append(pms, e)
 				}
 			}
-			pmKey := ecache.RedisSrvTagKey(meicai.EndpointKeyPM, nodeStr)
+			pmKey := ecache.RedisSrvTagKey(config.EndpointKeyPM, nodeStr)
 			if err = ecache.SetEndpointForRedis(pmKey, pms); err != nil {
 				return err
 			}
-			dockerKey := ecache.RedisSrvTagKey(meicai.EndpointKeyDocker, nodeStr)
+			dockerKey := ecache.RedisSrvTagKey(config.EndpointKeyDocker, nodeStr)
 			if err = ecache.SetEndpointForRedis(dockerKey, dockers); err != nil {
 				return err
 			}
 
 			// 网络
-			res, err = meicai.GetTreeResources(nodeStr, meicai.CmdbSourceNet)
+			res, err = meicai.GetTreeResources(nodeStr, config.CmdbSourceNet)
 			if err != nil {
 				return err
 			}
@@ -134,7 +136,7 @@ func InitSrvTagEndpoint() error {
 				}
 				networks = append(networks, e)
 			}
-			netKey := ecache.RedisSrvTagKey(meicai.EndpointKeyNetwork, nodeStr)
+			netKey := ecache.RedisSrvTagKey(config.EndpointKeyNetwork, nodeStr)
 			if err = ecache.SetEndpointForRedis(netKey, networks); err != nil {
 				return err
 			}
