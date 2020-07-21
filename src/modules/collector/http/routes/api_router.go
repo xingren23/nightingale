@@ -49,8 +49,11 @@ func pushData2Falcon(c *gin.Context) {
 
 	var recvMetricValues []*dataobj.MetricValue
 	errors.Dangerous(c.ShouldBindJSON(&recvMetricValues))
-
+	// 发送falcon
 	falcon.Push(recvMetricValues)
+	// 发送transfer
+	err := funcs.Push(recvMetricValues)
+	render.Message(c, err)
 }
 
 func getStrategy(c *gin.Context) {

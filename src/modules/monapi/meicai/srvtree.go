@@ -1,8 +1,8 @@
 package meicai
 
 import (
-	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
@@ -50,6 +50,7 @@ type CommonResult struct {
 
 // 获取整棵服务树
 func GetSrvTree() ([]*SrvTreeNode, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsSrvtreeRootPath)
 	data, err := RequestByPost(url, map[string]interface{}{})
 	if err != nil {
@@ -67,6 +68,7 @@ func GetSrvTree() ([]*SrvTreeNode, error) {
 
 // 获取服务树节点信息
 func GetTreeById(nid int64) (*SrvTreeNode, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	url := fmt.Sprintf("%s%s/%d", config.Get().Api.OpsAddr, config.OpsSrvtreePath, nid)
 	data, err := RequestByGet(url)
 	if err != nil {
@@ -84,6 +86,7 @@ func GetTreeById(nid int64) (*SrvTreeNode, error) {
 
 // 获取服务树资源
 func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	commonRet := &CommonResult{
 		Apps:     []*App{},
 		Networks: []*Network{},
@@ -118,6 +121,10 @@ func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 				logger.Errorf("Error: Parse CmdbHostResult JSON %v.", err)
 				return nil, err
 			}
+			if res.Result == nil {
+				logger.Error("Error: get tree resource host result nil")
+				return nil, err
+			}
 			pageRet = res.Result.Pagination
 			commonRet.Hosts = append(commonRet.Hosts, res.Result.Hosts...)
 		case config.CmdbSourceNet:
@@ -125,6 +132,10 @@ func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 			err = json.Unmarshal(data, &res)
 			if err != nil {
 				logger.Errorf("Error: Parse NetworkResult JSON %v.", err)
+				return nil, err
+			}
+			if res.Result == nil {
+				logger.Error("Error: get tree resource network result nil")
 				return nil, err
 			}
 			pageRet = res.Result.Pagination

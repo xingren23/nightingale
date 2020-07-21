@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+const (
+	EndpointTypeInstance = "INSTANCE"
+	EndpointTypeHost     = "HOST"
+	EndpointTypeNetwork  = "NETWORK"
+)
+
 // TODO : 去掉不用的字段
 type MonitorItem struct {
 	Id           int64     `json:"id"`

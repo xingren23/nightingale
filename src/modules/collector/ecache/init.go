@@ -22,6 +22,7 @@ func Init(res ResourceSection) {
 	AppCache = NewAppCache()
 	HostCache = NewHostCache()
 	InstanceCache = NewInstanceCache()
+	IpInstsCache = NewIpInstsCache()
 	NetworkCache = NewNetworkCache()
 	MonitorItemCache = NewMonitorItemCache()
 	GarbageFilterCache = NewGarbageFilterCache()
@@ -101,10 +102,24 @@ func buildResourceCache() error {
 	NetworkCache.SetAll(networkMap)
 
 	instanceMap := make(map[string]*meicai.Instance)
+	ipInstsMap := make(map[string][]*meicai.Instance)
 	for _, instance := range instanceResp.Dat {
 		instanceMap[instance.UUID] = instance
+		app, ok := AppCache.GetById(instance.AppId)
+		if !ok {
+			continue
+		}
+		if app.Basic {
+			// 基础服务排除
+			continue
+		}
+		if _, ok := ipInstsMap[instance.IP]; !ok {
+			ipInstsMap[instance.IP] = []*meicai.Instance{}
+		}
+		ipInstsMap[instance.IP] = append(ipInstsMap[instance.IP], instance)
 	}
 	InstanceCache.SetAll(instanceMap)
+	IpInstsCache.SetAll(ipInstsMap)
 
 	monitorItemMap := make(map[string]*model.MonitorItem)
 	for _, monitorItem := range monitorItemResp.Dat {

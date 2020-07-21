@@ -76,70 +76,75 @@ func InitSrvTagEndpoint() error {
 	start := time.Now()
 	// 比较缓存与服务树中节点数量
 	nodeMap := ecache.SrvTreeCache.GetAll()
+	for {
+		// 加锁
+		ok, err := ecache.SetEndpointLock()
+		if ok {
+			break
+		}
+		logger.Warningf("endpoint lock is exists or error %v,sleep 2s", err)
+		time.Sleep(2 * time.Second)
+	}
+	defer ecache.SetEndpointUnLock()
+
 	keys, err := ecache.ScanRedisEndpointKeys()
 	if err != nil {
 		return err
 	}
 	logger.Infof("srvTree size %d, redis cache size %d", len(nodeMap), len(keys))
-	// redis缓存数量少于90%
-	if len(keys) < len(nodeMap)/10*80 {
-		// 加锁
-		if ok, err := ecache.SetEndpointLock(); !ok || err != nil {
-			logger.Infof("endpoint lock is exists or error %v", err)
-			return nil
+	if len(keys) > 0 {
+		return nil
+	}
+	logger.Info("start init srvTag_endpoint.")
+	// 遍历节点
+	for _, nodeStr := range nodeMap {
+		// 主机资源
+		res, err := meicai.GetTreeResources(nodeStr, config.CmdbSourceHost)
+		if err != nil {
+			return err
 		}
-		defer ecache.SetEndpointUnLock()
-		logger.Info("start init srvTag_endpoint.")
-		// 遍历节点
-		for _, nodeStr := range nodeMap {
-			// 主机资源
-			res, err := meicai.GetTreeResources(nodeStr, config.CmdbSourceHost)
-			if err != nil {
-				return err
+		pms := []*ecache.TagEndpoint{}
+		dockers := []*ecache.TagEndpoint{}
+		for _, host := range res.Hosts {
+			e := &ecache.TagEndpoint{
+				Ip:       host.Ip,
+				HostName: host.HostName,
+				EnvCode:  host.EnvCode,
+				Endpoint: host.Ip,
 			}
-			pms := []*ecache.TagEndpoint{}
-			dockers := []*ecache.TagEndpoint{}
-			for _, host := range res.Hosts {
-				e := &ecache.TagEndpoint{
-					Ip:       host.Ip,
-					HostName: host.HostName,
-					EnvCode:  host.EnvCode,
-					Endpoint: host.Ip,
-				}
-				if host.Type == "DOCKER" {
-					dockers = append(dockers, e)
-				} else {
-					pms = append(pms, e)
-				}
+			if host.Type == "DOCKER" {
+				dockers = append(dockers, e)
+			} else {
+				pms = append(pms, e)
 			}
-			pmKey := ecache.RedisSrvTagKey(config.EndpointKeyPM, nodeStr)
-			if err = ecache.SetEndpointForRedis(pmKey, pms); err != nil {
-				return err
-			}
-			dockerKey := ecache.RedisSrvTagKey(config.EndpointKeyDocker, nodeStr)
-			if err = ecache.SetEndpointForRedis(dockerKey, dockers); err != nil {
-				return err
-			}
+		}
+		pmKey := ecache.RedisSrvTagKey(config.EndpointKeyPM, nodeStr)
+		if err = ecache.SetEndpointForRedis(pmKey, pms); err != nil {
+			return err
+		}
+		dockerKey := ecache.RedisSrvTagKey(config.EndpointKeyDocker, nodeStr)
+		if err = ecache.SetEndpointForRedis(dockerKey, dockers); err != nil {
+			return err
+		}
 
-			// 网络
-			res, err = meicai.GetTreeResources(nodeStr, config.CmdbSourceNet)
-			if err != nil {
-				return err
+		// 网络
+		res, err = meicai.GetTreeResources(nodeStr, config.CmdbSourceNet)
+		if err != nil {
+			return err
+		}
+		networks := []*ecache.TagEndpoint{}
+		for _, net := range res.Networks {
+			e := &ecache.TagEndpoint{
+				Ip:       net.ManageIp,
+				HostName: net.Name,
+				EnvCode:  net.EnvCode,
+				Endpoint: net.ManageIp,
 			}
-			networks := []*ecache.TagEndpoint{}
-			for _, net := range res.Networks {
-				e := &ecache.TagEndpoint{
-					Ip:       net.ManageIp,
-					HostName: net.Name,
-					EnvCode:  net.EnvCode,
-					Endpoint: net.ManageIp,
-				}
-				networks = append(networks, e)
-			}
-			netKey := ecache.RedisSrvTagKey(config.EndpointKeyNetwork, nodeStr)
-			if err = ecache.SetEndpointForRedis(netKey, networks); err != nil {
-				return err
-			}
+			networks = append(networks, e)
+		}
+		netKey := ecache.RedisSrvTagKey(config.EndpointKeyNetwork, nodeStr)
+		if err = ecache.SetEndpointForRedis(netKey, networks); err != nil {
+			return err
 		}
 	}
 	logger.Infof("init srvTag_endpoints redis cache elapsed %s ms", time.Since(start))
