@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/didi/nightingale/src/modules/monapi/config"
+
 	"github.com/didi/nightingale/src/modules/monapi/meicai"
 
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
@@ -91,10 +93,10 @@ func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
 		logger.Debugf("key [%s] not in redis cache.", key)
 		// 不存在直接调用服务树接口
 		switch srvType {
-		case meicai.EndpointKeyDocker:
+		case config.EndpointKeyDocker:
 			fallthrough
-		case meicai.EndpointKeyPM:
-			res, err := meicai.GetTreeResources(srvTag, meicai.CmdbSourceHost)
+		case config.EndpointKeyPM:
+			res, err := meicai.GetTreeResources(srvTag, config.CmdbSourceHost)
 			if err != nil {
 				return ret, err
 			}
@@ -106,8 +108,8 @@ func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
 				}
 				ret = append(ret, tagEndpoint)
 			}
-		case meicai.EndpointKeyNetwork:
-			res, err := meicai.GetTreeResources(srvTag, meicai.EndpointKeyNetwork)
+		case config.EndpointKeyNetwork:
+			res, err := meicai.GetTreeResources(srvTag, config.EndpointKeyNetwork)
 			if err != nil {
 				return ret, err
 			}

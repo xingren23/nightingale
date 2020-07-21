@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/didi/nightingale/src/modules/monapi/config"
+
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
@@ -95,7 +97,7 @@ func syncCollects() {
 
 	for _, p := range ports {
 
-		endpoints, err := GetEndpointsByNid(p.Nid, meicai.EndpointKeyPM)
+		endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -119,7 +121,7 @@ func syncCollects() {
 	}
 
 	for _, p := range procs {
-		endpoints, err := GetEndpointsByNid(p.Nid, meicai.EndpointKeyPM)
+		endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -144,7 +146,7 @@ func syncCollects() {
 	for _, l := range logConfigs {
 		l.Decode()
 
-		Endpoints, err := GetEndpointsByNid(l.Nid, meicai.EndpointKeyPM)
+		Endpoints, err := GetEndpointsByNid(l.Nid, config.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, l.Nid)
 			continue
@@ -168,7 +170,7 @@ func syncCollects() {
 
 	for _, p := range pluginConfigs {
 
-		Endpoints, err := GetEndpointsByNid(p.Nid, meicai.EndpointKeyPM)
+		Endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
 			continue
@@ -280,12 +282,12 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 
 func BuildSrvType(item *model.MonitorItem) string {
 	if item.EndpointType == "NETWORK" {
-		return meicai.EndpointKeyNetwork
+		return config.EndpointKeyNetwork
 	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {
 		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
-			return meicai.EndpointKeyDocker
+			return config.EndpointKeyDocker
 		} else {
-			return meicai.EndpointKeyPM
+			return config.EndpointKeyPM
 		}
 	}
 	return ""
