@@ -7,8 +7,6 @@ type MaskCacheMap struct {
 	Data map[string][]string
 }
 
-var MaskCache *MaskCacheMap
-
 func NewMaskCache() *MaskCacheMap {
 	return &MaskCacheMap{
 		Data: make(map[string][]string),

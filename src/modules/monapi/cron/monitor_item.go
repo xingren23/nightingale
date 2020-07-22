@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/didi/nightingale/src/model"
+
+	"github.com/didi/nightingale/src/modules/monapi/mcache"
+
 	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/toolkits/pkg/logger"
 )
@@ -26,17 +28,17 @@ func SyncMonitorItemLoop() {
 }
 
 func SyncMonitorItem() error {
-	items, err := meicai.MonitorItemAll()
+	items, err := model.MonitorItemAll()
 	if err != nil {
 		return fmt.Errorf("get monitorItem fail: %v", err)
 	}
 
-	m := make(map[string]*meicai.MonitorItem)
+	m := make(map[string]*model.MonitorItem)
 	size := len(items)
 	for i := 0; i < size; i++ {
 		m[items[i].Metric] = items[i]
 	}
 
-	ecache.MonitorItemCache.SetAll(m)
+	mcache.MonitorItemCache.SetAll(m)
 	return nil
 }

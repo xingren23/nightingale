@@ -1,8 +1,9 @@
 package routes
 
 import (
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
+	"github.com/didi/nightingale/src/modules/monapi/mcache"
 	"github.com/didi/nightingale/src/modules/monapi/scache"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
@@ -24,12 +25,12 @@ func resourcePost(c *gin.Context) {
 
 	srvTypes := make([]string, 0)
 	if f.Metric == "" {
-		srvTypes = append(srvTypes, dataobj.EndpointKeyNetwork)
-		srvTypes = append(srvTypes, dataobj.EndpointKeyPM)
-		srvTypes = append(srvTypes, dataobj.EndpointKeyDocker)
+		srvTypes = append(srvTypes, config.EndpointKeyNetwork)
+		srvTypes = append(srvTypes, config.EndpointKeyPM)
+		srvTypes = append(srvTypes, config.EndpointKeyDocker)
 	} else {
 		//获取MonitorItem的类型
-		item, exists := ecache.MonitorItemCache.Get(f.Metric)
+		item, exists := mcache.MonitorItemCache.Get(f.Metric)
 		if !exists {
 			errors.Bomb("MonitorItem is not exists: metric:%v", f.Metric)
 		}
@@ -43,7 +44,7 @@ func resourcePost(c *gin.Context) {
 
 	list := make([]data, 0)
 	for _, srvType := range srvTypes {
-		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, nodePath)
+		tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, nodePath)
 		if err != nil {
 			errors.Bomb("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
 		}
@@ -72,17 +73,17 @@ func networkGet(c *gin.Context) {
 }
 
 func monitorItemGet(c *gin.Context) {
-	renderData(c, ecache.MonitorItemCache.GetAll(), nil)
+	renderData(c, mcache.MonitorItemCache.GetAll(), nil)
 }
 
 func getType(srvType string) string {
-	if srvType == dataobj.EndpointKeyDocker {
+	if srvType == config.EndpointKeyDocker {
 		return "容器"
 	}
-	if srvType == dataobj.EndpointKeyPM {
+	if srvType == config.EndpointKeyPM {
 		return "物理机"
 	}
-	if srvType == dataobj.EndpointKeyNetwork {
+	if srvType == config.EndpointKeyNetwork {
 		return "网络设备"
 	}
 

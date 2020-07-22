@@ -1,8 +1,9 @@
 package ecache
 
 import (
-	"github.com/didi/nightingale/src/model"
 	"sync"
+
+	"github.com/didi/nightingale/src/model"
 )
 
 // endpoint -> endpoint信息
@@ -10,8 +11,6 @@ type EndpointCacheMap struct {
 	sync.RWMutex
 	Data map[string]*model.Endpoint
 }
-
-var EndpointCache *EndpointCacheMap
 
 func NewEndpointCache() *EndpointCacheMap {
 	return &EndpointCacheMap{

@@ -1,8 +1,8 @@
-package dataobj
+package meicai
 
 import (
-	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
@@ -50,7 +50,8 @@ type CommonResult struct {
 
 // 获取整棵服务树
 func GetSrvTree() ([]*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/tree", config.Get().Api.OpsAddr)
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsSrvtreeRootPath)
 	data, err := RequestByPost(url, map[string]interface{}{})
 	if err != nil {
 		return nil, err
@@ -67,7 +68,8 @@ func GetSrvTree() ([]*SrvTreeNode, error) {
 
 // 获取服务树节点信息
 func GetTreeById(nid int64) (*SrvTreeNode, error) {
-	url := fmt.Sprintf("%s/srv_tree/%d", config.Get().Api.OpsAddr, nid)
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	url := fmt.Sprintf("%s%s/%d", config.Get().Api.OpsAddr, config.OpsSrvtreePath, nid)
 	data, err := RequestByGet(url)
 	if err != nil {
 		return nil, err
@@ -83,14 +85,15 @@ func GetTreeById(nid int64) (*SrvTreeNode, error) {
 }
 
 // 获取服务树资源
-func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
+func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	commonRet := &CommonResult{
 		Apps:     []*App{},
 		Networks: []*Network{},
 		Insts:    []*Instance{},
 		Hosts:    []*CmdbHost{},
 	}
-	url := config.Get().Api.OpsAddr + "/api/resource/query"
+	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsApiResourcerPath)
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,
@@ -105,25 +108,34 @@ func GetTreeByPage(expr, cmdbSourceType string) (*CommonResult, error) {
 
 		data, err := RequestByPost(url, params)
 		if err != nil {
+			logger.Printf("%s", params)
 			return nil, err
 		}
 
 		var pageRet Pagination
 		switch cmdbSourceType {
-		case CmdbSourceHost:
+		case config.CmdbSourceHost:
 			var res CmdbHostResult
 			err = json.Unmarshal(data, &res)
 			if err != nil {
 				logger.Errorf("Error: Parse CmdbHostResult JSON %v.", err)
 				return nil, err
 			}
+			if res.Result == nil {
+				logger.Error("Error: get tree resource host result nil")
+				return nil, err
+			}
 			pageRet = res.Result.Pagination
 			commonRet.Hosts = append(commonRet.Hosts, res.Result.Hosts...)
-		case CmdbSourceNet:
+		case config.CmdbSourceNet:
 			var res NetworkResult
 			err = json.Unmarshal(data, &res)
 			if err != nil {
 				logger.Errorf("Error: Parse NetworkResult JSON %v.", err)
+				return nil, err
+			}
+			if res.Result == nil {
+				logger.Error("Error: get tree resource network result nil")
 				return nil, err
 			}
 			pageRet = res.Result.Pagination

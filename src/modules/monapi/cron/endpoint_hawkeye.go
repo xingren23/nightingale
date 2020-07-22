@@ -1,12 +1,12 @@
 package cron
 
 import (
+	"time"
+
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/dataobj"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/toolkits/pkg/logger"
-	"time"
 )
 
 func SyncEndpointsLoop() {
@@ -27,14 +27,14 @@ func SyncEndpointsLoop() {
 func SyncEndpoints() error {
 	start := time.Now()
 	endpointMap := make(map[string]*model.Endpoint)
-	keys, err := ecache.GetEndpointKeysFromRedis()
+	keys, err := ecache.ScanRedisEndpointKeys()
 	if err != nil {
 		return err
 	}
 	for _, key := range keys {
-		srvType, nodePath := dataobj.SplitKey(key)
+		srvType, nodePath := ecache.SplitRedisKey(key)
 		// 填充endpoint
-		tagEndpoints, err := ecache.GetEndpointByKeyFromRedis(srvType, nodePath)
+		tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, nodePath)
 		if err != nil {
 			return err
 		}

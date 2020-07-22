@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
-
 	"github.com/garyburd/redigo/redis"
 	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
+	"github.com/didi/nightingale/src/modules/monapi/meicai"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/didi/nightingale/src/toolkits/stats"
 )
