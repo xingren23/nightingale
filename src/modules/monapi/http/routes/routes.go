@@ -33,12 +33,13 @@ func Config(r *gin.Engine) {
 
 		nolog.GET("/stras/effective", effectiveStrasGet)
 		nolog.GET("/stras", strasAll)
+
 		nolog.GET("/app", appGet)
 		nolog.GET("/host", hostGet)
 		nolog.GET("/instance", instanceGet)
 		nolog.GET("/network", networkGet)
-		nolog.GET("/garbageFilter", GarbageFilterGet)
-		nolog.GET("/monitorItem", monitorItemGet)
+		nolog.GET("/garbage", GarbageFilterGet)
+		nolog.GET("/monitor_item", monitorItemGet)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())
@@ -58,10 +59,6 @@ func Config(r *gin.Engine) {
 		login.POST("/team", teamAddPost)
 		login.PUT("/team/:id", teamPut)
 		login.DELETE("/team/:id", teamDel)
-		//替换原始team接口
-		login.GET("/teamHawkeye", teamHawkeyeListGet)
-		login.POST("/teamHawkeye", teamHawkeyeAddPost)
-		login.PUT("/teamHawkeye/:id", teamHawkeyePut)
 
 		login.GET("/endpoint", endpointGets)
 		login.POST("/endpoint", endpointImport)
@@ -74,8 +71,6 @@ func Config(r *gin.Engine) {
 		login.GET("/tree", treeGet)
 		login.GET("/tree/search", treeSearchGet)
 
-		login.POST("/resource", resourcePost)
-
 		login.POST("/node", nodePost)
 		login.PUT("/node/:id/name", nodeNamePut)
 		login.DELETE("/node/:id", nodeDel)
@@ -85,8 +80,6 @@ func Config(r *gin.Engine) {
 		login.GET("/node/:id/maskconf", maskconfGets)
 		login.GET("/node/:id/screen", screenGets)
 		login.POST("/node/:id/screen", screenPost)
-		//屏蔽策略替换接口
-		login.GET("/node/:id/maskconf/hawkeye", maskconfGetsHawkeye)
 
 		login.GET("/nodes/search", nodeSearchGet)
 		login.GET("/nodes/leafids", nodeLeafIdsGet)
@@ -123,9 +116,6 @@ func Config(r *gin.Engine) {
 		login.GET("/event/his", eventHisGets)
 		login.GET("/event/his/:id", eventHisGetById)
 		login.POST("/event/curs/claim", eventCurClaim)
-		//替换原始事件相关接口
-		login.GET("/event/hawkeye/cur", eventCurGetsHawkeye)
-		login.GET("/event/hawkeye/his", eventHisGetsHawkeye)
 
 		login.POST("/collect", collectPost)
 		login.GET("/collect/list", collectsGet)
@@ -145,6 +135,21 @@ func Config(r *gin.Engine) {
 		login.DELETE("/config:id", cfgDel)
 		login.GET("/config", cfgListGet)
 		login.GET("/config/:id", cfgGet)
+	}
+
+	hawkeye := r.Group("/api/portal/hawkeye").Use(middleware.Logined())
+	{
+		hawkeye.POST("/resource", resourcePost)
+
+		hawkeye.GET("/team", teamHawkeyeListGet)
+		hawkeye.POST("/team", teamHawkeyeAddPost)
+		hawkeye.PUT("/team/:id", teamHawkeyePut)
+		hawkeye.DELETE("/team/:id", teamDel)
+
+		hawkeye.GET("/event/cur", eventCurGetsHawkeye)
+		hawkeye.GET("/event/his", eventHisGetsHawkeye)
+
+		hawkeye.GET("/node/:id/maskconf", maskconfGetsHawkeye)
 	}
 
 	v1 := r.Group("/v1/portal").Use(middleware.CheckHeaderToken())

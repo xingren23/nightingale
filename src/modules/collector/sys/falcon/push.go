@@ -1,8 +1,7 @@
 package falcon
 
 import (
-	"log"
-	"math"
+	"fmt"
 	"net/rpc"
 	"sync"
 	"time"
@@ -26,33 +25,28 @@ func (this *SingleConnRpcClient) close() {
 	}
 }
 
-func (this *SingleConnRpcClient) insureConn() {
-	if this.rpcClient != nil {
-		return
-	}
-
+func (this *SingleConnRpcClient) insureConn() bool {
+	var retry = 0
 	var err error
-	var retry int = 1
-
 	for {
 		if this.rpcClient != nil {
-			return
+			logger.Infof("rpc client is ready, %s", this.RpcServer)
+			return true
 		}
 
 		this.rpcClient, err = net.JsonRpcClient("tcp", this.RpcServer, this.Timeout)
 		if err == nil {
-			return
+			logger.Infof("init rpc client success, %s", this.RpcServer)
+			return true
 		}
-
-		log.Printf("dial %s fail: %v", this.RpcServer, err)
-
-		if retry > 6 {
-			retry = 1
-		}
-
-		time.Sleep(time.Duration(math.Pow(2.0, float64(retry))) * time.Second)
 
 		retry++
+		if retry > 3 {
+			err = fmt.Errorf("conn to rpcServer %s failed, retry %d", this.RpcServer, retry)
+			return false
+		}
+		logger.Errorf("dial %s fail retry %d: %v", this.RpcServer, retry, err)
+		time.Sleep(this.Timeout / 3)
 	}
 }
 
@@ -61,19 +55,21 @@ func (this *SingleConnRpcClient) Call(method string, args interface{}, reply int
 	this.Lock()
 	defer this.Unlock()
 
-	this.insureConn()
-
-	timeout := time.Duration(50 * time.Second)
 	done := make(chan error)
-
 	go func() {
-		err := this.rpcClient.Call(method, args, reply)
-		done <- err
+		ok := this.insureConn()
+		if ok {
+			err := this.rpcClient.Call(method, args, reply)
+			done <- err
+		} else {
+			done <- fmt.Errorf("insure conn failed, %s", this.RpcServer)
+		}
 	}()
 
 	select {
-	case <-time.After(timeout):
-		log.Printf("[WARN] rpc call timeout %v => %v", this.rpcClient, this.RpcServer)
+	case <-time.After(this.Timeout):
+		logger.Warningf("rpc call timeout %d milliseconds, %v => %v", this.Timeout.Milliseconds(), this.rpcClient,
+			this.RpcServer)
 		this.close()
 	case err := <-done:
 		if err != nil {
@@ -85,6 +81,7 @@ func (this *SingleConnRpcClient) Call(method string, args interface{}, reply int
 	return nil
 }
 
+// 直接发送到falcon-transfer( falcon内部处理 )
 func Push(metrics []*dataobj.MetricValue) {
 	if len(metrics) == 0 {
 		return

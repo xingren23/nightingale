@@ -47,7 +47,9 @@ func collect(sec int64, fn func() []*dataobj.MetricValue) {
 			item.Timestamp = now
 			metricValues = append(metricValues, item)
 		}
+		// push to n9e transfer
 		Push(metricValues)
+
 		// push to falcon transfer
 		falcon.Push(metricValues)
 	}

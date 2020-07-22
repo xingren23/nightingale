@@ -2,24 +2,18 @@ package meicai
 
 import (
 	"errors"
+
+	"github.com/didi/nightingale/src/dataobj"
+
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
 
-type App struct {
-	Id        int64  `json:"id"`
-	Code      string `json:"code"`
-	Language  string `json:"language"`
-	Name      string `json:"name"`
-	SrvTreeId int64  `json:"srvTreeId"`
-	Basic     bool   `json:"basic"`
-}
-
 type AppPageResult struct {
-	Pagination Pagination `json:"pagination"`
-	Result     []*App     `json:"result"`
+	Pagination Pagination     `json:"pagination"`
+	Result     []*dataobj.App `json:"result"`
 }
 
 type AppResult struct {
@@ -52,8 +46,8 @@ func getAppByPage(url string, pageNo, pageSize int) (*AppPageResult, error) {
 }
 
 // 获取应用
-func GetAllApps() ([]*App, error) {
-	res := []*App{}
+func GetAllApps() ([]*dataobj.App, error) {
+	res := []*dataobj.App{}
 	url := config.Get().Api.OpsAddr + config.OpsAppSearchPath
 	pageNo := 1
 	pageSize := 100
@@ -74,18 +68,9 @@ func GetAllApps() ([]*App, error) {
 	return res, nil
 }
 
-type CmdbHost struct {
-	Id             int64  `json:"id"`
-	Ip             string `json:"innerIp"`
-	HostName       string `json:"hostName"`
-	Type           string `json:"type"`
-	EnvCode        string `json:"envCode"`
-	DataCenterCode string `json:"dataCenterCode"`
-}
-
 type CmdbHostPageResult struct {
-	Pagination Pagination  `json:"pagination"`
-	Hosts      []*CmdbHost `json:"result"`
+	Pagination Pagination          `json:"pagination"`
+	Hosts      []*dataobj.CmdbHost `json:"result"`
 }
 
 type CmdbHostResult struct {
@@ -115,8 +100,8 @@ func getHostByPage(url string, pageNo, pageSize int) (*CmdbHostPageResult, error
 }
 
 // 获取主机
-func GetAllHosts() ([]*CmdbHost, error) {
-	res := []*CmdbHost{}
+func GetAllHosts() ([]*dataobj.CmdbHost, error) {
+	res := []*dataobj.CmdbHost{}
 	url := config.Get().Api.OpsAddr + config.OpsHostSearchPath
 	pageNo := 1
 	pageSize := 100
@@ -137,22 +122,9 @@ func GetAllHosts() ([]*CmdbHost, error) {
 	return res, nil
 }
 
-type Instance struct {
-	Id             int64  `json:"id"`
-	AppCode        string `json:"appCode"`
-	AppId          int64  `json:"appId"`
-	DataCenterCode string `json:"dataCenterCode"`
-	EnvCode        string `json:"envCode"`
-	GroupCode      string `json:"groupCode"`
-	IP             string `json:"ip"`
-	HostName       string `json:"hostName"`
-	Port           int    `json:"port"`
-	UUID           string `json:"uuid"`
-}
-
 type InstPageResult struct {
-	Pagination Pagination  `json:"pagination"`
-	Result     []*Instance `json:"result"`
+	Pagination Pagination          `json:"pagination"`
+	Result     []*dataobj.Instance `json:"result"`
 }
 
 type InstResult struct {
@@ -182,8 +154,8 @@ func getInstanceByPage(url string, pageNo, pageSize int) (*InstPageResult, error
 }
 
 // 获取实例
-func GetAllInstances() ([]*Instance, error) {
-	res := []*Instance{}
+func GetAllInstances() ([]*dataobj.Instance, error) {
+	res := []*dataobj.Instance{}
 	url := config.Get().Api.OpsAddr + config.OpsInstanceSearchPath
 	pageNo := 1
 	pageSize := 100
@@ -204,20 +176,10 @@ func GetAllInstances() ([]*Instance, error) {
 	return res, nil
 }
 
-type Network struct {
-	Id             int64  `json:"id"`
-	ManageIp       string `json:"manageIp"`
-	Name           string `json:"name"`
-	DataCenterCode string `json:"dataCenterCode"`
-	EnvCode        string `json:"envCode"`
-	Type           string `json:"type"`
-	SerialNo       string `json:"serialNo"`
-}
-
 type NetworkSearchResult struct {
-	Message    string     `json:"message"`
-	Pagination Pagination `json:"pagination"`
-	Result     []*Network `json:"result"`
+	Message    string             `json:"message"`
+	Pagination Pagination         `json:"pagination"`
+	Result     []*dataobj.Network `json:"result"`
 }
 
 func getNetworkByPage(url string, pageNo, pageSize int) (*NetworkSearchResult, error) {
@@ -242,8 +204,8 @@ func getNetworkByPage(url string, pageNo, pageSize int) (*NetworkSearchResult, e
 }
 
 // 获取网络设备
-func GetAllNetworks() ([]*Network, error) {
-	res := []*Network{}
+func GetAllNetworks() ([]*dataobj.Network, error) {
+	res := []*dataobj.Network{}
 	url := config.Get().Api.OpsAddr + config.OpsNetworkSearchPath
 	pageNo := 1
 	pageSize := 100

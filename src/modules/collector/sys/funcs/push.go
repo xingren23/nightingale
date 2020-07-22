@@ -22,6 +22,7 @@ import (
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
 
+// 指标转换，补充必要的标签数据
 func Push(metricItems []*dataobj.MetricValue) error {
 	var err error
 	var items []*dataobj.MetricValue
@@ -92,6 +93,7 @@ func Push(metricItems []*dataobj.MetricValue) error {
 	return err
 }
 
+// TODO: 优化
 func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) {
 	//指标白名单
 	monitorItem, exists := ecache.MonitorItemCache.Get(item.Metric)
@@ -129,14 +131,15 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		item.TagsMap["ip"] = host.Ip
 
 		insts, exists := ecache.IpInstsCache.GetByIp(ip)
+		// 宿主机无实例，不打应用标签
 		if !exists || len(insts) == 0 {
-			// 宿主机无实例
 			return item, nil
 		}
+		// 单机多实例，不打应用标签
 		if len(insts) > 1 {
-			// 单机多实例
 			return item, nil
 		}
+		// 单机单实例，打上应用标签
 		item.TagsMap["app"] = insts[0].AppCode
 		item.TagsMap["group"] = insts[0].GroupCode
 	case model.EndpointTypeNetwork:

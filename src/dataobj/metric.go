@@ -415,8 +415,8 @@ func alignTs(ts int64, period int64) int64 {
 	return ts - ts%period
 }
 
-// fixme : 服务逻辑说明，方法命名（filter？）
-func filterSeviceTag(key, val string) string {
+// service tag digit to _id
+func convertSeviceTag(key, val string) string {
 	if !strings.HasPrefix(key, "service.") {
 		return val
 	}
@@ -465,7 +465,6 @@ func filterSeviceTag(key, val string) string {
 }
 
 func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err error) {
-	// fixme : 需要 check nil 么？与外层逻辑不一致
 	if m == nil {
 		err = fmt.Errorf("item is nil")
 		return
@@ -534,7 +533,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 			continue
 		}
 		// 过滤service接口
-		v = filterSeviceTag(k, v)
+		v = convertSeviceTag(k, v)
 		if len(k) == 0 || len(v) == 0 {
 			err = fmt.Errorf("tag key and value should not be empty")
 			return
@@ -544,7 +543,6 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 	}
 
 	m.Tags = SortedTags(m.TagsMap)
-	// fixme : tags 多少合适 ？
 	if len(m.Tags) > 512 {
 		err = fmt.Errorf("len(m.Tags) is too large")
 		return

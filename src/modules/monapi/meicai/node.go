@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/didi/nightingale/src/model"
-
 	"github.com/didi/nightingale/src/modules/monapi/config"
+
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
 )
@@ -68,7 +68,6 @@ func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
 	}
 
 	return result.SrvTree, nil
-
 }
 
 type SrvResult struct {

@@ -1,19 +1,29 @@
 package routes
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/toolkits/pkg/errors"
-	"strings"
+	"github.com/toolkits/pkg/logger"
 )
 
 func eventCurGetsHawkeye(c *gin.Context) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-	user := middleware.GetUser(c)
+	// get user
+	username, exist := c.Get("username")
+	if !exist {
+		logger.Errorf("no login user")
+		errors.Dangerous(fmt.Sprintf("no login user"))
+	}
+	user, err := model.UserGet("username", username)
+	errors.Dangerous(err)
+
 	stime := queryInt64(c, "stime", 0)
 	etime := queryInt64(c, "etime", 0)
 	metric := queryStr(c, "metric", "")
@@ -24,10 +34,12 @@ func eventCurGetsHawkeye(c *gin.Context) {
 	priorities := queryStr(c, "priorities", "")
 	sendtypes := queryStr(c, "sendtypes", "")
 
-	total, err := model.EventCurTotalHawkeye(stime, etime, user.Id, metric, endpoint, strings.Split(priorities, ","), strings.Split(sendtypes, ","))
+	total, err := model.EventCurTotalHawkeye(stime, etime, user.Id, metric, endpoint, strings.Split(priorities, ","),
+		strings.Split(sendtypes, ","))
 	errors.Dangerous(err)
 
-	events, err := model.EventCurGetsHawkeye(stime, etime, user.Id, metric, endpoint, strings.Split(priorities, ","), strings.Split(sendtypes, ","), limit, offset(c, limit, total))
+	events, err := model.EventCurGetsHawkeye(stime, etime, user.Id, metric, endpoint, strings.Split(priorities, ","),
+		strings.Split(sendtypes, ","), limit, offset(c, limit, total))
 	errors.Dangerous(err)
 
 	datList := []eventData{}
@@ -36,9 +48,6 @@ func eventCurGetsHawkeye(c *gin.Context) {
 		errors.Dangerous(err)
 
 		groups, err := model.TeamNameGetsByIds(events[i].Groups)
-		errors.Dangerous(err)
-
-		claimants, err := model.UserNameGetByIds(events[i].Claimants)
 		errors.Dangerous(err)
 
 		var detail []model.EventDetail
@@ -79,7 +88,6 @@ func eventCurGetsHawkeye(c *gin.Context) {
 			Groups:      groups,
 			Detail:      detail,
 			Status:      model.StatusConvert(model.GetStatusByFlag(events[i].Status)),
-			Claimants:   claimants,
 			NeedUpgrade: events[i].NeedUpgrade,
 			AlertUpgrade: AlertUpgrade{
 				Groups:   alertGroups,
@@ -88,6 +96,11 @@ func eventCurGetsHawkeye(c *gin.Context) {
 				Level:    alertUpgrade.Level,
 			},
 		}
+
+		// update eventcur claimants
+		claimants, err := model.UserNameGetByIds(events[i].Claimants)
+		errors.Dangerous(err)
+		dat.Claimants = claimants
 
 		datList = append(datList, dat)
 	}
@@ -113,10 +126,12 @@ func eventHisGetsHawkeye(c *gin.Context) {
 	sendtypes := queryStr(c, "sendtypes", "")
 	eventType := queryStr(c, "type", "")
 
-	total, err := model.EventTotalHawkeye(stime, etime, nid, metric, eventType, strings.Split(endpoints, ","), strings.Split(priorities, ","), strings.Split(sendtypes, ","))
+	total, err := model.EventTotalHawkeye(stime, etime, nid, metric, eventType, strings.Split(endpoints, ","),
+		strings.Split(priorities, ","), strings.Split(sendtypes, ","))
 	errors.Dangerous(err)
 
-	events, err := model.EventGetsHawkeye(stime, etime, nid, metric, eventType, strings.Split(endpoints, ","), strings.Split(priorities, ","), strings.Split(sendtypes, ","), limit, offset(c, limit, total))
+	events, err := model.EventGetsHawkeye(stime, etime, nid, metric, eventType, strings.Split(endpoints, ","),
+		strings.Split(priorities, ","), strings.Split(sendtypes, ","), limit, offset(c, limit, total))
 	errors.Dangerous(err)
 
 	datList := []eventData{}
