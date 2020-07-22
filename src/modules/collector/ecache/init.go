@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/didi/nightingale/src/dataobj"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/toolkits/address"
@@ -14,10 +14,18 @@ import (
 	"github.com/toolkits/pkg/net/httplib"
 )
 
-var Resource ResourceSection
+const (
+	AppApi         = "/api/portal/app"
+	InstanceApi    = "/api/portal/instance"
+	NetworkApi     = "/api/portal/network"
+	HostApi        = "/api/portal/host"
+	MonitorItemApi = "/api/portal/monitor_item"
+	GarbageApi     = "/api/portal/garbage"
 
-func Init(res ResourceSection) {
-	Resource = res
+	Timeout = 10000
+)
+
+func Init() {
 	// fixme : 缓存构建失败 collector 能不能正常启动 ？
 	AppCache = NewAppCache()
 	HostCache = NewHostCache()
@@ -83,38 +91,38 @@ func buildResourceCache() error {
 	}
 	GarbageFilterCache.SetAll(garbageFilterResp)
 
-	appMap := make(map[int64]*meicai.App)
+	appMap := make(map[int64]*dataobj.App)
 	for _, app := range appResp.Dat {
 		appMap[app.Id] = app
 	}
 	AppCache.SetAll(appMap)
 
-	hostMap := make(map[string]*meicai.CmdbHost)
+	hostMap := make(map[string]*dataobj.CmdbHost)
 	for _, host := range hostResp.Dat {
 		hostMap[host.Ip] = host
 	}
 	HostCache.SetAll(hostMap)
 
-	networkMap := make(map[string]*meicai.Network)
+	networkMap := make(map[string]*dataobj.Network)
 	for _, network := range networkResp.Dat {
 		networkMap[network.ManageIp] = network
 	}
 	NetworkCache.SetAll(networkMap)
 
-	instanceMap := make(map[string]*meicai.Instance)
-	ipInstsMap := make(map[string][]*meicai.Instance)
+	instanceMap := make(map[string]*dataobj.Instance)
+	ipInstsMap := make(map[string][]*dataobj.Instance)
 	for _, instance := range instanceResp.Dat {
 		instanceMap[instance.UUID] = instance
 		app, ok := AppCache.GetById(instance.AppId)
 		if !ok {
 			continue
 		}
+		// 基础服务排除
 		if app.Basic {
-			// 基础服务排除
 			continue
 		}
 		if _, ok := ipInstsMap[instance.IP]; !ok {
-			ipInstsMap[instance.IP] = []*meicai.Instance{}
+			ipInstsMap[instance.IP] = []*dataobj.Instance{}
 		}
 		ipInstsMap[instance.IP] = append(ipInstsMap[instance.IP], instance)
 	}
@@ -131,16 +139,6 @@ func buildResourceCache() error {
 
 }
 
-type ResourceSection struct {
-	AppApi           string `yaml:"appApi"`
-	InstanceApi      string `yaml:"instanceApi"`
-	NetworkApi       string `yaml:"networkApi"`
-	HostApi          string `yaml:"hostApi"`
-	MonitorItemApi   string `yaml:"monitorItemApi"`
-	GarbageFilterApi string `yaml:"garbageFilterApi"`
-	Timeout          int    `yaml:"timeout"`
-}
-
 func getApps() (AppResp, error) {
 	addrs := address.GetHTTPAddresses("monapi")
 	i := rand.Intn(len(addrs))
@@ -149,8 +147,8 @@ func getApps() (AppResp, error) {
 	var res AppResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.AppApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, AppApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
 	}
@@ -170,8 +168,8 @@ func getHost() (HostResp, error) {
 	var res HostResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.HostApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, HostApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get host from remote:%s failed, error:%v", url, err)
 	}
@@ -191,8 +189,8 @@ func getInstance() (InstanceResp, error) {
 	var res InstanceResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.InstanceApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, InstanceApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get instance from remote:%s failed, error:%v", url, err)
 	}
@@ -212,8 +210,8 @@ func getNetwork() (NetworkResp, error) {
 	var res NetworkResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.NetworkApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, NetworkApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get network from remote:%s failed, error:%v", url, err)
 	}
@@ -233,8 +231,8 @@ func getMonitorItem() (MonitorItemResp, error) {
 	var res MonitorItemResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.MonitorItemApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, MonitorItemApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get monitorItem from remote:%s failed, error:%v", url, err)
 	}
@@ -247,23 +245,23 @@ func getMonitorItem() (MonitorItemResp, error) {
 }
 
 type AppResp struct {
-	Dat []*meicai.App `json:"dat"`
-	Err string        `json:"err"`
+	Dat []*dataobj.App `json:"dat"`
+	Err string         `json:"err"`
 }
 
 type HostResp struct {
-	Dat []*meicai.CmdbHost `json:"dat"`
-	Err string             `json:"err"`
+	Dat []*dataobj.CmdbHost `json:"dat"`
+	Err string              `json:"err"`
 }
 
 type InstanceResp struct {
-	Dat []*meicai.Instance `json:"dat"`
-	Err string             `json:"err"`
+	Dat []*dataobj.Instance `json:"dat"`
+	Err string              `json:"err"`
 }
 
 type NetworkResp struct {
-	Dat []*meicai.Network `json:"dat"`
-	Err string            `json:"err"`
+	Dat []*dataobj.Network `json:"dat"`
+	Err string             `json:"err"`
 }
 type MonitorItemResp struct {
 	Dat map[string]*model.MonitorItem `json:"dat"`
@@ -301,8 +299,8 @@ func getGarbageFilter() (GarbageFilterResp, error) {
 	var res GarbageFilterResp
 	var err error
 
-	url := fmt.Sprintf("http://%s%s", addr, Resource.GarbageFilterApi)
-	err = httplib.Get(url).SetTimeout(time.Duration(Resource.Timeout) * time.Millisecond).ToJSON(&res)
+	url := fmt.Sprintf("http://%s%s", addr, GarbageApi)
+	err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 	if err != nil {
 		err = fmt.Errorf("get GarbageFilter config from remote:%s failed, error:%v", url, err)
 	}

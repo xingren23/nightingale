@@ -1,9 +1,10 @@
 package ecache
 
 import (
-	"github.com/didi/nightingale/src/model"
 	"strings"
 	"sync"
+
+	"github.com/didi/nightingale/src/model"
 )
 
 var GarbageFilterCache *GarbageFilterCacheList

@@ -3,21 +3,21 @@ package ecache
 import (
 	"sync"
 
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/didi/nightingale/src/dataobj"
 )
 
 type AppCacheList struct {
 	sync.RWMutex
-	Data []*meicai.App
+	Data []*dataobj.App
 }
 
 func NewAppCache() *AppCacheList {
 	return &AppCacheList{
-		Data: []*meicai.App{},
+		Data: []*dataobj.App{},
 	}
 }
 
-func (this *AppCacheList) SetAll(vals []*meicai.App) {
+func (this *AppCacheList) SetAll(vals []*dataobj.App) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
@@ -29,10 +29,10 @@ func (this *AppCacheList) Len() int {
 	return len(this.Data)
 }
 
-func (this *AppCacheList) GetAll() []*meicai.App {
+func (this *AppCacheList) GetAll() []*dataobj.App {
 	this.RLock()
 	defer this.RUnlock()
-	var apps []*meicai.App
+	var apps []*dataobj.App
 	for _, app := range this.Data {
 		apps = append(apps, app)
 	}
@@ -41,16 +41,16 @@ func (this *AppCacheList) GetAll() []*meicai.App {
 
 type HostCacheList struct {
 	sync.RWMutex
-	Data []*meicai.CmdbHost
+	Data []*dataobj.CmdbHost
 }
 
 func NewHostCache() *HostCacheList {
 	return &HostCacheList{
-		Data: []*meicai.CmdbHost{},
+		Data: []*dataobj.CmdbHost{},
 	}
 }
 
-func (this *HostCacheList) SetAll(vals []*meicai.CmdbHost) {
+func (this *HostCacheList) SetAll(vals []*dataobj.CmdbHost) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
@@ -62,10 +62,10 @@ func (this *HostCacheList) Len() int {
 	return len(this.Data)
 }
 
-func (this *HostCacheList) GetAll() []*meicai.CmdbHost {
+func (this *HostCacheList) GetAll() []*dataobj.CmdbHost {
 	this.RLock()
 	defer this.RUnlock()
-	var hosts []*meicai.CmdbHost
+	var hosts []*dataobj.CmdbHost
 	for _, host := range this.Data {
 		hosts = append(hosts, host)
 	}
@@ -74,16 +74,16 @@ func (this *HostCacheList) GetAll() []*meicai.CmdbHost {
 
 type InstanceCacheList struct {
 	sync.RWMutex
-	Data []*meicai.Instance
+	Data []*dataobj.Instance
 }
 
 func NewInstanceCache() *InstanceCacheList {
 	return &InstanceCacheList{
-		Data: []*meicai.Instance{},
+		Data: []*dataobj.Instance{},
 	}
 }
 
-func (this *InstanceCacheList) SetAll(vals []*meicai.Instance) {
+func (this *InstanceCacheList) SetAll(vals []*dataobj.Instance) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
@@ -95,10 +95,10 @@ func (this *InstanceCacheList) Len() int {
 	return len(this.Data)
 }
 
-func (this *InstanceCacheList) GetAll() []*meicai.Instance {
+func (this *InstanceCacheList) GetAll() []*dataobj.Instance {
 	this.RLock()
 	defer this.RUnlock()
-	var instances []*meicai.Instance
+	var instances []*dataobj.Instance
 	for _, instance := range this.Data {
 		instances = append(instances, instance)
 	}
@@ -107,16 +107,16 @@ func (this *InstanceCacheList) GetAll() []*meicai.Instance {
 
 type NetworkCacheList struct {
 	sync.RWMutex
-	Data []*meicai.Network
+	Data []*dataobj.Network
 }
 
 func NewNetworkCache() *NetworkCacheList {
 	return &NetworkCacheList{
-		Data: []*meicai.Network{},
+		Data: []*dataobj.Network{},
 	}
 }
 
-func (this *NetworkCacheList) SetAll(vals []*meicai.Network) {
+func (this *NetworkCacheList) SetAll(vals []*dataobj.Network) {
 	this.Lock()
 	defer this.Unlock()
 	this.Data = vals
@@ -128,10 +128,10 @@ func (this *NetworkCacheList) Len() int {
 	return len(this.Data)
 }
 
-func (this *NetworkCacheList) GetAll() []*meicai.Network {
+func (this *NetworkCacheList) GetAll() []*dataobj.Network {
 	this.RLock()
 	defer this.RUnlock()
-	var networks []*meicai.Network
+	var networks []*dataobj.Network
 	for _, network := range this.Data {
 		networks = append(networks, network)
 	}

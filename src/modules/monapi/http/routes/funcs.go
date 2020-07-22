@@ -8,7 +8,6 @@ import (
 	"github.com/toolkits/pkg/errors"
 
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
@@ -161,11 +160,11 @@ func loginUsername(c *gin.Context) string {
 }
 
 func loginUser(c *gin.Context) *model.User {
-	//username := loginUsername(c)
-	//
-	//user, err := model.UserGet("username", username)
-	//errors.Dangerous(err)
-	user := middleware.GetUser(c)
+	username := loginUsername(c)
+
+	user, err := model.UserGet("username", username)
+	errors.Dangerous(err)
+
 	if user == nil {
 		errors.Bomb("login first please")
 	}

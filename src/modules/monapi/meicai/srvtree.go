@@ -2,6 +2,8 @@ package meicai
 
 import (
 	"fmt"
+
+	"github.com/didi/nightingale/src/dataobj"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
@@ -32,8 +34,8 @@ type SrvTreeNodeResult struct {
 }
 
 type NetworkPageResult struct {
-	Pagination Pagination `json:"pagination"`
-	Networks   []*Network `json:"result"`
+	Pagination Pagination         `json:"pagination"`
+	Networks   []*dataobj.Network `json:"result"`
 }
 
 type NetworkResult struct {
@@ -42,10 +44,10 @@ type NetworkResult struct {
 }
 
 type CommonResult struct {
-	Apps     []*App      `json:"result"`
-	Networks []*Network  `json:"result"`
-	Insts    []*Instance `json:"result"`
-	Hosts    []*CmdbHost `json:"result"`
+	Apps     []*dataobj.App      `json:"result"`
+	Networks []*dataobj.Network  `json:"result"`
+	Insts    []*dataobj.Instance `json:"result"`
+	Hosts    []*dataobj.CmdbHost `json:"result"`
 }
 
 // 获取整棵服务树
@@ -88,10 +90,10 @@ func GetTreeById(nid int64) (*SrvTreeNode, error) {
 func GetTreeResources(expr, cmdbSourceType string) (*CommonResult, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	commonRet := &CommonResult{
-		Apps:     []*App{},
-		Networks: []*Network{},
-		Insts:    []*Instance{},
-		Hosts:    []*CmdbHost{},
+		Apps:     []*dataobj.App{},
+		Networks: []*dataobj.Network{},
+		Insts:    []*dataobj.Instance{},
+		Hosts:    []*dataobj.CmdbHost{},
 	}
 	url := fmt.Sprintf("%s%s", config.Get().Api.OpsAddr, config.OpsApiResourcerPath)
 	params := make(map[string]interface{})
