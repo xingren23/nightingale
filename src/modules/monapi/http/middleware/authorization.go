@@ -19,8 +19,11 @@ func Logined() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := cookieUser(c)
 		if username == "" {
-			user := GetUser(c)
-			username = user.Username
+			username = headerUser(c)
+		}
+
+		if username == "" {
+			username = devOpsTokenUser(c)
 		}
 
 		if username == "" {
@@ -32,42 +35,39 @@ func Logined() gin.HandlerFunc {
 	}
 }
 
-func getCookie(c *gin.Context) string {
-	//cookie, err := c.Request.Cookie("beta_user_token")
+func devOpsTokenUser(c *gin.Context) string {
+	// TODO: user token
+	//cookie, err := c.Request.Cookie("devops_principal")
 	//if err != nil {
 	//	return ""
 	//}
 
-	//val, _ := url.QueryUnescape(cookie.Value)
-	val, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
-	return val
-}
-
-func GetUser(c *gin.Context) *model.User {
-	userStr := getCookie(c)
+	userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
+	//userStr, _ := url.QueryUnescape(cookie.Value)
 	if userStr == "" {
 		errors.Bomb("login first please")
 	}
 
-	var userCookie User
-	if err := json.Unmarshal([]byte(userStr), &userCookie); err != nil {
+	var opsUserResp DevOpsUserResp
+	if err := json.Unmarshal([]byte(userStr), &opsUserResp); err != nil {
 		errors.Bomb("login first please")
 	}
 
-	user, _ := model.UserGet("username", strings.Split(userCookie.Data.Email, "@")[0])
+	// 自动创建用户
+	user, _ := model.UserGet("username", strings.Split(opsUserResp.Data.Email, "@")[0])
 	if user == nil {
+		// TODO : 都是 root 用户？
 		user = &model.User{
-			Username: userCookie.Data.Email,
-			Dispname: userCookie.Data.Name,
-			Phone:    userCookie.Data.Phone,
-			Email:    userCookie.Data.Email,
+			Username: strings.Split(opsUserResp.Data.Email, "@")[0],
+			Dispname: opsUserResp.Data.Name,
+			Phone:    opsUserResp.Data.Phone,
+			Email:    opsUserResp.Data.Email,
 			IsRoot:   1,
 		}
-
 		user.Save()
 	}
 
-	return user
+	return user.Dispname
 }
 
 func cookieUser(c *gin.Context) string {
@@ -124,11 +124,11 @@ func CheckHeaderToken() gin.HandlerFunc {
 	}
 }
 
-type User struct {
-	Data Data `json:"data"`
+type DevOpsUserResp struct {
+	Data DevOpsUser `json:"data"`
 }
 
-type Data struct {
+type DevOpsUser struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`

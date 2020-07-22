@@ -6,6 +6,7 @@ import (
 	"github.com/didi/nightingale/src/model"
 )
 
+// 缓存节点下的策略：node -> []*stra
 type StraCacheMap struct {
 	sync.RWMutex
 	Data map[string][]*model.Stra

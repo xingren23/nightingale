@@ -70,7 +70,7 @@ func Parse(conf string) error {
 		"plugin":       "./plugin",
 	})
 
-	// fixme : 接口路径很难做到可配置
+	// fixme : 接口路径配置是否合适 ？
 	viper.SetDefault("resource", map[string]interface{}{
 		"appApi":           "/api/portal/app",
 		"instanceApi":      "/api/portal/instance",

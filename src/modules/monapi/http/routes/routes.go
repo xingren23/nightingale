@@ -33,10 +33,12 @@ func Config(r *gin.Engine) {
 
 		nolog.GET("/stras/effective", effectiveStrasGet)
 		nolog.GET("/stras", strasAll)
+		// fixme : add base url
 		nolog.GET("/app", appGet)
 		nolog.GET("/host", hostGet)
 		nolog.GET("/instance", instanceGet)
 		nolog.GET("/network", networkGet)
+
 		nolog.GET("/garbageFilter", GarbageFilterGet)
 		nolog.GET("/monitorItem", monitorItemGet)
 	}
@@ -58,6 +60,7 @@ func Config(r *gin.Engine) {
 		login.POST("/team", teamAddPost)
 		login.PUT("/team/:id", teamPut)
 		login.DELETE("/team/:id", teamDel)
+		// fixme : url 不区分大小写
 		//替换原始team接口
 		login.GET("/teamHawkeye", teamHawkeyeListGet)
 		login.POST("/teamHawkeye", teamHawkeyeAddPost)

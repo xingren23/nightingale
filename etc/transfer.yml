@@ -6,7 +6,8 @@ backend:
     cluster:
       tsdb01: 127.0.0.1:5821
   influxdb:
-    enabled: false
+    enabled: true
+    username: "admin"
     password: "admin123"
     precision: "s"
     database: "n9e"
