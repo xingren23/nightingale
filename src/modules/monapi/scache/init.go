@@ -271,7 +271,7 @@ func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
 
 	endpointList := make([]model.Endpoint, 0)
 	for _, endpoint := range endpointSets.ToSlice() {
-		endpointModel, exists := mcache.EndpointCache.Get(endpoint)
+		endpointModel, exists := ecache.EndpointCache.Get(endpoint)
 		if exists {
 			endpointList = append(endpointList, *endpointModel)
 		}
@@ -306,7 +306,7 @@ func GetEndpointsByNid(nid int64, srvType string) ([]model.Endpoint, error) {
 
 	endpointList := make([]model.Endpoint, 0)
 	for _, tagEndpoint := range tagEndpoints {
-		endpoint, exists := mcache.EndpointCache.Get(tagEndpoint.Endpoint)
+		endpoint, exists := ecache.EndpointCache.Get(tagEndpoint.Endpoint)
 		if exists {
 			endpointList = append(endpointList, *endpoint)
 		}

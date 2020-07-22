@@ -3,19 +3,21 @@ package funcs
 import (
 	"bufio"
 	"fmt"
-	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"io"
 	"math/rand"
 	"net"
 	"net/rpc"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/toolkits/pkg/logger"
 	"github.com/ugorji/go/codec"
 
 	"github.com/didi/nightingale/src/dataobj"
+	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/collector/cache"
+	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
@@ -38,12 +40,10 @@ func Push(metricItems []*dataobj.MetricValue) error {
 			// 如果数据有问题，直接跳过吧，比如mymon采集的到的数据，其实只有一个有问题，剩下的都没问题
 			continue
 		}
-
-		//指标白名单
-		_, exists := ecache.MonitorItemCache.Get(item.Metric)
-		if !exists {
-			msg := fmt.Errorf("metric:%v not exists in monitorItem", item)
-			logger.Warning(msg)
+		// 指标转换：白名单、渲染标签
+		item, err := convertMetricItem(item)
+		if err != nil {
+			logger.Errorf("convert error metric:%v err:%v", item, err)
 			continue
 		}
 		if item.CounterType == dataobj.COUNTER {
@@ -90,6 +90,68 @@ func Push(metricItems []*dataobj.MetricValue) error {
 	}
 
 	return err
+}
+
+func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) {
+	//指标白名单
+	monitorItem, exists := ecache.MonitorItemCache.Get(item.Metric)
+	if !exists {
+		return nil, fmt.Errorf("metric:%v not exists in monitorItem", item)
+	}
+
+	switch monitorItem.EndpointType {
+	case model.EndpointTypeInstance:
+		index := strings.LastIndex(item.Endpoint, "_inst.")
+		if index < 0 {
+			return nil, fmt.Errorf("metric [%s] is not exists in monitor_item ", item.Metric)
+		}
+		uuid := item.Endpoint[index+6:]
+		instance, exists := ecache.InstanceCache.GetByUUID(uuid)
+		if !exists {
+			return nil, fmt.Errorf("instance [%s] is not found in instance Cache ", item.Endpoint)
+		}
+		item.TagsMap["app"] = instance.AppCode
+		item.TagsMap["group"] = instance.GroupCode
+		item.TagsMap["env"] = instance.EnvCode
+		item.TagsMap["ip"] = instance.IP
+		// 如果指标本身不上报port,并且cmdb中存在端口信息，添加此标签
+		if _, exists := item.TagsMap["port"]; !exists && instance.Port != 0 {
+			item.TagsMap["port"] = string(instance.Port)
+		}
+		item.Endpoint = instance.IP
+	case model.EndpointTypeHost:
+		ip := item.Endpoint
+		host, exists := ecache.HostCache.GetByIp(ip)
+		if !exists {
+			return nil, fmt.Errorf("ip [%s] is not exists in hosts", ip)
+		}
+		item.TagsMap["env"] = host.EnvCode
+		item.TagsMap["ip"] = host.Ip
+
+		insts, exists := ecache.IpInstsCache.GetByIp(ip)
+		if !exists || len(insts) == 0 {
+			// 宿主机无实例
+			return item, nil
+		}
+		if len(insts) > 1 {
+			// 单机多实例
+			return item, nil
+		}
+		item.TagsMap["app"] = insts[0].AppCode
+		item.TagsMap["group"] = insts[0].GroupCode
+	case model.EndpointTypeNetwork:
+		networkIp := item.Endpoint
+		network, exists := ecache.NetworkCache.GetByIp(networkIp)
+		if !exists {
+			return nil, fmt.Errorf("ip [%s] is not exists in networks", networkIp)
+		}
+		item.TagsMap["ip"] = network.ManageIp
+	default:
+		// 其他类型丢弃
+		return nil, fmt.Errorf("metric type is not found.item :%v", monitorItem)
+	}
+	item.Tags = dataobj.SortedTags(item.TagsMap)
+	return item, nil
 }
 
 func rpcCall(addr string, items []*dataobj.MetricValue) (dataobj.TransferResp, error) {

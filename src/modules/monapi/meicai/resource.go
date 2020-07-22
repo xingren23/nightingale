@@ -1,8 +1,8 @@
 package meicai
 
 import (
-	"encoding/json"
 	"errors"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
@@ -28,6 +28,7 @@ type AppResult struct {
 }
 
 func getAppByPage(url string, pageNo, pageSize int) (*AppPageResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 
 	params["pagination"] = map[string]int{
@@ -93,6 +94,7 @@ type CmdbHostResult struct {
 }
 
 func getHostByPage(url string, pageNo, pageSize int) (*CmdbHostPageResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
@@ -138,7 +140,7 @@ func GetAllHosts() ([]*CmdbHost, error) {
 type Instance struct {
 	Id             int64  `json:"id"`
 	AppCode        string `json:"appCode"`
-	AppId          int    `json:"appId"`
+	AppId          int64  `json:"appId"`
 	DataCenterCode string `json:"dataCenterCode"`
 	EnvCode        string `json:"envCode"`
 	GroupCode      string `json:"groupCode"`
@@ -159,6 +161,7 @@ type InstResult struct {
 }
 
 func getInstanceByPage(url string, pageNo, pageSize int) (*InstPageResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize
@@ -218,6 +221,7 @@ type NetworkSearchResult struct {
 }
 
 func getNetworkByPage(url string, pageNo, pageSize int) (*NetworkSearchResult, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	params["pageNo"] = pageNo
 	params["pageSize"] = pageSize

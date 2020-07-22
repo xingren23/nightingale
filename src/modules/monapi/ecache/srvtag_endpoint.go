@@ -2,8 +2,8 @@ package ecache
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"strings"
 	"sync"
@@ -83,6 +83,7 @@ func ScanRedisEndpointKeys() ([]string, error) {
 }
 
 func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	ret := []*TagEndpoint{}
 	key := RedisSrvTagKey(srvType, srvTag)
 	bs, err := redisc.SMEMBERS(key)
@@ -135,6 +136,7 @@ func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
 }
 
 func SetEndpointForRedis(key string, endpoints []*TagEndpoint) error {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	batch := 10
 	size := len(endpoints)
 	n := size/batch + 1

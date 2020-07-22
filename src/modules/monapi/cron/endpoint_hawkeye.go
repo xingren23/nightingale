@@ -3,8 +3,6 @@ package cron
 import (
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/mcache"
-
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/toolkits/stats"
@@ -48,7 +46,7 @@ func SyncEndpoints() error {
 		}
 	}
 	// 添加缓存
-	mcache.EndpointCache.SetAll(endpointMap)
+	ecache.EndpointCache.SetAll(endpointMap)
 	logger.Infof("sync endpoints cache elapsed %s ms", time.Since(start))
 	return nil
 }

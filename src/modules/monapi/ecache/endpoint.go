@@ -1,4 +1,4 @@
-package mcache
+package ecache
 
 import (
 	"sync"
