@@ -329,8 +329,8 @@ func (s *Stra) Encode() error {
 		return fmt.Errorf("encode alert_upgrade err:%v", err)
 	}
 
-	if s.Priority > 3 || s.Priority < 1 {
-		return fmt.Errorf("priority: must be between p1 to p3")
+	if s.Priority > 3 || s.Priority < 0 {
+		return fmt.Errorf("priority: must be between p0 to p3")
 	}
 
 	if s.NeedUpgrade == 1 {

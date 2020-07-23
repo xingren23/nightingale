@@ -73,7 +73,7 @@ func main() {
 		log.Println("endpoint:", identity.Identity)
 	}
 
-	ecache.Init(cfg.Resource)
+	ecache.Init()
 	sys.Init(cfg.Sys)
 	stra.Init(cfg.Stra)
 

@@ -79,7 +79,7 @@ func teamHawkeyeAddPost(c *gin.Context) {
 	errors.Dangerous(c.ShouldBind(&f))
 	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
-		errors.Bomb("teamHawkeyeAddPost SaveSSOUser err,userNames:%v", f.UserNames)
+		errors.Bomb("save user fail, err:[%s], ", err)
 	}
 	renderMessage(c, model.TeamHawkeyeAdd(f.Ident, f.Name, 0, userIds, f.Nid))
 }

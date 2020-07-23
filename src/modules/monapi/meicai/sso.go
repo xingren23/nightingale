@@ -1,6 +1,7 @@
 package meicai
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/didi/nightingale/src/model"
 
 	"github.com/didi/nightingale/src/modules/monapi/config"
-	"github.com/toolkits/pkg/errors"
 	"github.com/toolkits/pkg/net/httplib"
 )
 
@@ -52,18 +52,16 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 			}
 
 			if resp.AuthUser == nil {
-				logger.Errorf("get authuser is nil, %s", err)
-				return nil, err
+				return nil, fmt.Errorf("request sso resp authUser is nil, url, %s", url)
 			}
 
 			if len(resp.AuthUser) == 0 {
-				// fixme : 什么情况下使用 bomb（panic）？
-				errors.Bomb("用户[%v]不存在: %v", userName)
+				return nil, fmt.Errorf("用户[%v]不存在", userName)
 			}
 
 			authUser := resp.AuthUser[0]
 			if authUser.Status == "0" {
-				errors.Bomb("用户[%v]为禁用状态: %v", userName)
+				return nil, fmt.Errorf("用户[%v]为禁用状态", userName)
 			}
 
 			user = &model.User{
