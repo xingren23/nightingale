@@ -5,7 +5,8 @@ import (
 	"github.com/toolkits/pkg/errors"
 	"github.com/toolkits/pkg/str"
 
-	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 )
 
 type nodeForm struct {
@@ -35,7 +36,7 @@ func nodePost(c *gin.Context) {
 		errors.Bomb("leaf invalid")
 	}
 
-	parent, err := model.NodeGet("id", f.Pid)
+	parent, err := cmdb.GetCmdb().NodeGet("id", f.Pid)
 	errors.Dangerous(err)
 
 	if parent == nil {
@@ -43,21 +44,21 @@ func nodePost(c *gin.Context) {
 	}
 
 	newPath := parent.Path + "." + f.Name
-	node, err := model.NodeGet("path", newPath)
+	node, err := cmdb.GetCmdb().NodeGet("path", newPath)
 	errors.Dangerous(err)
 
 	if node != nil {
 		errors.Bomb("%s already exists", newPath)
 	}
 
-	_, err = parent.CreateChild(f.Name, f.Leaf, f.Note)
+	_, err = cmdb.GetCmdb().CreateChild(parent, f.Name, f.Leaf, f.Note)
 	renderMessage(c, err)
 }
 
 func nodeSearchGet(c *gin.Context) {
 	limit := queryInt(c, "limit", 20)
 	query := queryStr(c, "query", "")
-	nodes, err := model.NodeQueryPath(query, limit)
+	nodes, err := cmdb.GetCmdb().NodeQueryPath(query, limit)
 	renderData(c, nodes, err)
 }
 
@@ -69,38 +70,38 @@ func nodeNamePut(c *gin.Context) {
 	var f nodeNameForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	node, err := model.NodeGet("id", urlParamInt64(c, "id"))
+	node, err := cmdb.GetCmdb().NodeGet("id", urlParamInt64(c, "id"))
 	errors.Dangerous(err)
 
 	if node == nil {
 		errors.Bomb("arg[id] invalid, no such node")
 	}
 
-	renderMessage(c, node.Rename(f.Name))
+	renderMessage(c, cmdb.GetCmdb().Rename(node, f.Name))
 }
 
 func nodeDel(c *gin.Context) {
-	node, err := model.NodeGet("id", urlParamInt64(c, "id"))
+	node, err := cmdb.GetCmdb().NodeGet("id", urlParamInt64(c, "id"))
 	errors.Dangerous(err)
 
 	if node == nil {
 		errors.Bomb("arg[id] invalid, no such node")
 	}
 
-	renderMessage(c, node.Del())
+	renderMessage(c, cmdb.GetCmdb().Del(node))
 }
 
 func nodeLeafIdsGet(c *gin.Context) {
 	idsStr := mustQueryStr(c, "ids")
 	ids := str.IdsInt64(idsStr)
 
-	nodes, err := model.NodesGetByIds(ids)
+	nodes, err := cmdb.GetCmdb().NodesGetByIds(ids)
 	errors.Dangerous(err)
 
 	dat := make(map[int64][]int64)
 
 	for i := 0; i < len(nodes); i++ {
-		leafIds, err := nodes[i].LeafIds()
+		leafIds, err := cmdb.GetCmdb().LeafIds(&nodes[i])
 		errors.Dangerous(err)
 		dat[nodes[i].Id] = leafIds
 	}
@@ -112,13 +113,13 @@ func nodePidsGet(c *gin.Context) {
 	idsStr := mustQueryStr(c, "ids")
 	ids := str.IdsInt64(idsStr)
 
-	nodes, err := model.NodesGetByIds(ids)
+	nodes, err := cmdb.GetCmdb().NodesGetByIds(ids)
 	errors.Dangerous(err)
 
 	dat := make(map[int64][]int64)
 
 	for i := 0; i < len(nodes); i++ {
-		pids, err := nodes[i].Pids()
+		pids, err := cmdb.GetCmdb().Pids(&nodes[i])
 		errors.Dangerous(err)
 		dat[nodes[i].Id] = pids
 	}
@@ -129,7 +130,7 @@ func nodePidsGet(c *gin.Context) {
 func nodesByIdsGets(c *gin.Context) {
 	idsStr := mustQueryStr(c, "ids")
 	ids := str.IdsInt64(idsStr)
-	nodes, err := model.NodeByIds(ids)
+	nodes, err := cmdb.GetCmdb().NodeByIds(ids)
 	renderData(c, nodes, err)
 }
 
@@ -144,28 +145,28 @@ func endpointsUnder(c *gin.Context) {
 		errors.Bomb("field invalid")
 	}
 
-	node, err := model.NodeGet("id", nodeid)
+	node, err := cmdb.GetCmdb().NodeGet("id", nodeid)
 	errors.Dangerous(err)
 
 	if node == nil {
 		errors.Bomb("no such node")
 	}
 
-	leafIds, err := node.LeafIds()
+	leafIds, err := cmdb.GetCmdb().LeafIds(node)
 	errors.Dangerous(err)
 
 	if len(leafIds) == 0 {
 		renderData(c, gin.H{
-			"list":  []model.Endpoint{},
+			"list":  []dataobj.Endpoint{},
 			"total": 0,
 		}, nil)
 		return
 	}
 
-	total, err := model.EndpointUnderNodeTotal(leafIds, query, batch, field)
+	total, err := cmdb.GetCmdb().EndpointUnderNodeTotal(leafIds, query, batch, field)
 	errors.Dangerous(err)
 
-	list, err := model.EndpointUnderNodeGets(leafIds, query, batch, field, limit, offset(c, limit, total))
+	list, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafIds, query, batch, field, limit, offset(c, limit, total))
 	errors.Dangerous(err)
 
 	renderData(c, gin.H{
@@ -180,7 +181,7 @@ type endpointBindForm struct {
 }
 
 func endpointBind(c *gin.Context) {
-	node, err := model.NodeGet("id", urlParamInt64(c, "id"))
+	node, err := cmdb.GetCmdb().NodeGet("id", urlParamInt64(c, "id"))
 	errors.Dangerous(err)
 
 	if node == nil {
@@ -194,10 +195,10 @@ func endpointBind(c *gin.Context) {
 	var f endpointBindForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	ids, err := model.EndpointIdsByIdents(f.Idents)
+	ids, err := cmdb.GetCmdb().EndpointIdsByIdents(f.Idents)
 	errors.Dangerous(err)
 
-	renderMessage(c, node.Bind(ids, f.DelOld))
+	renderMessage(c, cmdb.GetCmdb().Bind(node, ids, f.DelOld))
 }
 
 type endpointUnbindForm struct {
@@ -205,7 +206,7 @@ type endpointUnbindForm struct {
 }
 
 func endpointUnbind(c *gin.Context) {
-	node, err := model.NodeGet("id", urlParamInt64(c, "id"))
+	node, err := cmdb.GetCmdb().NodeGet("id", urlParamInt64(c, "id"))
 	errors.Dangerous(err)
 
 	if node == nil {
@@ -219,8 +220,8 @@ func endpointUnbind(c *gin.Context) {
 	var f endpointUnbindForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	ids, err := model.EndpointIdsByIdents(f.Idents)
+	ids, err := cmdb.GetCmdb().EndpointIdsByIdents(f.Idents)
 	errors.Dangerous(err)
 
-	renderMessage(c, node.Unbind(ids))
+	renderMessage(c, cmdb.GetCmdb().Unbind(node, ids))
 }

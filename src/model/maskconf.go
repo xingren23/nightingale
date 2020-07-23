@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 	"github.com/toolkits/pkg/str"
 )
 
@@ -71,28 +72,23 @@ func (mc *Maskconf) FillEndpoints() error {
 	return nil
 }
 
-func MaskconfGets(nodeId int64) ([]Maskconf, error) {
-	node, err := NodeGet("id", nodeId)
-	if err != nil {
-		return nil, err
-	}
-
-	if node.Leaf == 1 {
+func MaskconfGets(nodeId int64, leaf int, path string) ([]Maskconf, error) {
+	if leaf == 1 {
 		var objs []Maskconf
-		err = DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)
+		err := DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)
 		if err != nil {
 			return nil, err
 		}
 
 		for i := 0; i < len(objs); i++ {
-			objs[i].NodePath = node.Path
+			objs[i].NodePath = path
 		}
 
 		return objs, nil
 	}
 
 	var relatedNodeIds []int64
-	err = DB["mon"].Table("maskconf").Select("nid").Find(&relatedNodeIds)
+	err := DB["mon"].Table("maskconf").Select("nid").Find(&relatedNodeIds)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +97,9 @@ func MaskconfGets(nodeId int64) ([]Maskconf, error) {
 		return []Maskconf{}, nil
 	}
 
-	var nodes []Node
-	err = DB["mon"].Where("id in ("+str.IdsString(relatedNodeIds)+")").Where("id="+fmt.Sprint(node.Id)+" or path like ?", node.Path+".%").Find(&nodes)
+	var nodes []dataobj.Node
+	err = DB["mon"].Where("id in ("+str.IdsString(relatedNodeIds)+")").Where("id="+fmt.Sprint(nodeId)+" or path like ?",
+		path+".%").Find(&nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +110,7 @@ func MaskconfGets(nodeId int64) ([]Maskconf, error) {
 	}
 
 	ids := make([]int64, 0, count)
-	nmap := make(map[int64]Node, count)
+	nmap := make(map[int64]dataobj.Node, count)
 	for i := 0; i < count; i++ {
 		nmap[nodes[i].Id] = nodes[i]
 		ids = append(ids, nodes[i].Id)

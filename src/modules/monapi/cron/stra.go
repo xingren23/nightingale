@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/toolkits/pkg/logger"
-
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 	"github.com/didi/nightingale/src/toolkits/stats"
+	"github.com/toolkits/pkg/logger"
 )
 
 func SyncStraLoop() {
@@ -60,7 +60,7 @@ func CleanStra() {
 	}
 
 	for _, stra := range list {
-		node, err := model.NodeGet("id", stra.Nid)
+		node, err := cmdb.GetCmdb().NodeGet("id", stra.Nid)
 		if err != nil {
 			logger.Warningf("get node failed, node id: %d, err: %v", stra.Nid, err)
 			continue

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/toolkits/pkg/logger"
-
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/toolkits/pkg/logger"
 )
 
 var JudgeHashRing *ConsistentHashRing
@@ -49,7 +49,7 @@ func syncStras() {
 			continue
 		}
 
-		endpoints, err := model.EndpointUnderLeafs(stra.LeafNids)
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(stra.LeafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, stra)
 			continue
@@ -100,7 +100,7 @@ func syncCollects() {
 			continue
 		}
 
-		endpoints, err := model.EndpointUnderLeafs(leafNids)
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
@@ -130,7 +130,7 @@ func syncCollects() {
 			continue
 		}
 
-		endpoints, err := model.EndpointUnderLeafs(leafNids)
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
@@ -160,7 +160,7 @@ func syncCollects() {
 			continue
 		}
 
-		Endpoints, err := model.EndpointUnderLeafs(leafNids)
+		Endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, l)
 			continue
@@ -189,7 +189,7 @@ func syncCollects() {
 			continue
 		}
 
-		Endpoints, err := model.EndpointUnderLeafs(leafNids)
+		Endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
@@ -214,7 +214,7 @@ func syncCollects() {
 func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 	leafIds := []int64{}
 	idsMap := make(map[int64]bool)
-	node, err := model.NodeGet("id", nid)
+	node, err := cmdb.GetCmdb().NodeGet("id", nid)
 	if err != nil {
 		return leafIds, err
 	}
@@ -223,7 +223,7 @@ func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 		return nil, fmt.Errorf("no such node[%d]", nid)
 	}
 
-	ids, err := node.LeafIds()
+	ids, err := cmdb.GetCmdb().LeafIds(node)
 	if err != nil {
 		return leafIds, err
 	}

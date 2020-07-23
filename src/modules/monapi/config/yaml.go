@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/spf13/viper"
 	"github.com/toolkits/pkg/file"
 )
@@ -20,6 +21,7 @@ type Config struct {
 	Link    linkSection         `yaml:"link"`
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
+	Cmdb    cmdb.CmdbSection    `yaml:"cmdb"`
 }
 
 type linkSection struct {
@@ -119,6 +121,10 @@ func Parse(ymlfile string) error {
 		"callback":     "/n9e/event/callback",
 		"senderPrefix": "/n9e/sender/",
 	})
+
+	viper.SetDefault("cmdb.default", "n9e")
+	viper.SetDefault("cmdb.n9e.enabled", 1)
+	viper.SetDefault("cmdb.n9e.name", "n9e")
 
 	viper.SetDefault("cleaner", map[string]int{
 		"days":  366,

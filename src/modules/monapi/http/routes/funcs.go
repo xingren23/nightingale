@@ -3,11 +3,13 @@ package routes
 import (
 	"strconv"
 
+	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
-
-	"github.com/didi/nightingale/src/model"
 )
 
 func urlParamStr(c *gin.Context, field string) string {
@@ -193,8 +195,8 @@ func mustUser(id int64) *model.User {
 	return user
 }
 
-func mustNode(id int64) *model.Node {
-	node, err := model.NodeGet("id", id)
+func mustNode(id int64) *dataobj.Node {
+	node, err := cmdb.GetCmdb().NodeGet("id", id)
 	if err != nil {
 		errors.Bomb("cannot retrieve node[%d]: %v", id, err)
 	}

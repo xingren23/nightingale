@@ -8,6 +8,7 @@ import (
 	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/didi/nightingale/src/toolkits/stats"
@@ -50,7 +51,7 @@ func genEventLink(event *model.Event) string {
 }
 
 func genBindings(event *model.Event) []string {
-	return model.EndpointBindingsForMail([]string{event.Endpoint})
+	return cmdb.GetCmdb().EndpointBindingsForMail([]string{event.Endpoint})
 }
 
 func genMetrics(event *model.Event) []string {

@@ -1,4 +1,4 @@
-package model
+package n9e
 
 import (
 	"fmt"
@@ -13,39 +13,39 @@ func (NodeEndpoint) TableName() string {
 	return "node_endpoint"
 }
 
-func NodeIdsGetByEndpointId(endpointId int64) ([]int64, error) {
+func (c *N9e) NodeIdsGetByEndpointId(endpointId int64) ([]int64, error) {
 	if endpointId == 0 {
 		return []int64{}, nil
 	}
 
 	var ids []int64
-	err := DB["mon"].Table("node_endpoint").Where("endpoint_id = ?", endpointId).Select("node_id").Find(&ids)
+	err := c.DB["mon"].Table("node_endpoint").Where("endpoint_id = ?", endpointId).Select("node_id").Find(&ids)
 	return ids, err
 }
 
-func EndpointIdsByNodeIds(nodeIds []int64) ([]int64, error) {
+func (c *N9e) EndpointIdsByNodeIds(nodeIds []int64) ([]int64, error) {
 	if len(nodeIds) == 0 {
 		return []int64{}, nil
 	}
 
 	var ids []int64
-	err := DB["mon"].Table("node_endpoint").In("node_id", nodeIds).Select("endpoint_id").Find(&ids)
+	err := c.DB["mon"].Table("node_endpoint").In("node_id", nodeIds).Select("endpoint_id").Find(&ids)
 	return ids, err
 }
 
-func NodeEndpointGetByEndpointIds(endpointsIds []int64) ([]NodeEndpoint, error) {
+func (c *N9e) nodeEndpointGetByEndpointIds(endpointsIds []int64) ([]NodeEndpoint, error) {
 	if len(endpointsIds) == 0 {
 		return []NodeEndpoint{}, nil
 	}
 
 	var objs []NodeEndpoint
-	err := DB["mon"].In("endpoint_id", endpointsIds).Find(&objs)
+	err := c.DB["mon"].In("endpoint_id", endpointsIds).Find(&objs)
 	return objs, err
 }
 
 // EndpointBindingsForMail 用来发告警邮件的时候带上各个endpoint的挂载信息
-func EndpointBindingsForMail(endpoints []string) []string {
-	ids, err := EndpointIdsByIdents(endpoints)
+func (c *N9e) EndpointBindingsForMail(endpoints []string) []string {
+	ids, err := c.EndpointIdsByIdents(endpoints)
 	if err != nil {
 		return []string{fmt.Sprintf("get endpoint ids by idents fail: %v", err)}
 	}
@@ -54,7 +54,7 @@ func EndpointBindingsForMail(endpoints []string) []string {
 		return []string{}
 	}
 
-	bindings, err := EndpointBindings(ids)
+	bindings, err := c.EndpointBindings(ids)
 	if err != nil {
 		return []string{fmt.Sprintf("get endpoint bindings fail: %v", err)}
 	}
@@ -70,23 +70,23 @@ func EndpointBindingsForMail(endpoints []string) []string {
 	return ret
 }
 
-func NodeEndpointGetByNodeIds(nodeIds []int64) ([]NodeEndpoint, error) {
+func (c *N9e) nodeEndpointGetByNodeIds(nodeIds []int64) ([]NodeEndpoint, error) {
 	if len(nodeIds) == 0 {
 		return []NodeEndpoint{}, nil
 	}
 
 	var objs []NodeEndpoint
-	err := DB["mon"].In("node_id", nodeIds).Find(&objs)
+	err := c.DB["mon"].In("node_id", nodeIds).Find(&objs)
 	return objs, err
 }
 
-func NodeEndpointUnbind(nid, eid int64) error {
-	_, err := DB["mon"].Where("node_id=? and endpoint_id=?", nid, eid).Delete(new(NodeEndpoint))
+func (c *N9e) NodeEndpointUnbind(nid, eid int64) error {
+	_, err := c.DB["mon"].Where("node_id=? and endpoint_id=?", nid, eid).Delete(new(NodeEndpoint))
 	return err
 }
 
-func NodeEndpointBind(nid, eid int64) error {
-	total, err := DB["mon"].Where("node_id=? and endpoint_id=?", nid, eid).Count(new(NodeEndpoint))
+func (c *N9e) NodeEndpointBind(nid, eid int64) error {
+	total, err := c.DB["mon"].Where("node_id=? and endpoint_id=?", nid, eid).Count(new(NodeEndpoint))
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func NodeEndpointBind(nid, eid int64) error {
 		return nil
 	}
 
-	endpoint, err := EndpointGet("id", eid)
+	endpoint, err := c.EndpointGet("id", eid)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func NodeEndpointBind(nid, eid int64) error {
 		return fmt.Errorf("endpoint[id:%d] not found", eid)
 	}
 
-	_, err = DB["mon"].Insert(&NodeEndpoint{
+	_, err = c.DB["mon"].Insert(&NodeEndpoint{
 		NodeId:     nid,
 		EndpointId: eid,
 	})
