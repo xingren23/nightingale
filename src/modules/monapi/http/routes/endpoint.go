@@ -7,7 +7,7 @@ import (
 	"github.com/toolkits/pkg/errors"
 	"github.com/toolkits/pkg/str"
 
-	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 )
 
 func endpointGets(c *gin.Context) {
@@ -20,10 +20,10 @@ func endpointGets(c *gin.Context) {
 		errors.Bomb("field invalid")
 	}
 
-	total, err := model.EndpointTotal(query, batch, field)
+	total, err := cmdb.GetCmdb().EndpointTotal(query, batch, field)
 	errors.Dangerous(err)
 
-	list, err := model.EndpointGets(query, batch, field, limit, offset(c, limit, total))
+	list, err := cmdb.GetCmdb().EndpointGets(query, batch, field, limit, offset(c, limit, total))
 	errors.Dangerous(err)
 
 	renderData(c, gin.H{
@@ -39,7 +39,7 @@ type endpointImportForm struct {
 func endpointImport(c *gin.Context) {
 	var f endpointImportForm
 	errors.Dangerous(c.ShouldBind(&f))
-	renderMessage(c, model.EndpointImport(f.Endpoints))
+	renderMessage(c, cmdb.GetCmdb().EndpointImport(f.Endpoints))
 }
 
 type endpointForm struct {
@@ -51,7 +51,7 @@ func endpointPut(c *gin.Context) {
 	errors.Dangerous(c.ShouldBind(&f))
 
 	id := urlParamInt64(c, "id")
-	endpoint, err := model.EndpointGet("id", id)
+	endpoint, err := cmdb.GetCmdb().EndpointGet("id", id)
 	errors.Dangerous(err)
 
 	if endpoint == nil {
@@ -59,7 +59,7 @@ func endpointPut(c *gin.Context) {
 	}
 
 	endpoint.Alias = f.Alias
-	renderMessage(c, endpoint.Update("alias"))
+	renderMessage(c, cmdb.GetCmdb().Update(endpoint, "alias"))
 }
 
 type endpointDelForm struct {
@@ -75,23 +75,23 @@ func endpointDel(c *gin.Context) {
 		return
 	}
 
-	ids, err := model.EndpointIdsByIdents(f.Idents)
+	ids, err := cmdb.GetCmdb().EndpointIdsByIdents(f.Idents)
 	errors.Dangerous(err)
 
-	renderMessage(c, model.EndpointDel(ids))
+	renderMessage(c, cmdb.GetCmdb().EndpointDel(ids))
 }
 
 func endpointBindingsGet(c *gin.Context) {
 	idents := strings.Split(mustQueryStr(c, "idents"), ",")
 
-	ids, err := model.EndpointIdsByIdents(idents)
+	ids, err := cmdb.GetCmdb().EndpointIdsByIdents(idents)
 	errors.Dangerous(err)
 
 	if ids == nil || len(ids) == 0 {
 		errors.Bomb("endpoints not found")
 	}
 
-	bindings, err := model.EndpointBindings(ids)
+	bindings, err := cmdb.GetCmdb().EndpointBindings(ids)
 	renderData(c, bindings, err)
 }
 
@@ -99,20 +99,20 @@ func endpointByNodeIdsGets(c *gin.Context) {
 	ids := str.IdsInt64(mustQueryStr(c, "ids"))
 	var allLeafIds []int64
 	for i := 0; i < len(ids); i++ {
-		node, err := model.NodeGet("id", ids[i])
+		node, err := cmdb.GetCmdb().NodeGet("id", ids[i])
 		errors.Dangerous(err)
 
 		if node == nil {
 			errors.Bomb("no such node")
 		}
 
-		leafIds, err := node.LeafIds()
+		leafIds, err := cmdb.GetCmdb().LeafIds(node)
 		errors.Dangerous(err)
 
 		allLeafIds = append(allLeafIds, leafIds...)
 	}
 
-	list, err := model.EndpointUnderLeafs(allLeafIds)
+	list, err := cmdb.GetCmdb().EndpointUnderLeafs(allLeafIds)
 	errors.Dangerous(err)
 
 	renderData(c, list, nil)

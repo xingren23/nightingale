@@ -15,6 +15,7 @@ import (
 	"github.com/toolkits/pkg/runner"
 
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/cron"
 	"github.com/didi/nightingale/src/modules/monapi/ecache"
@@ -67,7 +68,7 @@ func main() {
 
 	model.InitMySQL("uic", "mon", "hbs")
 	model.InitRoot()
-	model.InitNode()
+	cmdb.Init(config.Get().Cmdb)
 
 	redisc.InitRedis()
 	ecache.Init()

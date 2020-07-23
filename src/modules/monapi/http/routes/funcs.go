@@ -1,15 +1,15 @@
 package routes
 
 import (
-	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 	"strconv"
+
+	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
-
-	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
 )
 
 func urlParamStr(c *gin.Context, field string) string {
@@ -162,9 +162,6 @@ func loginUsername(c *gin.Context) string {
 
 func loginUser(c *gin.Context) *model.User {
 	username := loginUsername(c)
-	if username == "" {
-		username = middleware.DevOpsTokenUser(c)
-	}
 
 	user, err := model.UserGet("username", username)
 	errors.Dangerous(err)
@@ -198,8 +195,8 @@ func mustUser(id int64) *model.User {
 	return user
 }
 
-func mustNode(id int64) *model.Node {
-	node, err := meicai.GetNodeById(id)
+func mustNode(id int64) *dataobj.Node {
+	node, err := cmdb.GetCmdb().NodeGet("id", id)
 	if err != nil {
 		errors.Bomb("cannot retrieve node[%d]: %v", id, err)
 	}

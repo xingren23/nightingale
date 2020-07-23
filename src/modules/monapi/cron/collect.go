@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/toolkits/pkg/logger"
 )
 
@@ -77,7 +77,7 @@ func CleanCollect() {
 			collectType = collect.(*model.PluginCollect).CollectType
 		}
 
-		node, err := meicai.GetNodeById(nid)
+		node, err := cmdb.GetCmdb().NodeGet("id", nid)
 		if err != nil {
 			logger.Warningf("get node failed, node id: %d, err: %v", nid, err)
 			continue

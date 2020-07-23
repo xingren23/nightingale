@@ -8,10 +8,9 @@ import (
 	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/didi/nightingale/src/modules/monapi/config"
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/didi/nightingale/src/toolkits/stats"
 )
@@ -79,15 +78,20 @@ func popEvent(queues []interface{}) (*model.Event, bool) {
 
 	// 如果nid和endpoint的对应关系不正确，直接丢弃该event
 	// 可能endpoint挪了节点
-	endpoint, exists := ecache.EndpointCache.Get(event.Endpoint)
-	if !exists || endpoint == nil {
+	endpoint, err := cmdb.GetCmdb().EndpointGet("ident", event.Endpoint)
+	if err != nil {
+		logger.Errorf("model.EndpointGet fail, event: %+v, err: %v", event, err)
+		return nil, true
+	}
+
+	if endpoint == nil {
 		logger.Errorf("endpoint[%s] not found, event: %+v", event.Endpoint, event)
 		return nil, false
 	}
 
 	nodePath := ""
 
-	node, err := meicai.GetNodeById(stra.Nid)
+	node, err := cmdb.GetCmdb().NodeGet("id", stra.Nid)
 	if err != nil {
 		logger.Errorf("get node failed, node id: %v, event: %+v, err: %v", stra.Nid, event, err)
 		return nil, true
@@ -99,6 +103,38 @@ func popEvent(queues []interface{}) (*model.Event, bool) {
 	}
 
 	nodePath = node.Path
+
+	leafIds, err := cmdb.GetCmdb().LeafIds(node)
+	if err != nil {
+		logger.Errorf("get node leaf ids failed, node id: %v, event: %+v, err: %v", stra.Nid, event, err)
+		return nil, true
+	}
+
+	nodeIds, err := cmdb.GetCmdb().NodeIdsGetByEndpointId(endpoint.Id)
+	if err != nil {
+		logger.Errorf("get node_endpoint by endpoint_id fail: %v, event: %+v", err, event)
+		return nil, true
+	}
+
+	if nodeIds == nil || len(nodeIds) == 0 {
+		logger.Errorf("endpoint[%s] not bind any node, event: %+v", event.Endpoint, event)
+		return nil, false
+	}
+
+	has = false
+	for i := 0; i < len(nodeIds); i++ {
+		for j := 0; j < len(leafIds); j++ {
+			if nodeIds[i] == leafIds[j] {
+				has = true
+				break
+			}
+		}
+	}
+
+	if !has {
+		logger.Errorf("endpoint(%s) not match nid(%v), event: %+v", event.Endpoint, stra.Nid, event)
+		return nil, false
+	}
 
 	users, err := json.Marshal(stra.NotifyUser)
 	if err != nil {

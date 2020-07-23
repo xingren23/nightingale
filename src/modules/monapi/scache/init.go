@@ -3,20 +3,11 @@ package scache
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/config"
-
-	"github.com/didi/nightingale/src/modules/monapi/mcache"
-
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
-	"github.com/toolkits/pkg/container/set"
-
-	"github.com/toolkits/pkg/logger"
-
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/toolkits/pkg/logger"
 )
 
 var JudgeHashRing *ConsistentHashRing
@@ -51,7 +42,14 @@ func syncStras() {
 	}
 	strasMap := make(map[string][]*model.Stra)
 	for _, stra := range stras {
-		endpoints, err := GetEndpointsByStra(stra)
+		//增加叶子节点nid
+		stra.LeafNids, err = GetLeafNids(stra.Nid, stra.ExclNid)
+		if err != nil {
+			logger.Warningf("get LeafNids err:%v %v", err, stra)
+			continue
+		}
+
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(stra.LeafNids)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, stra)
 			continue
@@ -96,10 +94,15 @@ func syncCollects() {
 	}
 
 	for _, p := range ports {
-
-		endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
+		leafNids, err := GetLeafNids(p.Nid, []int64{})
 		if err != nil {
-			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
+			logger.Warningf("get LeafNids err:%v %v", err, p)
+			continue
+		}
+
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
+		if err != nil {
+			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
 		}
 
@@ -121,9 +124,15 @@ func syncCollects() {
 	}
 
 	for _, p := range procs {
-		endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
+		leafNids, err := GetLeafNids(p.Nid, []int64{})
 		if err != nil {
-			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
+			logger.Warningf("get LeafNids err:%v %v", err, p)
+			continue
+		}
+
+		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
+		if err != nil {
+			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
 		}
 
@@ -145,10 +154,15 @@ func syncCollects() {
 
 	for _, l := range logConfigs {
 		l.Decode()
-
-		Endpoints, err := GetEndpointsByNid(l.Nid, config.EndpointKeyPM)
+		leafNids, err := GetLeafNids(l.Nid, []int64{})
 		if err != nil {
-			logger.Warningf("get endpoints err:%v %v", err, l.Nid)
+			logger.Warningf("get LeafNids err:%v %v", err, l)
+			continue
+		}
+
+		Endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
+		if err != nil {
+			logger.Warningf("get endpoints err:%v %v", err, l)
 			continue
 		}
 
@@ -169,10 +183,15 @@ func syncCollects() {
 	}
 
 	for _, p := range pluginConfigs {
-
-		Endpoints, err := GetEndpointsByNid(p.Nid, config.EndpointKeyPM)
+		leafNids, err := GetLeafNids(p.Nid, []int64{})
 		if err != nil {
-			logger.Warningf("get endpoints err:%v %v", err, p.Nid)
+			logger.Warningf("get LeafNids err:%v %v", err, p)
+			continue
+		}
+
+		Endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
+		if err != nil {
+			logger.Warningf("get endpoints err:%v %v", err, p)
 			continue
 		}
 
@@ -195,7 +214,7 @@ func syncCollects() {
 func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 	leafIds := []int64{}
 	idsMap := make(map[int64]bool)
-	node, err := meicai.GetNodeById(nid)
+	node, err := cmdb.GetCmdb().NodeGet("id", nid)
 	if err != nil {
 		return leafIds, err
 	}
@@ -204,7 +223,7 @@ func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 		return nil, fmt.Errorf("no such node[%d]", nid)
 	}
 
-	ids, err := node.LeafIds()
+	ids, err := cmdb.GetCmdb().LeafIds(node)
 	if err != nil {
 		return leafIds, err
 	}
@@ -213,10 +232,15 @@ func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 		return ids, nil
 	}
 
+	exclLeafIds, err := GetExclLeafIds(exclNid)
+	if err != nil {
+		return leafIds, err
+	}
+
 	for _, id := range ids {
 		idsMap[id] = true
 	}
-	for _, id := range exclNid {
+	for _, id := range exclLeafIds {
 		delete(idsMap, id)
 	}
 
@@ -238,193 +262,24 @@ func removeDuplicateElement(addrs []string) []string {
 	return result
 }
 
-func GetEndpointsByStra(stra *model.Stra) ([]model.Endpoint, error) {
-	if len(stra.Exprs) == 0 {
-		return nil, fmt.Errorf("stra is nil or stra.Exprs size is zero")
-	}
-
-	//获取MonitorItem的类型
-	item, exists := mcache.MonitorItemCache.Get(stra.Exprs[0].Metric)
-	if !exists {
-		return nil, fmt.Errorf("MonitorItem is not exists: metric:%v", stra.Exprs[0].Metric)
-	}
-
-	nodePath, exists := ecache.SrvTreeCache.Get(stra.Nid)
-	if !exists {
-		return nil, fmt.Errorf("nodePath is not exists: srvTreeId:%v", stra.Nid)
-	}
-
-	srvType := BuildSrvType(item)
-	if srvType == "" {
-		return nil, fmt.Errorf("MonitorItem buildSrvType error: metric:%v", item.Metric)
-	}
-
-	tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, nodePath)
-	if err != nil {
-		return nil, fmt.Errorf("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
-	}
-
-	endpointSets := filterEnvs(tagEndpoints, stra)
-	endpointSets = filterNodeIds(endpointSets, stra, srvType)
-	endpointSets = filterNodePath(endpointSets, stra, srvType)
-	endpointSets = filterHost(endpointSets, stra)
-
-	endpointList := make([]model.Endpoint, 0)
-	for _, endpoint := range endpointSets.ToSlice() {
-		endpointModel, exists := ecache.EndpointCache.Get(endpoint)
-		if exists {
-			endpointList = append(endpointList, *endpointModel)
-		}
-	}
-
-	return endpointList, nil
-}
-
-func BuildSrvType(item *model.MonitorItem) string {
-	if item.EndpointType == "NETWORK" {
-		return config.EndpointKeyNetwork
-	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {
-		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
-			return config.EndpointKeyDocker
-		} else {
-			return config.EndpointKeyPM
-		}
-	}
-	return ""
-}
-
-func GetEndpointsByNid(nid int64, srvType string) ([]model.Endpoint, error) {
-	nodePath, exists := ecache.SrvTreeCache.Get(nid)
-	if !exists {
-		return nil, fmt.Errorf("GetEndpointsByNid nodePath is not exists: srvTreeId:%v", nid)
-	}
-
-	tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, nodePath)
-	if err != nil {
-		return nil, fmt.Errorf("GetEndpointsByNid endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
-	}
-
-	endpointList := make([]model.Endpoint, 0)
-	for _, tagEndpoint := range tagEndpoints {
-		endpoint, exists := ecache.EndpointCache.Get(tagEndpoint.Endpoint)
-		if exists {
-			endpointList = append(endpointList, *endpoint)
-		}
-	}
-
-	return endpointList, nil
-}
-
-func filterEnvs(tagEndpoints []*ecache.TagEndpoint, stra *model.Stra) *set.StringSet {
-	isContain, envCodes := analysisTag(stra, "env")
-
-	endpointSets := set.NewStringSet()
-	for _, tagEndpoint := range tagEndpoints {
-		endpointSets.Add(tagEndpoint.Endpoint)
-	}
-
-	if len(envCodes.M) == 0 {
-		return endpointSets
-	}
-
-	hosts := set.NewStringSet()
-	for _, tagEndpoint := range tagEndpoints {
-		for _, envCode := range envCodes.ToSlice() {
-			if tagEndpoint.EnvCode == envCode {
-				hosts.Add(tagEndpoint.Endpoint)
-			}
-		}
-	}
-
-	return buildEndpointSet(endpointSets, hosts, isContain)
-}
-
-func filterNodeIds(endpointSets *set.StringSet, stra *model.Stra, srvType string) *set.StringSet {
-	nids := stra.ExclNid
-	if nids == nil || len(nids) == 0 {
-		return endpointSets
-	}
-
-	hosts := set.NewStringSet()
-	for _, nid := range nids {
-		expression, exists := ecache.SrvTreeCache.Get(nid)
-		if exists {
-			tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, expression)
-			if err != nil {
-				logger.Error("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", expression, srvType, err)
-				continue
-			}
-			for _, tagEndpoint := range tagEndpoints {
-				hosts.Add(tagEndpoint.Endpoint)
-			}
-		}
-	}
-
-	return buildEndpointSet(endpointSets, hosts, false)
-}
-
-func buildEndpointSet(endpointSets *set.StringSet, hostSet *set.StringSet, isContain bool) *set.StringSet {
-	endpoints := endpointSets.ToSlice()
-	if isContain {
-		for _, endpoint := range endpoints {
-			if !hostSet.Exists(endpoint) {
-				endpointSets.Delete(endpoint)
-			}
-		}
-	} else {
-		for _, endpoint := range endpoints {
-			if hostSet.Exists(endpoint) {
-				endpointSets.Delete(endpoint)
-			}
-		}
-	}
-
-	return endpointSets
-}
-
-func filterNodePath(endpointSets *set.StringSet, stra *model.Stra, srvType string) *set.StringSet {
-	isContain, nodePaths := analysisTag(stra, "nodePath")
-	if len(nodePaths.M) == 0 {
-		return endpointSets
-	}
-
-	hosts := set.NewStringSet()
-	for _, nodePath := range nodePaths.ToSlice() {
-		tagEndpoints, err := ecache.GetEndpointsFromRedis(srvType, nodePath)
+// GetExclLeafIds 获取排除节点下的叶子节点
+func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
+	for _, nid := range exclNid {
+		node, err := model.NodeGet("id", nid)
 		if err != nil {
-			logger.Error("endpoints is not exists: nodePath:%v, srvType:%v, err:%v", nodePath, srvType, err)
+			return leafIds, err
+		}
+
+		if node == nil {
+			logger.Warningf("no such node[%d]", nid)
 			continue
 		}
-		for _, tagEndpoint := range tagEndpoints {
-			hosts.Add(tagEndpoint.Endpoint)
+
+		ids, err := node.LeafIds()
+		if err != nil {
+			return leafIds, err
 		}
+		leafIds = append(leafIds, ids...)
 	}
-
-	return buildEndpointSet(endpointSets, hosts, isContain)
-}
-
-func filterHost(endpointSets *set.StringSet, stra *model.Stra) *set.StringSet {
-	isContain, hosts := analysisTag(stra, "host")
-	if len(hosts.M) == 0 {
-		return endpointSets
-	}
-
-	return buildEndpointSet(endpointSets, hosts, isContain)
-}
-
-func analysisTag(stra *model.Stra, key string) (bool, *set.StringSet) {
-	isContain := false
-	tagValues := set.NewStringSet()
-	for _, tag := range stra.Tags {
-		if tag.Tkey == key {
-			for _, value := range tag.Tval {
-				tagValues.Add(value)
-			}
-
-			if tag.Topt == "=" {
-				isContain = true
-			}
-		}
-	}
-	return isContain, tagValues
+	return leafIds, nil
 }

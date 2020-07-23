@@ -5,6 +5,7 @@ import (
 	"github.com/toolkits/pkg/errors"
 
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 )
 
 type MaskconfForm struct {
@@ -50,7 +51,10 @@ func maskconfPost(c *gin.Context) {
 func maskconfGets(c *gin.Context) {
 	nid := urlParamInt64(c, "id")
 
-	objs, err := model.MaskconfGets(nid)
+	node, err := cmdb.GetCmdb().NodeGet("id", nid)
+	errors.Dangerous(err)
+
+	objs, err := model.MaskconfGets(nid, node.Leaf, node.Path)
 	errors.Dangerous(err)
 
 	for i := 0; i < len(objs); i++ {
