@@ -63,7 +63,6 @@ func syncResource() error {
 }
 
 func buildResourceCache() error {
-	// fixme : err 输出日志
 	appResp, err := getApps()
 	if err != nil {
 		logger.Error("build app cache fail:", err)
