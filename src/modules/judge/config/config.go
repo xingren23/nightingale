@@ -65,6 +65,7 @@ func Parse(conf string) error {
 		"partitionApi":   "/api/portal/stras/effective?instance=%s:%s",
 		"updateInterval": 9000,
 		"indexInterval":  60000,
+		"nodataInterval": 60,
 		"timeout":        5000,
 		"mod":            "monapi",
 		"eventPrefix":    "n9e",
