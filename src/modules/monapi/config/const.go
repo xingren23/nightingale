@@ -11,6 +11,7 @@ const (
 	OpsSrvtreeRootPath        = "/srv_tree/tree"
 	OpsSrvtreePath            = "/srv_tree"
 	OpsSrvtreeDescendantsPath = "/srv_tree/descendants"
+	OpsSrvtreeAncestorsPath   = "/srv_tree/ancestors"
 
 	OpsApiResourcerPath   = "/api/resource/query"
 	OpsAppSearchPath      = "/app/search"

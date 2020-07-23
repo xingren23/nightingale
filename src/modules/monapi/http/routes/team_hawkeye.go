@@ -19,10 +19,8 @@ func teamHawkeyeListGet(c *gin.Context) {
 	m := make(map[int64]string)
 
 	if edit == 1 {
-		srvTrees, err := meicai.SrvTreeDescendants(nid)
-		if err != nil {
-
-		}
+		srvTrees, err := meicai.SrvTreeAncestors(nid)
+		errors.Dangerous(err)
 
 		for _, srvTree := range srvTrees {
 			nids = append(nids, srvTree.Id)
