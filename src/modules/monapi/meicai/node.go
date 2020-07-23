@@ -70,6 +70,30 @@ func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
 	return result.SrvTree, nil
 }
 
+//根据服务树id获取父节点
+func SrvTreeAncestors(nid int64) ([]*SrvTree, error) {
+	url := config.Get().Api.OpsAddr + config.OpsSrvtreeAncestorsPath
+
+	m := map[string]int64{
+		"currentNodeId": nid,
+	}
+
+	var result SrvResult
+	err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(3 * time.Second).ToJSON(&result)
+	if err != nil {
+		err = fmt.Errorf("request srvTree ancestors fail: nid:%v, err:%v", nid, err)
+		logger.Error(err)
+		return nil, err
+	}
+
+	if result.Status != 200 {
+		return nil, fmt.Errorf("%v srvtree Ancestors status error", nid)
+	}
+
+	tlogger.TimeoutWarning("SrvTreeAncestors", config.OpsSrvtreeDescendantsPath, time.Now(), float64(1))
+	return result.SrvTree, nil
+}
+
 type SrvResult struct {
 	Message string     `json:"message"`
 	SrvTree []*SrvTree `json:"result"`
