@@ -7,17 +7,16 @@ import (
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/config"
+	tlogger "github.com/didi/nightingale/src/toolkits/logger"
 
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
 )
 
 func GetNodeById(nid int64) (*model.Node, error) {
-	// fixme: url 路径拼接，配置项 要不要带 "/"?
-	url := config.Get().Api.OpsAddr + config.OpsSrvtreePath + strconv.FormatInt(nid, 10)
+	url := fmt.Sprintf("%s%s/%s", config.Get().Api.OpsAddr, config.OpsSrvtreePath, strconv.FormatInt(nid, 10))
 
 	var result SrvResultDetail
-	// fixme: 外部请求输出info日志，以及慢请求日志
 	err := httplib.Get(url).SetTimeout(3 * time.Second).ToJSON(&result)
 	if err != nil {
 		err = fmt.Errorf("request srvTree detail fail: nid:%v, err:%v", nid, err)
@@ -35,6 +34,7 @@ func GetNodeById(nid int64) (*model.Node, error) {
 		return nil, fmt.Errorf("request srvTree detail is nil: nid:%v", nid)
 	}
 
+	tlogger.TimeoutWarning("GetNodeById", config.OpsSrvtreePath, time.Now(), float64(1))
 	return &model.Node{
 		Id:   result.SrvTree.Id,
 		Pid:  0,
@@ -55,7 +55,6 @@ func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
 	}
 
 	var result SrvResult
-	// fixme: 外部请求输出info日志，以及慢请求日志
 	err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(3 * time.Second).ToJSON(&result)
 	if err != nil {
 		err = fmt.Errorf("request srvTree descendants fail: nid:%v, err:%v", nid, err)
@@ -67,6 +66,7 @@ func SrvTreeDescendants(nid int64) ([]*SrvTree, error) {
 		return nil, fmt.Errorf("%v srvtree descendants status error", nid)
 	}
 
+	tlogger.TimeoutWarning("SrvTreeDescendants", config.OpsSrvtreeDescendantsPath, time.Now(), float64(1))
 	return result.SrvTree, nil
 }
 

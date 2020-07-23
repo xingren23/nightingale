@@ -37,7 +37,7 @@ func Logined() gin.HandlerFunc {
 
 func devOpsTokenUser(c *gin.Context) string {
 	// TODO: user token
-	//cookie, err := c.Request.Cookie("devops_principal")
+	//cookie, err := c.Request.Cookie(config.Get().Cookie.Name)
 	//if err != nil {
 	//	return ""
 	//}

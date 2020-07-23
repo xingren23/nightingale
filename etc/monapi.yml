@@ -67,3 +67,6 @@ api:
   opsAddr: http://192.168.248.180:8089
   ssoAddr: http://192.168.253.65:10001
   timeout: 1000
+
+cookie:
+  name: "test_principal"

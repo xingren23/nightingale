@@ -21,6 +21,11 @@ type Config struct {
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
 	Api     apiSection          `yaml:"api"`
+	Cookie  cookieSection       `yaml:"cookie"`
+}
+
+type cookieSection struct {
+	Name string `yaml:"name"`
 }
 
 type apiSection struct {

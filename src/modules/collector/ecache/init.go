@@ -26,7 +26,6 @@ const (
 )
 
 func Init() {
-	// fixme : 缓存构建失败 collector 能不能正常启动 ？
 	AppCache = NewAppCache()
 	HostCache = NewHostCache()
 	InstanceCache = NewInstanceCache()
@@ -67,26 +66,32 @@ func buildResourceCache() error {
 	// fixme : err 输出日志
 	appResp, err := getApps()
 	if err != nil {
+		logger.Error("build app cache fail:", err)
 		return err
 	}
 	hostResp, err := getHost()
 	if err != nil {
+		logger.Error("build host cache fail:", err)
 		return err
 	}
 	networkResp, err := getNetwork()
 	if err != nil {
+		logger.Error("build network cache fail:", err)
 		return err
 	}
 	instanceResp, err := getInstance()
 	if err != nil {
+		logger.Error("build instance cache fail:", err)
 		return err
 	}
 	monitorItemResp, err := getMonitorItem()
 	if err != nil {
+		logger.Error("build monitorItem cache fail:", err)
 		return err
 	}
 	garbageFilterResp, err := getGarbageFiltersRetry()
 	if err != nil {
+		logger.Error("build garbageFilter cache fail:", err)
 		return err
 	}
 	GarbageFilterCache.SetAll(garbageFilterResp)
