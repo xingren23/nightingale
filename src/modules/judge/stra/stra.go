@@ -23,6 +23,7 @@ type StrategySection struct {
 	UpdateInterval int    `yaml:"updateInterval"`
 	IndexInterval  int    `yaml:"indexInterval"`
 	ReportInterval int    `yaml:"reportInterval"`
+	NodataInterval int    `yaml:"nodataInterval"`
 	Mod            string `yaml:"mod"`
 }
 

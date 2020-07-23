@@ -7,20 +7,19 @@ import (
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/judge/cache"
+	"github.com/didi/nightingale/src/modules/judge/config"
 
 	"github.com/toolkits/pkg/concurrent/semaphore"
 	"github.com/toolkits/pkg/logger"
 )
 
-var (
-	interval  = 60
-	nodataJob *semaphore.Semaphore
-)
+var nodataJob *semaphore.Semaphore
 
 func NodataJudge(concurrency int) {
 	if concurrency < 1 {
 		concurrency = 1000
 	}
+	interval := config.Config.Strategy.NodataInterval
 	nodataJob = semaphore.NewSemaphore(concurrency)
 	for {
 		if time.Now().Unix()%int64(interval) == 0 {
