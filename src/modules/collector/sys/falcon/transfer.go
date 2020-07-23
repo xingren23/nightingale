@@ -1,10 +1,11 @@
 package falcon
 
 import (
-	"log"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/modules/collector/sys"
@@ -16,7 +17,6 @@ var (
 )
 
 func SendMetrics(metrics []*dataobj.MetricValue, resp *TransferResponse) {
-	rand.Seed(time.Now().UnixNano())
 	addrs := sys.Config.FalconTransfer.Addrs
 	for _, i := range rand.Perm(len(addrs)) {
 		addr := addrs[i]
@@ -45,7 +45,7 @@ func updateMetrics(addr string, metrics []*dataobj.MetricValue, resp *TransferRe
 	defer TransferLock.RUnlock()
 	err := TransferClients[addr].Call("Transfer.Update", metrics, resp)
 	if err != nil {
-		log.Println("call Transfer.Update fail", addr, err)
+		logger.Errorf("call %s Transfer.Update fail, %s", addr, err)
 		return false
 	}
 	return true

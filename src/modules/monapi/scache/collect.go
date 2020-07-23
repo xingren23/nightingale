@@ -6,6 +6,7 @@ import (
 	"github.com/didi/nightingale/src/model"
 )
 
+// 缓存endpoint对应的采集策略：endpoint -> collect
 type CollectCacheMap struct {
 	sync.RWMutex
 	Data map[string]*model.Collect
