@@ -23,6 +23,6 @@ judge:
   rpc: 0.0.0.0:5841
 
 collector:
-  http: 0.0.0.0:2058
+  http: 0.0.0.0:1998
 
 

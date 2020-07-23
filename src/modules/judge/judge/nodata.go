@@ -12,7 +12,10 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
-var nodataJob *semaphore.Semaphore
+var (
+	interval  = 60
+	nodataJob *semaphore.Semaphore
+)
 
 func NodataJudge(concurrency int) {
 	if concurrency < 1 {
@@ -20,13 +23,13 @@ func NodataJudge(concurrency int) {
 	}
 	nodataJob = semaphore.NewSemaphore(concurrency)
 	for {
-		if time.Now().Unix()%10 == 0 {
+		if time.Now().Unix()%int64(interval) == 0 {
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	t1 := time.NewTicker(time.Duration(10) * time.Second)
+	t1 := time.NewTicker(time.Duration(interval) * time.Second)
 	nodataJudge()
 	for {
 		<-t1.C
