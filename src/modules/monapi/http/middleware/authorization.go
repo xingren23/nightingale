@@ -24,7 +24,7 @@ func Logined() gin.HandlerFunc {
 		}
 
 		if username == "" {
-			username = devOpsTokenUser(c)
+			username = DevOpsTokenUser(c)
 		}
 
 		if username == "" {
@@ -36,7 +36,7 @@ func Logined() gin.HandlerFunc {
 	}
 }
 
-func devOpsTokenUser(c *gin.Context) string {
+func DevOpsTokenUser(c *gin.Context) string {
 	cookie, err := c.Request.Cookie(config.Get().Cookie.Name)
 	if err != nil {
 		logger.Error("login get cookie name fail", err)
@@ -46,19 +46,16 @@ func devOpsTokenUser(c *gin.Context) string {
 	//userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
 	userStr, err := url.QueryUnescape(cookie.Value)
 	if userStr == "" || err != nil {
-		logger.Error("login QueryUnescape cookie value fail", err)
 		errors.Bomb("login first please")
 	}
 
 	userJson, err := url.QueryUnescape(userStr)
 	if userJson == "" || err != nil {
-		logger.Error("login QueryUnescape userStr fail", err)
 		errors.Bomb("login first please")
 	}
 
 	var opsUserResp DevOpsUserResp
 	if err := json.Unmarshal([]byte(userJson), &opsUserResp); err != nil {
-		logger.Error("login userJson unmarshal fail", err)
 		errors.Bomb("login first please")
 	}
 
@@ -75,7 +72,7 @@ func devOpsTokenUser(c *gin.Context) string {
 		user.Save()
 	}
 
-	return user.Dispname
+	return user.Username
 }
 
 func cookieUser(c *gin.Context) string {

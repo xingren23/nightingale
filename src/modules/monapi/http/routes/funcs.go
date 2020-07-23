@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
 	"strconv"
 
 	"github.com/gin-contrib/sessions"
@@ -161,6 +162,9 @@ func loginUsername(c *gin.Context) string {
 
 func loginUser(c *gin.Context) *model.User {
 	username := loginUsername(c)
+	if username == "" {
+		username = middleware.DevOpsTokenUser(c)
+	}
 
 	user, err := model.UserGet("username", username)
 	errors.Dangerous(err)
