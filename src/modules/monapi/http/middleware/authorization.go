@@ -36,14 +36,13 @@ func Logined() gin.HandlerFunc {
 }
 
 func devOpsTokenUser(c *gin.Context) string {
-	// TODO: user token
-	//cookie, err := c.Request.Cookie(config.Get().Cookie.Name)
-	//if err != nil {
-	//	return ""
-	//}
+	cookie, err := c.Request.Cookie(config.Get().Cookie.Name)
+	if err != nil {
+		return ""
+	}
 
-	userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
-	//userStr, _ := url.QueryUnescape(cookie.Value)
+	//userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
+	userStr, _ := url.QueryUnescape(cookie.Value)
 	if userStr == "" {
 		errors.Bomb("login first please")
 	}
@@ -56,7 +55,6 @@ func devOpsTokenUser(c *gin.Context) string {
 	// 自动创建用户
 	user, _ := model.UserGet("username", strings.Split(opsUserResp.Data.Email, "@")[0])
 	if user == nil {
-		// TODO : 都是 root 用户？
 		user = &model.User{
 			Username: strings.Split(opsUserResp.Data.Email, "@")[0],
 			Dispname: opsUserResp.Data.Name,
