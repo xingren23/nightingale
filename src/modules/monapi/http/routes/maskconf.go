@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
+	"sort"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
@@ -78,6 +79,16 @@ func maskconfGets(c *gin.Context) {
 	for i := 0; i < len(maskconfs); i++ {
 		errors.Dangerous(maskconfs[i].FillEndpoints())
 	}
+
+	sort.Slice(maskconfs, func(i int, j int) bool {
+		if maskconfs[i].NodePath < maskconfs[j].NodePath {
+			return true
+		}
+		if maskconfs[i].Id > maskconfs[j].Id {
+			return true
+		}
+		return false
+	})
 
 	renderData(c, maskconfs, nil)
 }
