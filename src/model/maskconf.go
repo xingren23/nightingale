@@ -72,7 +72,21 @@ func (mc *Maskconf) FillEndpoints() error {
 	return nil
 }
 
-func MaskconfGets(nodeId int64, leaf int, path string) ([]Maskconf, error) {
+func MaskconfGets(nodeId int64, path string) ([]Maskconf, error) {
+	var objs []Maskconf
+	err := DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(objs); i++ {
+		objs[i].NodePath = path
+	}
+
+	return objs, nil
+}
+
+func MaskconfGetUnderNode(nodeId int64) ([]Maskconf, error) {
 	if leaf == 1 {
 		var objs []Maskconf
 		err := DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)

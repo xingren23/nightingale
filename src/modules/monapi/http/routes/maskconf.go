@@ -54,14 +54,32 @@ func maskconfGets(c *gin.Context) {
 	node, err := cmdb.GetCmdb().NodeGet("id", nid)
 	errors.Dangerous(err)
 
-	objs, err := model.MaskconfGets(nid, node.Leaf, node.Path)
-	errors.Dangerous(err)
+	maskconfs := make([]model.Maskconf, 0)
+	if node.Leaf == 1 {
+		// 查询当前节点
+		objs, err := model.MaskconfGets(node.Id, node.Path)
+		errors.Dangerous(err)
+		maskconfs = append(maskconfs, objs...)
+	}else {
+		// 查询所有子节点
+		nIds, err :=cmdb.GetCmdb().LeafIds(node)
+		errors.Dangerous(err)
 
-	for i := 0; i < len(objs); i++ {
-		errors.Dangerous(objs[i].FillEndpoints())
+		for nid := range nIds {
+			node, err := cmdb.GetCmdb().NodeGet("id", nid)
+			errors.Dangerous(err)
+
+			objs, err := model.MaskconfGets(node.Id, node.Path)
+			errors.Dangerous(err)
+			maskconfs = append(maskconfs, objs...)
+		}
 	}
 
-	renderData(c, objs, nil)
+	for i := 0; i < len(maskconfs); i++ {
+		errors.Dangerous(maskconfs[i].FillEndpoints())
+	}
+
+	renderData(c, maskconfs, nil)
 }
 
 func maskconfDel(c *gin.Context) {
