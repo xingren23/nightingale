@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/toolkits/pkg/logger"
+
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
-	"github.com/toolkits/pkg/logger"
 )
 
 var JudgeHashRing *ConsistentHashRing

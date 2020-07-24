@@ -3,13 +3,13 @@ package routes
 import (
 	"strconv"
 
-	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/cmdb"
-	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
+
+	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 )
 
 func urlParamStr(c *gin.Context, field string) string {
