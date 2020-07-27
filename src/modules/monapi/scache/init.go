@@ -266,7 +266,7 @@ func removeDuplicateElement(addrs []string) []string {
 // GetExclLeafIds 获取排除节点下的叶子节点
 func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
 	for _, nid := range exclNid {
-		node, err := model.NodeGet("id", nid)
+		node, err := cmdb.GetCmdb().NodeGet("id", nid)
 		if err != nil {
 			return leafIds, err
 		}
@@ -276,7 +276,7 @@ func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
 			continue
 		}
 
-		ids, err := node.LeafIds()
+		ids, err := cmdb.GetCmdb().LeafIds(node)
 		if err != nil {
 			return leafIds, err
 		}
