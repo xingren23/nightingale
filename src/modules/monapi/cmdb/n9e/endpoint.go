@@ -1,6 +1,7 @@
 package n9e
 
 import (
+	"fmt"
 	"strings"
 
 	"xorm.io/xorm"
@@ -28,16 +29,23 @@ func (c *N9e) Update(e *dataobj.Endpoint, cols ...string) error {
 	return err
 }
 
-func (c *N9e) EndpointTotal(query, batch, field string) (int64, error) {
+func (c *N9e) endpointTotal(query, batch, field string) (int64, error) {
 	session := c.buildEndpointWhere(query, batch, field)
 	return session.Count(new(dataobj.Endpoint))
 }
 
-func (c *N9e) EndpointGets(query, batch, field string, limit, offset int) ([]dataobj.Endpoint, error) {
-	session := c.buildEndpointWhere(query, batch, field).OrderBy(field).Limit(limit, offset)
+func (c *N9e) EndpointGets(query, batch, field string, limit, offset int) ([]dataobj.Endpoint, int64, error) {
 	var objs []dataobj.Endpoint
-	err := session.Find(&objs)
-	return objs, err
+	total, err := c.endpointTotal(query, batch, field)
+	if err != nil {
+		return objs, total, err
+	}
+	if int64(offset) > total {
+		return objs, total, fmt.Errorf("offset > total, %d > %d", offset, total)
+	}
+	session := c.buildEndpointWhere(query, batch, field).OrderBy(field).Limit(limit, offset)
+	err = session.Find(&objs)
+	return objs, total, err
 }
 
 func (c *N9e) buildEndpointWhere(query, batch, field string) *xorm.Session {
@@ -156,16 +164,25 @@ func (c *N9e) buildEndpointUnderNodeWhere(leafids []int64, query, batch, field s
 	return session
 }
 
-func (c *N9e) EndpointUnderNodeTotal(leafids []int64, query, batch, field string) (int64, error) {
+func (c *N9e) endpointUnderNodeTotal(leafids []int64, query, batch, field string) (int64, error) {
 	session := c.buildEndpointUnderNodeWhere(leafids, query, batch, field)
 	return session.Count(new(dataobj.Endpoint))
 }
 
-func (c *N9e) EndpointUnderNodeGets(leafids []int64, query, batch, field string, limit, offset int) ([]dataobj.Endpoint, error) {
-	session := c.buildEndpointUnderNodeWhere(leafids, query, batch, field).Limit(limit, offset).OrderBy(field)
+func (c *N9e) EndpointUnderNodeGets(leafids []int64, query, batch, field string, limit,
+	offset int) ([]dataobj.Endpoint, int64, error) {
 	var objs []dataobj.Endpoint
-	err := session.Find(&objs)
-	return objs, err
+	total, err := c.endpointUnderNodeTotal(leafids, query, batch, field)
+	if err != nil {
+		return objs, total, err
+	}
+	if int64(offset) > total {
+		return objs, total, fmt.Errorf("offset > total, %d > %d", offset, total)
+	}
+
+	session := c.buildEndpointUnderNodeWhere(leafids, query, batch, field).Limit(limit, offset).OrderBy(field)
+	err = session.Find(&objs)
+	return objs, total, err
 }
 
 func (c *N9e) EndpointIdsByIdents(idents []string) ([]int64, error) {

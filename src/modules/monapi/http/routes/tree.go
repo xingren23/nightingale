@@ -6,7 +6,7 @@ import (
 )
 
 func treeGet(c *gin.Context) {
-	nodes, err := cmdb.GetCmdb().NodeGets("")
+	nodes, err := cmdb.GetCmdb().NodeGets()
 	renderData(c, nodes, err)
 }
 

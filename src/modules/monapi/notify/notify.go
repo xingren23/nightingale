@@ -51,7 +51,34 @@ func genEventLink(event *model.Event) string {
 }
 
 func genBindings(event *model.Event) []string {
-	return cmdb.GetCmdb().EndpointBindingsForMail([]string{event.Endpoint})
+	return endpointBindingsForMail([]string{event.Endpoint})
+}
+
+// EndpointBindingsForMail 用来发告警邮件的时候带上各个endpoint的挂载信息
+func endpointBindingsForMail(endpoints []string) []string {
+	ids, err := cmdb.GetCmdb().EndpointIdsByIdents(endpoints)
+	if err != nil {
+		return []string{fmt.Sprintf("get endpoint ids by idents fail: %v", err)}
+	}
+
+	if len(ids) == 0 {
+		return []string{}
+	}
+
+	bindings, err := cmdb.GetCmdb().EndpointBindings(ids)
+	if err != nil {
+		return []string{fmt.Sprintf("get endpoint bindings fail: %v", err)}
+	}
+
+	var ret []string
+	size := len(bindings)
+	for i := 0; i < size; i++ {
+		for j := 0; j < len(bindings[i].Nodes); j++ {
+			ret = append(ret, bindings[i].Ident+" - "+bindings[i].Alias+" - "+bindings[i].Nodes[j].Path)
+		}
+	}
+
+	return ret
 }
 
 func genMetrics(event *model.Event) []string {

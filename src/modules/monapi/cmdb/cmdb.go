@@ -6,13 +6,19 @@ import (
 )
 
 type IEndpointReadable interface {
-	EndpointTotal(query, batch, field string) (int64, error)
+	// 查询endpoint（col: id、ident or alias）
 	EndpointGet(col string, val interface{}) (*dataobj.Endpoint, error)
-	EndpointGets(query, batch, field string, limit, offset int) ([]dataobj.Endpoint, error)
+	// 批量查询endpoint（query:ident or alias; field in batch; offset），支持翻页
+	EndpointGets(query, batch, field string, limit, offset int) ([]dataobj.Endpoint, int64, error)
+	// 批量查询endpoint（ident）
 	EndpointIdsByIdents(idents []string) ([]int64, error)
-	EndpointUnderNodeTotal(leafids []int64, query, batch, field string) (int64, error)
-	EndpointUnderNodeGets(leafids []int64, query, batch, field string, limit, offset int) ([]dataobj.Endpoint, error)
+	// 查询指定node下的endpoint（query:ident or alias; field in batch; offset）
+	EndpointUnderNodeGets(leafids []int64, query, batch, field string, limit, offset int) ([]dataobj.Endpoint,
+		int64, error)
+	// 查询指定node下所有endpoint
 	EndpointUnderLeafs(leafIds []int64) ([]dataobj.Endpoint, error)
+	// 查询endpoint的bind信息
+	EndpointBindings(endpointIds []int64) ([]dataobj.EndpointBinding, error)
 }
 
 type IEndpoint interface {
@@ -21,19 +27,29 @@ type IEndpoint interface {
 	Update(e *dataobj.Endpoint, cols ...string) error
 	EndpointDel(ids []int64) error
 	EndpointImport(endpoints []string) error
-	EndpointBindings(endpointIds []int64) ([]dataobj.EndpointBinding, error)
 }
 
 type INodeReadable interface {
-	NodeGets(where string, args ...interface{}) (nodes []dataobj.Node, err error)
+	// 查询所有节点
+	NodeGets() (nodes []dataobj.Node, err error)
+	// 根据path查询
 	NodeGetsByPaths(paths []string) ([]dataobj.Node, error)
+	// 根据ids查询
 	NodeByIds(ids []int64) ([]dataobj.Node, error)
+
+	// 查询子节点id
 	LeafIds(n *dataobj.Node) ([]int64, error)
-	NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error)
-	TreeSearchByPath(query string) (nodes []dataobj.Node, err error)
-	NodeGet(col string, val interface{}) (*dataobj.Node, error)
-	NodesGetByIds(ids []int64) ([]dataobj.Node, error)
+	// 查询父节点id
 	Pids(n *dataobj.Node) ([]int64, error)
+
+	// 查询节点信息
+	NodeGet(col string, val interface{}) (*dataobj.Node, error)
+	// 根据path搜索节点
+	NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error)
+	// 根据ids查询节点
+	NodesGetByIds(ids []int64) ([]dataobj.Node, error)
+	// 服务树搜索（支持多查询条件）
+	TreeSearchByPath(query string) (nodes []dataobj.Node, err error)
 }
 
 type INode interface {
@@ -48,9 +64,10 @@ type INode interface {
 }
 
 type INodeEndpointReadable interface {
+	// 查询endpoint所属的node
 	NodeIdsGetByEndpointId(endpointId int64) ([]int64, error)
+	// 查询node下的endpoint
 	EndpointIdsByNodeIds(nodeIds []int64) ([]int64, error)
-	EndpointBindingsForMail(endpoints []string) []string
 }
 
 type INodeEndpoint interface {
@@ -89,4 +106,3 @@ func GetCmdb() ICmdb {
 func RegisterCmdb(name string, cmdb ICmdb) {
 	registryCmdb[name] = cmdb
 }
-
