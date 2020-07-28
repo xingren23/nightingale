@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
+	"github.com/didi/nightingale/src/modules/collector/core"
+	"github.com/didi/nightingale/src/modules/collector/core/falcon"
 	"github.com/didi/nightingale/src/modules/collector/sys"
-	"github.com/didi/nightingale/src/modules/collector/sys/falcon"
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
 
@@ -48,7 +49,7 @@ func collect(sec int64, fn func() []*dataobj.MetricValue) {
 			metricValues = append(metricValues, item)
 		}
 		// push to n9e transfer
-		Push(metricValues)
+		core.Push(metricValues)
 
 		// push to falcon transfer
 		falcon.Push(metricValues)

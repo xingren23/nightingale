@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync"
 	"unicode"
-
-	"github.com/toolkits/pkg/logger"
 )
 
 const (
@@ -112,8 +110,8 @@ func (m *MetricValue) CheckValidity(now int64) (err error) {
 		}
 	}
 
-	if len(m.TagsMap) > 12 {
-		err = fmt.Errorf("tagkv count is too large > 12")
+	if len(m.TagsMap) > 20 {
+		err = fmt.Errorf("tagkv count is too large > 20")
 	}
 
 	if len(m.Metric) > 128 {
@@ -201,7 +199,6 @@ func filterString(str string) string {
 				r == '\n' ||
 				r == ',' ||
 				r == ' ' ||
-				r == ':' ||
 				r == '='
 		}) {
 
@@ -214,7 +211,6 @@ func filterString(str string) string {
 			r == '\n' ||
 			r == ',' ||
 			r == ' ' ||
-			r == ':' ||
 			r == '=' {
 			return '_'
 		}
@@ -323,7 +319,6 @@ func GetCounter(metric, tag string, tagMap map[string]string) (counter string, e
 	if tagMap == nil {
 		tagMap, err = SplitTagsString(tag)
 		if err != nil {
-			logger.Warningf("split tag string error: %+v", err)
 			return
 		}
 	}
@@ -458,10 +453,7 @@ func convertSeviceTag(key, val string) string {
 	}
 
 	res := builder.String()
-	if length != len(res) {
-		logger.Debugf("parse metric filter [%s] to [%s].", val, res)
-	}
-	return val
+	return res
 }
 
 func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err error) {

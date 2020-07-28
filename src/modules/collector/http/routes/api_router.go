@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/didi/nightingale/src/dataobj"
+	"github.com/didi/nightingale/src/modules/collector/core"
+	"github.com/didi/nightingale/src/modules/collector/core/falcon"
 	"github.com/didi/nightingale/src/modules/collector/log/strategy"
 	"github.com/didi/nightingale/src/modules/collector/log/worker"
 	"github.com/didi/nightingale/src/modules/collector/stra"
-	"github.com/didi/nightingale/src/modules/collector/sys/falcon"
-	"github.com/didi/nightingale/src/modules/collector/sys/funcs"
 	"github.com/didi/nightingale/src/toolkits/http/render"
 
 	"github.com/gin-gonic/gin"
@@ -37,11 +37,12 @@ func pushData(c *gin.Context) {
 	var recvMetricValues []*dataobj.MetricValue
 	errors.Dangerous(c.ShouldBindJSON(&recvMetricValues))
 
-	err := funcs.Push(recvMetricValues)
+	err := core.Push(recvMetricValues)
 	render.Message(c, err)
 }
 
-func pushData2Falcon(c *gin.Context) {
+// push data to n9e & falcon
+func pushData2(c *gin.Context) {
 	if c.Request.ContentLength == 0 {
 		render.Message(c, "blank body")
 		return
@@ -52,7 +53,7 @@ func pushData2Falcon(c *gin.Context) {
 	// send to falcon
 	falcon.Push(recvMetricValues)
 	// send to n9e
-	err := funcs.Push(recvMetricValues)
+	err := core.Push(recvMetricValues)
 	render.Message(c, err)
 }
 

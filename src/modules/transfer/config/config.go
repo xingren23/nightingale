@@ -7,19 +7,23 @@ import (
 
 	"github.com/didi/nightingale/src/modules/transfer/backend"
 	"github.com/didi/nightingale/src/modules/transfer/backend/tsdb"
+	"github.com/didi/nightingale/src/toolkits/identity"
 	"github.com/didi/nightingale/src/toolkits/logger"
+	"github.com/didi/nightingale/src/toolkits/report"
 
 	"github.com/spf13/viper"
 	"github.com/toolkits/pkg/file"
 )
 
 type ConfYaml struct {
-	Debug   bool                   `yaml:"debug"`
-	MinStep int                    `yaml:"minStep"`
-	Logger  logger.LoggerSection   `yaml:"logger"`
-	Backend backend.BackendSection `yaml:"backend"`
-	HTTP    HTTPSection            `yaml:"http"`
-	RPC     RPCSection             `yaml:"rpc"`
+	Debug    bool                     `yaml:"debug"`
+	MinStep  int                      `yaml:"minStep"`
+	Logger   logger.LoggerSection     `yaml:"logger"`
+	Backend  backend.BackendSection   `yaml:"backend"`
+	HTTP     HTTPSection              `yaml:"http"`
+	RPC      RPCSection               `yaml:"rpc"`
+	Identity identity.IdentitySection `yaml:"identity"`
+	Report   report.ReportSection     `yaml:"report"`
 }
 
 type IndexSection struct {

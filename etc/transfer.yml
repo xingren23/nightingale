@@ -1,18 +1,17 @@
 backend:
-  storage: "tsdb"
+  datasource: "tsdb"
   tsdb:
-    enable: true
+    enabled: true
     name: "tsdb"
     cluster:
       tsdb01: 127.0.0.1:5821
   influxdb:
-    enabled: true
-    username: "admin"
+    enabled: false
+    username: "influx"
     password: "admin123"
     precision: "s"
     database: "n9e"
     address: "http://127.0.0.1:8086"
-
   opentsdb:
     enabled: false
     address: "127.0.0.1:4242"
@@ -20,6 +19,11 @@ backend:
     enabled: false
     brokersPeers: "192.168.1.1:9092,192.168.1.2:9092"
     topic: "n9e"
+
+identity:
+  specify: ""
+  shell: ifconfig `route|grep '^default'|awk '{print $NF}'`|grep inet|awk '{print $2}'|awk -F ':' '{print $NF}'|head -n 1
+
 
 logger:
   dir: logs/transfer

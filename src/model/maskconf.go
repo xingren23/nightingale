@@ -2,10 +2,7 @@ package model
 
 import (
 	"fmt"
-	"sort"
 	"strings"
-
-	"github.com/toolkits/pkg/str"
 )
 
 type Maskconf struct {
@@ -71,83 +68,16 @@ func (mc *Maskconf) FillEndpoints() error {
 	return nil
 }
 
-func MaskconfGets(nodeId int64) ([]Maskconf, error) {
-	node, err := NodeGet("id", nodeId)
-	if err != nil {
-		return nil, err
-	}
-
-	if node.Leaf == 1 {
-		var objs []Maskconf
-		err = DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < len(objs); i++ {
-			objs[i].NodePath = node.Path
-		}
-
-		return objs, nil
-	}
-
-	var relatedNodeIds []int64
-	err = DB["mon"].Table("maskconf").Select("nid").Find(&relatedNodeIds)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(relatedNodeIds) == 0 {
-		return []Maskconf{}, nil
-	}
-
-	var nodes []Node
-	err = DB["mon"].Where("id in ("+str.IdsString(relatedNodeIds)+")").Where("id="+fmt.Sprint(node.Id)+" or path like ?", node.Path+".%").Find(&nodes)
-	if err != nil {
-		return nil, err
-	}
-
-	count := len(nodes)
-	if count == 0 {
-		return []Maskconf{}, nil
-	}
-
-	ids := make([]int64, 0, count)
-	nmap := make(map[int64]Node, count)
-	for i := 0; i < count; i++ {
-		nmap[nodes[i].Id] = nodes[i]
-		ids = append(ids, nodes[i].Id)
-	}
-
+func MaskconfGets(nodeId int64, path string) ([]Maskconf, error) {
 	var objs []Maskconf
-	err = DB["mon"].In("nid", ids).Find(&objs)
+	err := DB["mon"].Where("nid=?", nodeId).OrderBy("id desc").Find(&objs)
 	if err != nil {
 		return nil, err
 	}
 
-	count = len(objs)
-	for i := 0; i < count; i++ {
-		n, has := nmap[objs[i].Nid]
-		if has {
-			objs[i].NodePath = n.Path
-		}
+	for i := 0; i < len(objs); i++ {
+		objs[i].NodePath = path
 	}
-
-	if count == 0 {
-		return []Maskconf{}, nil
-	}
-
-	sort.Slice(objs, func(i int, j int) bool {
-		if objs[i].NodePath < objs[j].NodePath {
-			return true
-		}
-
-		if objs[i].Id > objs[j].Id {
-			return true
-		}
-
-		return false
-	})
 
 	return objs, nil
 }

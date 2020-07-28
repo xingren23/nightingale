@@ -62,6 +62,7 @@ func Parse(conf string) error {
 	})
 
 	viper.SetDefault("sys", map[string]interface{}{
+		"enable":       true,
 		"timeout":      1000, //请求超时时间
 		"interval":     10,   //基础指标上报周期
 		"pluginRemote": true, //从monapi获取插件采集配置
