@@ -55,4 +55,7 @@ func (n9e *N9e) Init() {
 
 	n9e.DB = map[string]*xorm.Engine{}
 	n9e.DB[name] = db
+
+	// init node
+	n9e.InitNode()
 }

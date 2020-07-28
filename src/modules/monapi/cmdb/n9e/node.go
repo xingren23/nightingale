@@ -37,7 +37,12 @@ func (c *N9e) InitNode() {
 	logger.Info("node cop init done")
 }
 
-func (c *N9e) NodeGets(where string, args ...interface{}) (nodes []dataobj.Node, err error) {
+func (c *N9e) NodeGets() (nodes []dataobj.Node, err error) {
+	nodes, err = c.nodeGetsWhere("")
+	return nodes, err
+}
+
+func (c *N9e) nodeGetsWhere(where string, args ...interface{}) (nodes []dataobj.Node, err error) {
 	if where != "" {
 		err = c.DB["mon"].Where(where, args...).Find(&nodes)
 	} else {
@@ -61,7 +66,7 @@ func (c *N9e) NodeByIds(ids []int64) ([]dataobj.Node, error) {
 		return []dataobj.Node{}, nil
 	}
 
-	return c.NodeGets(fmt.Sprintf("id in (%s)", str.IdsString(ids)))
+	return c.nodeGetsWhere(fmt.Sprintf("id in (%s)", str.IdsString(ids)))
 }
 
 func (c *N9e) NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error) {
