@@ -34,10 +34,8 @@ func Config(r *gin.Engine) {
 		nolog.GET("/stras/effective", effectiveStrasGet)
 		nolog.GET("/stras", strasAll)
 
-		nolog.GET("/app", appGet)
-		nolog.GET("/host", hostGet)
-		nolog.GET("/instance", instanceGet)
-		nolog.GET("/network", networkGet)
+		nolog.GET("/endpoints", endpointGets)
+
 		nolog.GET("/garbage", GarbageFilterGet)
 		nolog.GET("/monitor_item", monitorItemGet)
 	}
@@ -139,8 +137,6 @@ func Config(r *gin.Engine) {
 
 	hawkeye := r.Group("/api/portal/hawkeye").Use(middleware.Logined())
 	{
-		hawkeye.POST("/resource", resourcePost)
-
 		hawkeye.GET("/team", teamHawkeyeListGet)
 		hawkeye.POST("/team", teamHawkeyeAddPost)
 		hawkeye.PUT("/team/:id", teamHawkeyePut)

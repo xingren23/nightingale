@@ -1,4 +1,4 @@
-package meicai
+package auth
 
 import (
 	"fmt"
@@ -25,6 +25,11 @@ type AuthUser struct {
 	Phone  string `json:"phone"`
 }
 
+const (
+	//获取用户详情信息
+	SsoSearchUserPath = "/adminuser/searchadmin"
+)
+
 func SaveSSOUser(userNames []string) ([]int64, error) {
 	cnt := len(userNames)
 	ret := make([]int64, 0, cnt)
@@ -36,14 +41,14 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 		}
 
 		if user == nil {
-			url := config.Get().Api.SSOAddr + config.SsoSearchUserPath
+			url := config.Get().SSO.SSOAddr + SsoSearchUserPath
 
 			m := map[string]string{
 				"email": userName,
 			}
 
 			var resp AuthResp
-			err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(time.Duration(config.Get().Api.Timeout) * time.
+			err := httplib.Post(url).JSONBodyQuiet(m).SetTimeout(time.Duration(config.Get().SSO.Timeout) * time.
 				Millisecond).ToJSON(
 				&resp)
 			if err != nil {

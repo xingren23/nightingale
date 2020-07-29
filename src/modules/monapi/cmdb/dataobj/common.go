@@ -4,6 +4,7 @@ type Endpoint struct {
 	Id    int64  `json:"id"`
 	Ident string `json:"ident"`
 	Alias string `json:"alias"`
+	Tags  string `json:"tags"`
 }
 
 type Node struct {

@@ -21,7 +21,13 @@ type Config struct {
 	Link    linkSection         `yaml:"link"`
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
+	SSO     ssoSection          `yaml:"sso"`
 	Cmdb    cmdb.CmdbSection    `yaml:"cmdb"`
+}
+
+type ssoSection struct {
+	Timeout int    `yaml:"timeout"`
+	SSOAddr string `yaml:"ssoAddr"`
 }
 
 type linkSection struct {

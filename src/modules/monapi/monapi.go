@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/meicai"
+
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/toolkits/pkg/file"
@@ -77,7 +79,7 @@ func main() {
 		log.Fatalf("sync cmdb resource fail: %v", err)
 	}
 	// 服务树缓存
-	if err := cron.SyncSrvTree(); err != nil {
+	if err := meicai.SyncSrvTree(); err != nil {
 		log.Fatalf("sync srvtree fail: %v", err)
 	}
 	// 全量endpoint缓存
@@ -106,7 +108,7 @@ func main() {
 
 	go cron.SyncMonitorItemLoop()
 	go cron.SyncResourceLoop()
-	go cron.SyncSrvTreeLoop()
+	go meicai.SyncSrvTreeLoop()
 	go cron.SyncEndpointsLoop()
 	go cron.SyncMaskconfLoop()
 	go cron.SyncStraLoop()

@@ -1,16 +1,15 @@
-package ecache
+package cache
 
 import (
 	"bytes"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 
-	"github.com/didi/nightingale/src/modules/monapi/meicai"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/toolkits/pkg/logger"
@@ -21,13 +20,6 @@ const (
 	EndpointKeyDot     = "#"
 	EndpointKeyForLock = "hawkeye_endpoint_lock"
 )
-
-type TagEndpoint struct {
-	Ip       string `json:"ip"`
-	HostName string `json:"hostname"`
-	EnvCode  string `json:"envCode"`
-	Endpoint string `json:"endpoint"`
-}
 
 var bufferPool = sync.Pool{
 	New: func() interface{} {
@@ -82,50 +74,21 @@ func ScanRedisEndpointKeys() ([]string, error) {
 	return ret, nil
 }
 
-func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
+func GetEndpointsFromRedis(srvType, srvTag string) ([]*dataobj.Endpoint, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	ret := []*TagEndpoint{}
+	ret := make([]*dataobj.Endpoint, 0)
 	key := RedisSrvTagKey(srvType, srvTag)
 	bs, err := redisc.SMEMBERS(key)
 	if err != nil {
+		logger.Warningf("smembers %s failed", key)
 		return ret, err
 	}
 	if len(bs) == 0 {
-		logger.Debugf("key [%s] not in redis cache.", key)
-		// 不存在直接调用服务树接口
-		switch srvType {
-		case config.EndpointKeyDocker:
-			fallthrough
-		case config.EndpointKeyPM:
-			res, err := meicai.GetTreeResources(srvTag, config.CmdbSourceHost)
-			if err != nil {
-				return ret, err
-			}
-			for _, h := range res.Hosts {
-				tagEndpoint := &TagEndpoint{
-					Ip:       h.Ip,
-					HostName: h.HostName,
-					EnvCode:  h.EnvCode,
-				}
-				ret = append(ret, tagEndpoint)
-			}
-		case config.EndpointKeyNetwork:
-			res, err := meicai.GetTreeResources(srvTag, config.EndpointKeyNetwork)
-			if err != nil {
-				return ret, err
-			}
-			for _, n := range res.Networks {
-				tagEndpoint := &TagEndpoint{
-					Ip:       n.ManageIp,
-					HostName: n.Name,
-					EnvCode:  n.EnvCode,
-				}
-				ret = append(ret, tagEndpoint)
-			}
-		}
+		logger.Warningf("key %s not in redis cache.", key)
+		return ret, nil
 	}
 	for _, b := range bs {
-		var te TagEndpoint
+		var te dataobj.Endpoint
 		err := json.Unmarshal(b, &te)
 		if err != nil {
 			return ret, err
@@ -135,7 +98,7 @@ func GetEndpointsFromRedis(srvType, srvTag string) ([]*TagEndpoint, error) {
 	return ret, nil
 }
 
-func SetEndpointForRedis(key string, endpoints []*TagEndpoint) error {
+func SetEndpointForRedis(key string, endpoints []*dataobj.Endpoint) error {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	batch := 10
 	size := len(endpoints)

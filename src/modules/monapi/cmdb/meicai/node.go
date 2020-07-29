@@ -11,8 +11,16 @@ import (
 
 // InitNode 初始化服务树节点
 func (m *Meicai) InitNode() {
-
-	logger.Info("node cop init done")
+	// get srvtree
+	url := fmt.Sprintf("%s%s", m.OpsAddr, OpsSrvtreeRootPath)
+	nodes, err := SrvTreeGets(url, m.Timeout)
+	if err != nil {
+		logger.Errorf("get srvtree failed, %s", err)
+		return
+	}
+	// update local cache
+	m.srvTreeCache.SetAll(nodes)
+	logger.Info("srvtree node init done")
 }
 
 func (m *Meicai) NodeGets() (nodes []dataobj.Node, err error) {

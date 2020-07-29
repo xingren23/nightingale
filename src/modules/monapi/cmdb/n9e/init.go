@@ -19,6 +19,11 @@ type MySQLConf struct {
 	Debug bool   `yaml:"debug"`
 }
 
+type N9eSection struct {
+	Enabled bool   `yaml:"enabled""`
+	Name    string `yaml:"name""`
+}
+
 type N9e struct {
 	DB map[string]*xorm.Engine
 }
