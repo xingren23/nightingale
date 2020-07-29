@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/toolkits/pkg/logger"
 )
 
@@ -19,7 +18,7 @@ type Pagination struct {
 	TotalRecord int `json:"totalRecord"`
 }
 
-func RequestByPost(url string, params map[string]interface{}) ([]byte, error) {
+func RequestByPost(url string, timeout int, params map[string]interface{}) ([]byte, error) {
 	b, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -31,7 +30,7 @@ func RequestByPost(url string, params map[string]interface{}) ([]byte, error) {
 	}
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	c := &http.Client{
-		Timeout: time.Duration(config.Get().Api.Timeout) * time.Millisecond,
+		Timeout: time.Duration(timeout) * time.Millisecond,
 	}
 
 	resp, err := c.Do(req)
@@ -50,13 +49,13 @@ func RequestByPost(url string, params map[string]interface{}) ([]byte, error) {
 	return data, err
 }
 
-func RequestByGet(url string) ([]byte, error) {
+func RequestByGet(url string, timeout int) ([]byte, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 	c := &http.Client{
-		Timeout: time.Duration(config.Get().Api.Timeout) * time.Millisecond,
+		Timeout: time.Duration(timeout) * time.Millisecond,
 	}
 
 	resp, err := c.Do(req)
