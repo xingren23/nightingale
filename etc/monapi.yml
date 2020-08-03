@@ -63,10 +63,16 @@ redis:
 tokens:
   - 7dcd606e0462f9df2fea0bf505c9e622
 
-api:
-  opsAddr: http://192.168.248.180:8089
+sso:
+  cookieName: "test_principal"
   ssoAddr: http://192.168.253.65:10001
   timeout: 1000
 
-cookie:
-  name: "test_principal"
+cmdb:
+  default: "meicai"
+  n9e:
+    enabled: false
+  meicai:
+    enabled: true
+    opsAddr: http://192.168.248.180:8089
+    timeout: 1000

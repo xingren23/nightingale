@@ -9,11 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
+	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/toolkits/str"
 
-	"github.com/didi/nightingale/src/modules/monapi/config"
-
-	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/toolkits/pkg/logger"
 )
@@ -110,7 +109,7 @@ type App struct {
 
 type CmdbAppPageResult struct {
 	Pagination Pagination `json:"pagination"`
-	Hosts      []*App     `json:"result"`
+	Hosts      []App      `json:"result"`
 }
 
 type CmdbAppResult struct {
@@ -128,8 +127,8 @@ type CmdbHost struct {
 }
 
 type CmdbHostPageResult struct {
-	Pagination Pagination  `json:"pagination"`
-	Hosts      []*CmdbHost `json:"result"`
+	Pagination Pagination `json:"pagination"`
+	Hosts      []CmdbHost `json:"result"`
 }
 
 type CmdbHostResult struct {
@@ -151,8 +150,8 @@ type Instance struct {
 }
 
 type CmdbInstancePageResult struct {
-	Pagination Pagination  `json:"pagination"`
-	Instances  []*Instance `json:"result"`
+	Pagination Pagination `json:"pagination"`
+	Instances  []Instance `json:"result"`
 }
 
 type CmdbInstanceResult struct {
@@ -172,7 +171,7 @@ type Network struct {
 
 type CmdbNetworkPageResult struct {
 	Pagination Pagination `json:"pagination"`
-	Networks   []*Network `json:"result"`
+	Networks   []Network  `json:"result"`
 }
 
 type CmdbNetworkResult struct {
@@ -245,7 +244,7 @@ func EndpointUnderNodeGets(url string, timeout int, query string, source string)
 	return ret, nil
 }
 
-func convertHost2Endpoint(hosts []*CmdbHost) []*dataobj.Endpoint {
+func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 	if len(hosts) == 0 {
 		return make([]*dataobj.Endpoint, 0)
 	}
@@ -268,7 +267,7 @@ func convertHost2Endpoint(hosts []*CmdbHost) []*dataobj.Endpoint {
 	return ret
 }
 
-func convertNetwork2Endpoint(networks []*Network) []*dataobj.Endpoint {
+func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 	if len(networks) == 0 {
 		return make([]*dataobj.Endpoint, 0)
 	}
@@ -291,7 +290,7 @@ func convertNetwork2Endpoint(networks []*Network) []*dataobj.Endpoint {
 	return ret
 }
 
-func convertInstance2Endpoint(instances []*Instance) []*dataobj.Endpoint {
+func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
 	if len(instances) == 0 {
 		return make([]*dataobj.Endpoint, 0)
 	}

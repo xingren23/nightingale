@@ -11,14 +11,14 @@ import (
 )
 
 // InitNode 初始化第一个node节点
-func (c *N9e) InitNode() {
+func (c *N9e) InitNode() error {
 	num, err := c.DB["mon"].Where("pid=0").Count(new(dataobj.Node))
 	if err != nil {
 		log.Fatalln("cannot query first node", err)
 	}
 
 	if num > 0 {
-		return
+		return nil
 	}
 
 	node := dataobj.Node{
@@ -32,9 +32,11 @@ func (c *N9e) InitNode() {
 	_, err = c.DB["mon"].Insert(&node)
 	if err != nil {
 		log.Fatalln("cannot insert node[cop]")
+		return err
 	}
 
 	logger.Info("node cop init done")
+	return nil
 }
 
 func (c *N9e) NodeGets() (nodes []dataobj.Node, err error) {
@@ -65,8 +67,9 @@ func (c *N9e) NodeByIds(ids []int64) ([]dataobj.Node, error) {
 	if len(ids) == 0 {
 		return []dataobj.Node{}, nil
 	}
-
-	return c.nodeGetsWhere(fmt.Sprintf("id in (%s)", str.IdsString(ids)))
+	var objs []dataobj.Node
+	err := c.DB["mon"].In("id", ids).Find(&objs)
+	return objs, err
 }
 
 func (c *N9e) NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error) {
@@ -125,12 +128,6 @@ func (c *N9e) NodeGet(col string, val interface{}) (*dataobj.Node, error) {
 	}
 
 	return &obj, nil
-}
-
-func (c *N9e) NodesGetByIds(ids []int64) ([]dataobj.Node, error) {
-	var objs []dataobj.Node
-	err := c.DB["mon"].In("id", ids).Find(&objs)
-	return objs, err
 }
 
 func (c *N9e) NodeValid(name, path string) error {

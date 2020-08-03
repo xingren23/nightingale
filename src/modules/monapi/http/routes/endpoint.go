@@ -11,7 +11,6 @@ import (
 )
 
 func endpointGets(c *gin.Context) {
-	offset := queryInt(c, "offset", 0)
 	limit := queryInt(c, "limit", 20)
 	query := queryStr(c, "query", "")
 	batch := queryStr(c, "batch", "")
@@ -21,7 +20,7 @@ func endpointGets(c *gin.Context) {
 		errors.Bomb("field invalid")
 	}
 
-	list, total, err := cmdb.GetCmdb().EndpointGets(query, batch, field, limit, offset)
+	list, total, err := cmdb.GetCmdb().EndpointGets(query, batch, field, limit, offset(c, limit, 999))
 	errors.Dangerous(err)
 
 	renderData(c, gin.H{

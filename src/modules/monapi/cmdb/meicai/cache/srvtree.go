@@ -85,13 +85,27 @@ func (cache *SrvTreeCache) Len() int {
 	return len(cache.idNodes)
 }
 
-func (cache *SrvTreeCache) GetAll() []*dataobj.Node {
+func (cache *SrvTreeCache) GetNodes() []dataobj.Node {
 	cache.RLock()
 	defer cache.RUnlock()
 
-	ret := make([]*dataobj.Node, len(cache.idNodes))
+	ret := make([]dataobj.Node, 0)
 	for _, node := range cache.idNodes {
-		ret = append(ret, node)
+		ret = append(ret, *node)
 	}
 	return ret
+}
+
+func (cache *SrvTreeCache) GetPathNodes() map[string]*dataobj.Node {
+	cache.RLock()
+	defer cache.RUnlock()
+
+	return cache.pathNodes
+}
+
+func (cache *SrvTreeCache) GetIdNodes() map[int64]*dataobj.Node {
+	cache.RLock()
+	defer cache.RUnlock()
+
+	return cache.idNodes
 }

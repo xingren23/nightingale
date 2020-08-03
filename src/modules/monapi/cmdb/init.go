@@ -3,17 +3,13 @@ package cmdb
 import (
 	"log"
 
+	"github.com/didi/nightingale/src/modules/monapi/config"
+
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/meicai"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/n9e"
 )
 
-type CmdbSection struct {
-	Default string               `yaml:"name""`
-	N9e     n9e.N9eSection       `yaml:"n9e""`
-	Meicai  meicai.MeicaiSection `yaml:"meicai"`
-}
-
-func Init(cmdb CmdbSection) {
+func Init(cmdb config.CmdbSection) {
 	log.Printf("init cmdb section %s", cmdb)
 
 	if cmdb.N9e.Enabled {
@@ -31,7 +27,7 @@ func Init(cmdb CmdbSection) {
 	if cmdb.Meicai.Enabled {
 		if cmdb.Meicai.Name == cmdb.Default {
 			log.Println("init meicai cmdb")
-			meicaiCmdb := &meicai.Meicai{}
+			meicaiCmdb := &meicai.Meicai{OpsAddr: cmdb.Meicai.OpsAddr, Timeout: cmdb.Meicai.Timeout}
 			meicaiCmdb.Init()
 			RegisterCmdb(cmdb.Meicai.Name, meicaiCmdb)
 			defaultCmdb = cmdb.Default

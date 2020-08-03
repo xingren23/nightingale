@@ -46,8 +46,6 @@ type INodeReadable interface {
 	NodeGet(col string, val interface{}) (*dataobj.Node, error)
 	// 根据path搜索节点
 	NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error)
-	// 根据ids查询节点
-	NodesGetByIds(ids []int64) ([]dataobj.Node, error)
 	// 服务树搜索（支持多查询条件）
 	TreeSearchByPath(query string) (nodes []dataobj.Node, err error)
 }
@@ -55,7 +53,7 @@ type INodeReadable interface {
 type INode interface {
 	INodeReadable
 
-	InitNode()
+	InitNode() error
 	CreateChild(n *dataobj.Node, name string, leaf int, note string) (int64, error)
 	Bind(n *dataobj.Node, endpointIds []int64, delOld int) error
 	Unbind(n *dataobj.Node, hostIds []int64) error

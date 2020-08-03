@@ -19,11 +19,6 @@ type MySQLConf struct {
 	Debug bool   `yaml:"debug"`
 }
 
-type N9eSection struct {
-	Enabled bool   `yaml:"enabled""`
-	Name    string `yaml:"name""`
-}
-
 type N9e struct {
 	DB map[string]*xorm.Engine
 }
@@ -50,6 +45,7 @@ func (n9e *N9e) Init() {
 	db, err := xorm.NewEngine("mysql", conf.Addr)
 	if err != nil {
 		log.Fatalf("cannot connect mysql[%s]: %v", conf.Addr, err)
+		panic(err)
 	}
 
 	db.SetMaxIdleConns(conf.Idle)
@@ -62,5 +58,9 @@ func (n9e *N9e) Init() {
 	n9e.DB[name] = db
 
 	// init node
-	n9e.InitNode()
+	err = n9e.InitNode()
+	if err != nil {
+		log.Fatalf("init n9e cmdb failed, %s", err)
+		panic(err)
+	}
 }

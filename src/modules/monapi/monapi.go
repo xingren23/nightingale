@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/didi/nightingale/src/modules/monapi/cmdb/meicai"
-
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/toolkits/pkg/file"
@@ -20,7 +18,6 @@ import (
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/cron"
-	"github.com/didi/nightingale/src/modules/monapi/ecache"
 	"github.com/didi/nightingale/src/modules/monapi/http"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
@@ -70,22 +67,22 @@ func main() {
 
 	model.InitMySQL("uic", "mon", "hbs")
 	model.InitRoot()
-	cmdb.Init(config.Get().Cmdb)
 
 	redisc.InitRedis()
-	ecache.Init()
-	// cmdb缓存
-	if err := cron.SyncResource(); err != nil {
-		log.Fatalf("sync cmdb resource fail: %v", err)
-	}
-	// 服务树缓存
-	if err := meicai.SyncSrvTree(); err != nil {
-		log.Fatalf("sync srvtree fail: %v", err)
-	}
-	// 全量endpoint缓存
-	if err := cron.SyncEndpoints(); err != nil {
-		log.Fatalf("sync endpoints fail: %v", err)
-	}
+	cmdb.Init(config.Get().Cmdb)
+
+	//// cmdb缓存
+	//if err := cron.SyncResource(); err != nil {
+	//	log.Fatalf("sync cmdb resource fail: %v", err)
+	//}
+	//// 服务树缓存
+	//if err := meicai.SyncSrvTree(); err != nil {
+	//	log.Fatalf("sync srvtree fail: %v", err)
+	//}
+	//// 全量endpoint缓存
+	//if err := cron.SyncEndpoints(); err != nil {
+	//	log.Fatalf("sync endpoints fail: %v", err)
+	//}
 
 	scache.Init()
 	mcache.Init()
@@ -107,9 +104,9 @@ func main() {
 	}
 
 	go cron.SyncMonitorItemLoop()
-	go cron.SyncResourceLoop()
-	go meicai.SyncSrvTreeLoop()
-	go cron.SyncEndpointsLoop()
+	//go cron.SyncResourceLoop()
+	//go meicai.SyncSrvTreeLoop()
+	//go cron.SyncEndpointsLoop()
 	go cron.SyncMaskconfLoop()
 	go cron.SyncStraLoop()
 	go cron.CleanStraLoop()

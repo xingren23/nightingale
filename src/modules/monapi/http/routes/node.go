@@ -95,7 +95,7 @@ func nodeLeafIdsGet(c *gin.Context) {
 	idsStr := mustQueryStr(c, "ids")
 	ids := str.IdsInt64(idsStr)
 
-	nodes, err := cmdb.GetCmdb().NodesGetByIds(ids)
+	nodes, err := cmdb.GetCmdb().NodeByIds(ids)
 	errors.Dangerous(err)
 
 	dat := make(map[int64][]int64)
@@ -113,7 +113,7 @@ func nodePidsGet(c *gin.Context) {
 	idsStr := mustQueryStr(c, "ids")
 	ids := str.IdsInt64(idsStr)
 
-	nodes, err := cmdb.GetCmdb().NodesGetByIds(ids)
+	nodes, err := cmdb.GetCmdb().NodeByIds(ids)
 	errors.Dangerous(err)
 
 	dat := make(map[int64][]int64)
@@ -136,7 +136,6 @@ func nodesByIdsGets(c *gin.Context) {
 
 func endpointsUnder(c *gin.Context) {
 	nodeid := urlParamInt64(c, "id")
-	offset := queryInt(c, "offset", 0)
 	limit := queryInt(c, "limit", 20)
 	query := queryStr(c, "query", "")
 	batch := queryStr(c, "batch", "")
@@ -164,7 +163,8 @@ func endpointsUnder(c *gin.Context) {
 		return
 	}
 
-	list, total, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafIds, query, batch, field, limit, offset)
+	list, total, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafIds, query, batch, field, limit, offset(c, limit,
+		999))
 	errors.Dangerous(err)
 
 	renderData(c, gin.H{

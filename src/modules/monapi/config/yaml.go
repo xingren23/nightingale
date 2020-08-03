@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/spf13/viper"
 	"github.com/toolkits/pkg/file"
 )
@@ -22,12 +21,31 @@ type Config struct {
 	Notify  map[string][]string `yaml:"notify"`
 	Tokens  []string            `yaml:"tokens"`
 	SSO     ssoSection          `yaml:"sso"`
-	Cmdb    cmdb.CmdbSection    `yaml:"cmdb"`
+	Cmdb    CmdbSection         `yaml:"cmdb"`
+}
+
+type CmdbSection struct {
+	Default string        `yaml:"name"`
+	N9e     N9eSection    `yaml:"n9e"`
+	Meicai  MeicaiSection `yaml:"meicai"`
+}
+
+type N9eSection struct {
+	Enabled bool   `yaml:"enabled"`
+	Name    string `yaml:"name"`
+}
+
+type MeicaiSection struct {
+	Enabled bool   `yaml:"enabled"`
+	Name    string `yaml:"name"`
+	Timeout int    `yaml:"timeout"`
+	OpsAddr string `yaml:"opsAddr"`
 }
 
 type ssoSection struct {
-	Timeout int    `yaml:"timeout"`
-	SSOAddr string `yaml:"ssoAddr"`
+	CookieName string `yaml:"cookieName"`
+	Timeout    int    `yaml:"timeout"`
+	SSOAddr    string `yaml:"ssoAddr"`
 }
 
 type linkSection struct {

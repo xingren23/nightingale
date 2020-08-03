@@ -11,13 +11,6 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
-type MeicaiSection struct {
-	Enabled bool   `yaml:"enabled"`
-	Name    string `yaml:"name"`
-	Timeout int    `yaml:"timeout"`
-	OpsAddr string `yaml:"opsAddr"`
-}
-
 type Meicai struct {
 	Timeout      int
 	OpsAddr      string
@@ -40,14 +33,34 @@ func (meicai *Meicai) Init() {
 	meicai.srvTreeCache = cache.NewSrvTreeCache()
 
 	// init srvtree
-	meicai.InitNode()
+	err := meicai.InitNode()
+	if err != nil {
+		logger.Errorf("init meicai node failed, %s", err)
+		panic(err)
+	}
 
-	// init resource
-
+	// init endpoint
+	err = meicai.InitEndpoint()
+	if err != nil {
+		logger.Errorf("init meicai endpoint failed, %s", err)
+		panic(err)
+	}
 }
 
-func (meicai *Meicai) InitSrvTagEndpoint() error {
+func (meicai *Meicai) InitEndpoint() error {
 	start := time.Now()
+	// 检查缓存内容，有内容则不再初始化
+	keys, err := cache.ScanRedisEndpointKeys()
+	if err != nil {
+		logger.Errorf("scan redis cache endpoints failed, %s", err)
+		return err
+	}
+	if len(keys) > 0 {
+		logger.Infof("redis cache inited, size %d", len(keys))
+		return nil
+	}
+	logger.Infof("redis cache size %d", len(keys))
+
 	// 加锁
 	for {
 		ok, err := cache.SetEndpointLock()
@@ -59,19 +72,11 @@ func (meicai *Meicai) InitSrvTagEndpoint() error {
 	}
 	defer cache.SetEndpointUnLock()
 
-	keys, err := cache.ScanRedisEndpointKeys()
-	if err != nil {
-		return err
-	}
-	logger.Infof("redis cache size %d", len(keys))
-	if len(keys) > 0 {
-		return nil
-	}
-
 	// 遍历节点
-	logger.Info("start init srvTag_endpoint.")
-	nodes := meicai.srvTreeCache.GetAll()
+	logger.Info("start init endpoint.")
+	nodes := meicai.srvTreeCache.GetNodes()
 	for _, node := range nodes {
+		logger.Infof("init node endpoint, id=%d path=%s", node.Id, node.Path)
 		nodeStr := node.Path
 		url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
 
@@ -79,7 +84,7 @@ func (meicai *Meicai) InitSrvTagEndpoint() error {
 		initNodeNetworks(url, meicai.Timeout, nodeStr)
 
 	}
-	logger.Infof("init srvTag_endpoints redis cache elapsed %s ms", time.Since(start))
+	logger.Infof("end init endpoints, elapsed %s ms", time.Since(start))
 	return nil
 }
 
@@ -125,4 +130,5 @@ func splitHosts(endpoints []*cmdbdataobj.Endpoint) (pms []*cmdbdataobj.Endpoint,
 			pms = append(pms, endpoint)
 		}
 	}
+	return
 }

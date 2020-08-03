@@ -3,9 +3,10 @@ package middleware
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/toolkits/pkg/logger"
 	"net/url"
 	"strings"
+
+	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/config"
@@ -24,7 +25,7 @@ func Logined() gin.HandlerFunc {
 		}
 
 		if username == "" {
-			username = DevOpsTokenUser(c)
+			username = MeicaiOpsTokenUser(c)
 		}
 
 		if username == "" {
@@ -34,45 +35,6 @@ func Logined() gin.HandlerFunc {
 		c.Set("username", username)
 		c.Next()
 	}
-}
-
-func DevOpsTokenUser(c *gin.Context) string {
-	cookie, err := c.Request.Cookie(config.Get().Cookie.Name)
-	if err != nil {
-		logger.Error("login get cookie name fail", err)
-		errors.Bomb("login get cookie name fail")
-	}
-
-	//userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
-	userStr, err := url.QueryUnescape(cookie.Value)
-	if userStr == "" || err != nil {
-		errors.Bomb("login first please")
-	}
-
-	userJson, err := url.QueryUnescape(userStr)
-	if userJson == "" || err != nil {
-		errors.Bomb("login first please")
-	}
-
-	var opsUserResp DevOpsUserResp
-	if err := json.Unmarshal([]byte(userJson), &opsUserResp); err != nil {
-		errors.Bomb("login first please")
-	}
-
-	// 自动创建用户
-	user, _ := model.UserGet("username", strings.Split(opsUserResp.Data.Email, "@")[0])
-	if user == nil {
-		user = &model.User{
-			Username: strings.Split(opsUserResp.Data.Email, "@")[0],
-			Dispname: opsUserResp.Data.Name,
-			Phone:    opsUserResp.Data.Phone,
-			Email:    opsUserResp.Data.Email,
-			IsRoot:   1,
-		}
-		user.Save()
-	}
-
-	return user.Username
 }
 
 func cookieUser(c *gin.Context) string {
@@ -138,4 +100,43 @@ type DevOpsUser struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Phone string `json:"phone"`
+}
+
+func MeicaiOpsTokenUser(c *gin.Context) string {
+	cookie, err := c.Request.Cookie(config.Get().SSO.CookieName)
+	if err != nil {
+		logger.Error("login get cookie name fail", err)
+		errors.Bomb("login get cookie name fail")
+	}
+
+	//userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
+	userStr, err := url.QueryUnescape(cookie.Value)
+	if userStr == "" || err != nil {
+		errors.Bomb("login first please")
+	}
+
+	userJson, err := url.QueryUnescape(userStr)
+	if userJson == "" || err != nil {
+		errors.Bomb("login first please")
+	}
+
+	var opsUserResp DevOpsUserResp
+	if err := json.Unmarshal([]byte(userJson), &opsUserResp); err != nil {
+		errors.Bomb("login first please")
+	}
+
+	// 自动创建用户
+	user, _ := model.UserGet("username", strings.Split(opsUserResp.Data.Email, "@")[0])
+	if user == nil {
+		user = &model.User{
+			Username: strings.Split(opsUserResp.Data.Email, "@")[0],
+			Dispname: opsUserResp.Data.Name,
+			Phone:    opsUserResp.Data.Phone,
+			Email:    opsUserResp.Data.Email,
+			IsRoot:   1,
+		}
+		user.Save()
+	}
+
+	return user.Username
 }

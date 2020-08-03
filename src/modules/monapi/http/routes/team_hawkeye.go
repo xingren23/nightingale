@@ -4,8 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/didi/nightingale/src/modules/monapi/auth"
-	"github.com/didi/nightingale/src/modules/monapi/cmdb/meicai/ops"
+	"github.com/didi/nightingale/src/modules/monapi/auth/meicai"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/gin-gonic/gin"
@@ -16,26 +15,26 @@ func teamHawkeyeListGet(c *gin.Context) {
 	limit := queryInt(c, "limit", 10000)
 	query := queryStr(c, "query", "")
 	nid := mustQueryInt64(c, "nid")
-	edit := queryInt(c, "edit", 1)
+	//edit := queryInt(c, "edit", 1)
 	var nids []int64
 	m := make(map[int64]string)
 
-	if edit == 1 {
-		srvTrees, err := ops.SrvTreeAncestors(nid)
-		errors.Dangerous(err)
-
-		for _, srvTree := range srvTrees {
-			nids = append(nids, srvTree.Id)
-			m[srvTree.Id] = srvTree.NodeCode
-		}
-	} else {
-		nids = append(nids, nid)
-		srvTree, err := ops.GetNodeById(nid)
-		if err != nil {
-
-		}
-		m[srvTree.Id] = srvTree.Note
-	}
+	//if edit == 1 {
+	//	srvTrees, err := ops.SrvTreeAncestors(nid)
+	//	errors.Dangerous(err)
+	//
+	//	for _, srvTree := range srvTrees {
+	//		nids = append(nids, srvTree.Id)
+	//		m[srvTree.Id] = srvTree.NodeCode
+	//	}
+	//} else {
+	//	nids = append(nids, nid)
+	//	srvTree, err := ops.GetNodeById(nid)
+	//	if err != nil {
+	//
+	//	}
+	//	m[srvTree.Id] = srvTree.Note
+	//}
 
 	var ids []int64
 	if query != "" {
@@ -77,7 +76,7 @@ type teamHawkeyeForm struct {
 func teamHawkeyeAddPost(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
-	userIds, err := auth.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("save user fail, err:[%s], ", err)
 	}
@@ -90,7 +89,7 @@ func teamHawkeyePut(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	userIds, err := auth.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.UserNames)
 	if err != nil {
 		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.UserNames)
 	}
