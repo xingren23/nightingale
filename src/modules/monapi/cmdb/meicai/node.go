@@ -5,115 +5,97 @@ import (
 	"strings"
 
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
-	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/str"
 )
 
-// InitNode 初始化服务树节点
-func (m *Meicai) InitNode() error {
-	// get srvtree
-	url := fmt.Sprintf("%s%s", m.OpsAddr, OpsSrvtreeRootPath)
-	nodes, err := SrvTreeGets(url, m.Timeout)
-	if err != nil {
-		logger.Errorf("get srvtree failed, %s", err)
-		return err
-	}
-	// update local cache
-	m.srvTreeCache.SetAll(nodes)
-	logger.Info("srvtree node init done")
-	return nil
+func (m *Meicai) NodeGets() (nodes []dataobj.Node, err error) {
+	nodes, err = m.nodeGetsWhere("")
+	return nodes, err
 }
 
-func (m *Meicai) NodeGets() (nodes []dataobj.Node, err error) {
-	nodes = m.srvTreeCache.GetNodes()
-	if len(nodes) == 0 {
-		err = fmt.Errorf("nodes is empty")
+func (m *Meicai) nodeGetsWhere(where string, args ...interface{}) (nodes []dataobj.Node, err error) {
+	if where != "" {
+		err = m.DB["mon"].Where(where, args...).Find(&nodes)
+	} else {
+		err = m.DB["mon"].Find(&nodes)
 	}
 	return nodes, err
 }
 
-func (m *Meicai) NodeGetsByPaths(paths []string) (nodes []dataobj.Node, err error) {
+func (m *Meicai) NodeGetsByPaths(paths []string) ([]dataobj.Node, error) {
 	if len(paths) == 0 {
 		return []dataobj.Node{}, nil
 	}
 
-	pathNodes := m.srvTreeCache.GetPathNodes()
-	nodes = make([]dataobj.Node, 0)
-	for _, path := range paths {
-		if node, exist := pathNodes[path]; exist {
-			nodes = append(nodes, *node)
-		}
-	}
-	if len(nodes) == 0 {
-		err = fmt.Errorf("could not find nodes, paths %v", paths)
-	}
-
+	var nodes []dataobj.Node
+	err := m.DB["mon"].In("path", paths).Find(&nodes)
 	return nodes, err
 }
 
-func (m *Meicai) NodeByIds(ids []int64) (nodes []dataobj.Node, err error) {
+func (m *Meicai) NodeByIds(ids []int64) ([]dataobj.Node, error) {
 	if len(ids) == 0 {
 		return []dataobj.Node{}, nil
 	}
-
-	idNodes := m.srvTreeCache.GetIdNodes()
-	nodes = make([]dataobj.Node, 0)
-	for _, id := range ids {
-		if node, exist := idNodes[id]; exist {
-			nodes = append(nodes, *node)
-		}
-	}
-	if len(nodes) == 0 {
-		err = fmt.Errorf("could not find nodes, ids %v", ids)
-	}
-	return nodes, err
+	var objs []dataobj.Node
+	err := m.DB["mon"].In("id", ids).Find(&objs)
+	return objs, err
 }
 
 func (m *Meicai) NodeQueryPath(query string, limit int) (nodes []dataobj.Node, err error) {
-	pathNodes := m.srvTreeCache.GetPathNodes()
-	nodes = make([]dataobj.Node, 0)
-	for path, node := range pathNodes {
-		if strings.Contains(path, query) {
-			nodes = append(nodes, *node)
-		}
-		if len(nodes) == limit {
-			logger.Infof("exceed query path %s limit %d", query, limit)
-			break
-		}
-	}
-	if len(nodes) == 0 {
-		err = fmt.Errorf("could not find nodes, query %v", query)
-	}
-
+	err = m.DB["mon"].Where("path like ?", "%"+query+"%").OrderBy("path").Limit(limit).Find(&nodes)
 	return nodes, err
 }
 
 func (m *Meicai) TreeSearchByPath(query string) (nodes []dataobj.Node, err error) {
-	pathNodes := m.srvTreeCache.GetPathNodes()
-	nodes = make([]dataobj.Node, 0)
-	for path, node := range pathNodes {
-		if strings.Contains(path, query) {
-			nodes = append(nodes, *node)
+	session := m.DB["mon"].NewSession()
+	defer session.Close()
+
+	if strings.Contains(query, " ") {
+		arr := strings.Fields(query)
+		cnt := len(arr)
+		for i := 0; i < cnt; i++ {
+			session.Where("path like ?", "%"+arr[i]+"%")
+		}
+		err = session.Find(&nodes)
+	} else {
+		err = session.Where("path like ?", "%"+query+"%").Find(&nodes)
+	}
+
+	if err != nil {
+		return
+	}
+
+	cnt := len(nodes)
+	if cnt == 0 {
+		return
+	}
+
+	pathset := make(map[string]struct{})
+	for i := 0; i < cnt; i++ {
+		pathset[nodes[i].Path] = struct{}{}
+
+		paths := dataobj.Paths(nodes[i].Path)
+		for j := 0; j < len(paths); j++ {
+			pathset[paths[j]] = struct{}{}
 		}
 	}
-	if len(nodes) == 0 {
-		err = fmt.Errorf("could not find nodes, query %v", query)
-	}
-	return nodes, err
+
+	var objs []dataobj.Node
+	err = session.In("path", str.MtoL(pathset)).Find(&objs)
+	return objs, err
 }
 
 func (m *Meicai) NodeGet(col string, val interface{}) (*dataobj.Node, error) {
 	var obj dataobj.Node
-	nodes := m.srvTreeCache.GetNodes()
-	for _, node := range nodes {
-		if col == "id" && node.Id == val {
-			obj = node
-		} else if col == "name" && node.Name == val {
-			obj = node
-		} else if col == "path" && node.Path == val {
-			obj = node
-		}
+	has, err := m.DB["mon"].Where(col+"=?", val).Get(&obj)
+	if err != nil {
+		return nil, err
 	}
+
+	if !has {
+		return nil, nil
+	}
+
 	return &obj, nil
 }
 
@@ -140,31 +122,53 @@ func (m *Meicai) NodeValid(name, path string) error {
 
 // 包括自身节点
 func (m *Meicai) LeafIds(n *dataobj.Node) ([]int64, error) {
-	ret := make([]int64, 0)
-	pathNodes := m.srvTreeCache.GetPathNodes()
-	for path, node := range pathNodes {
-		if strings.Contains(path, n.Path) && strings.Contains(n.Path, "_srv.") {
-			ret = append(ret, node.Id)
-		}
+	if n.Leaf == 1 {
+		return []int64{n.Id}, nil
 	}
-	if len(ret) == 0 {
-		return ret, fmt.Errorf("no leaf node, nid %d path %s", n.Id, n.Path)
+
+	var nodes []dataobj.Node
+	err := m.DB["mon"].Where("path like ? and leaf=1", n.Path+".%").Find(&nodes)
+	if err != nil {
+		return []int64{}, err
 	}
-	return ret, nil
+
+	cnt := len(nodes)
+	arr := make([]int64, 0, cnt)
+	for i := 0; i < cnt; i++ {
+		arr = append(arr, nodes[i].Id)
+	}
+
+	return arr, nil
 }
 
 func (m *Meicai) Pids(n *dataobj.Node) ([]int64, error) {
-	ret := make([]int64, 0)
-	pathNodes := m.srvTreeCache.GetPathNodes()
-	for path, node := range pathNodes {
-		if strings.Contains(n.Path, path) && path != n.Path {
-			ret = append(ret, node.Id)
-		}
+	if n.Pid == 0 {
+		return []int64{n.Pid}, nil
 	}
-	if len(ret) == 0 {
-		return ret, fmt.Errorf("root node, nid %d path %s", n.Id, n.Path)
+
+	var objs []dataobj.Node
+	arr := []int64{}
+	paths := []string{}
+
+	nodes := strings.Split(n.Path, ".")
+	cnt := len(nodes)
+
+	for i := 1; i < cnt; i++ {
+		path := strings.Join(nodes[:cnt-i], ".")
+		paths = append(paths, path)
 	}
-	return ret, nil
+
+	err := m.DB["mon"].In("path", paths).Find(&objs)
+	if err != nil {
+		return []int64{}, err
+	}
+
+	cnt = len(objs)
+	for i := 0; i < cnt; i++ {
+		arr = append(arr, objs[i].Id)
+	}
+
+	return arr, nil
 }
 
 func (m *Meicai) CreateChild(n *dataobj.Node, name string, leaf int, note string) (int64, error) {

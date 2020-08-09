@@ -53,7 +53,6 @@ type INodeReadable interface {
 type INode interface {
 	INodeReadable
 
-	InitNode() error
 	CreateChild(n *dataobj.Node, name string, leaf int, note string) (int64, error)
 	Bind(n *dataobj.Node, endpointIds []int64, delOld int) error
 	Unbind(n *dataobj.Node, hostIds []int64) error

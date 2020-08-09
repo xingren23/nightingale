@@ -35,6 +35,7 @@ func Config(r *gin.Engine) {
 		nolog.GET("/stras", strasAll)
 
 		nolog.GET("/endpoints", endpointGets)
+		nolog.GET("/instances", instanceGets)
 
 		nolog.GET("/garbage", GarbageFilterGet)
 		nolog.GET("/monitor_item", monitorItemGet)

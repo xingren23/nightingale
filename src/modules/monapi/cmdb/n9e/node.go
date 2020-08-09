@@ -105,7 +105,7 @@ func (c *N9e) TreeSearchByPath(query string) (nodes []dataobj.Node, err error) {
 	for i := 0; i < cnt; i++ {
 		pathset[nodes[i].Path] = struct{}{}
 
-		paths := Paths(nodes[i].Path)
+		paths := dataobj.Paths(nodes[i].Path)
 		for j := 0; j < len(paths); j++ {
 			pathset[paths[j]] = struct{}{}
 		}

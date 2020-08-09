@@ -17,6 +17,13 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
+const (
+	CmdbSourceInst = "instance"
+	CmdbSourceApp  = "app"
+	CmdbSourceNet  = "network"
+	CmdbSourceHost = "host"
+)
+
 type SrvTreeNode struct {
 	Id       int64          `json:"id"`
 	ParentId int64          `json:"parentId"`
@@ -109,7 +116,7 @@ type App struct {
 
 type CmdbAppPageResult struct {
 	Pagination Pagination `json:"pagination"`
-	Hosts      []App      `json:"result"`
+	Apps       []*App     `json:"result"`
 }
 
 type CmdbAppResult struct {
@@ -179,10 +186,52 @@ type CmdbNetworkResult struct {
 	Result  *CmdbNetworkPageResult `json:"result"`
 }
 
+func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	params := make(map[string]interface{})
+	page := Pagination{
+		PageNo:    1,
+		PageSize:  100,
+		TotalPage: 999,
+	}
+	params["sourceType"] = CmdbSourceApp
+	params["expression"] = query
+
+	ret := make([]*App, 0)
+	for page.PageNo <= page.TotalPage {
+		params["pagination"] = page
+
+		data, err := RequestByPost(url, timeout, params)
+		if err != nil {
+			logger.Errorf("request url %s params %s failed, %s", url, params, err)
+			return nil, err
+		}
+
+		var pageRet Pagination
+
+		var appPageResult CmdbAppResult
+		err = json.Unmarshal(data, &appPageResult)
+		if err != nil || appPageResult.Result == nil {
+			logger.Errorf("Error: Parse %s JSON %v.", CmdbSourceApp, err)
+			return nil, err
+		}
+		pageRet = appPageResult.Result.Pagination
+		ret = append(ret, appPageResult.Result.Apps...)
+
+		if pageRet.PageNo == 0 {
+			return ret, fmt.Errorf("page result is nil")
+		}
+		page.PageNo++
+		page.TotalPage = pageRet.TotalPage
+	}
+
+	return ret, nil
+}
+
 // query : cmdb 服务树节点串
 // source ： 资源类型
 // 参考：https://meicai.feishu.cn/docs/doccniuHjuYFzFQAT0kBO52e1kf?sidebarOpen=1#EDzlgz
-func EndpointUnderNodeGets(url string, timeout int, query string, source string) ([]*dataobj.Endpoint, error) {
+func QueryResourceByNode(url string, timeout int, query string, source string) ([]*dataobj.Endpoint, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	page := Pagination{
@@ -260,6 +309,7 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 		extra["env"] = host.EnvCode
 		extra["idc"] = host.DataCenterCode
 		extra["type"] = host.Type
+		extra["ip"] = host.Ip
 		endpoint.Tags = str.SortedTags(extra)
 
 		ret = append(ret, endpoint)
@@ -283,6 +333,7 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 		extra["env"] = network.EnvCode
 		extra["idc"] = network.DataCenterCode
 		extra["type"] = network.Type
+		extra["ip"] = network.ManageIp
 		endpoint.Tags = str.SortedTags(extra)
 
 		ret = append(ret, endpoint)
@@ -308,6 +359,7 @@ func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
 		extra["idc"] = instance.DataCenterCode
 		extra["port"] = strconv.Itoa(instance.Port)
 		extra["app"] = instance.AppCode
+		extra["ip"] = instance.IP
 
 		endpoint.Tags = str.SortedTags(extra)
 
