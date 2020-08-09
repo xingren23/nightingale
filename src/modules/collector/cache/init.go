@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
@@ -16,6 +17,7 @@ import (
 
 const (
 	EndpointsApi   = "/api/portal/endpoints"
+	InstancesApi   = "/api/portal/instances"
 	MonitorItemApi = "/api/portal/monitor_item"
 	GarbageApi     = "/api/portal/garbage"
 
@@ -26,21 +28,20 @@ func Init() {
 	MetricHistory = NewHistory()
 	ProcsCache = NewProcsCache()
 
-	HostCache = NewHostCache()
+	EndpointCache = NewEndpointCache()
 	InstanceCache = NewInstanceCache()
 	MonitorItemCache = NewMonitorItemCache()
 	GarbageCache = NewGarbageCache()
 
 	if err := syncResource(); err != nil {
-		log.Fatalf("build resourceCache fail: %v", err)
+		log.Fatalf("build resource cache fail: %v", err)
 	}
 	go loopSyncResource()
 }
 
 func loopSyncResource() {
 	t1 := time.NewTicker(time.Duration(180) * time.Second)
-
-	logger.Info("[cron] sync resourceCache start...")
+	logger.Info("[cron] sync resource cache start...")
 	for {
 		<-t1.C
 		syncResource()
@@ -49,6 +50,7 @@ func loopSyncResource() {
 
 func syncResource() error {
 	err := buildEndpointCache()
+	err = buildInstanceCache()
 	err = buildGarbageCache()
 	err = buildMonitorItemCache()
 	return err
@@ -62,7 +64,6 @@ func buildEndpointCache() error {
 		return err
 	}
 	hostMap := make(map[string]*Endpoint)
-	instanceMap := make(map[string]*Endpoint)
 	for _, endpoint := range endpointsResp.Dat {
 		tags, err := dataobj.SplitTagsString(endpoint.Tags)
 		if err != nil {
@@ -72,15 +73,39 @@ func buildEndpointCache() error {
 		if value, ok := tags["type"]; ok {
 			if value == "HOST" || value == "NETWORK" {
 				hostMap[endpoint.Ident] = endpoint
-			} else if value == "INSTANCE" {
-				if uuid, ok := tags["uuid"]; ok {
-					// FIXME : basic app 基础服务排除 ？
-					instanceMap[uuid] = endpoint
-				}
 			}
 		}
 	}
-	HostCache.SetAll(hostMap)
+	EndpointCache.SetAll(hostMap)
+	return nil
+}
+
+// instances, retry monapi addr
+func buildInstanceCache() error {
+	instancesResp, err := getInstances()
+	if err != nil {
+		logger.Error("build endpoints cache fail:", err)
+		return err
+	}
+	instanceMap := make(map[string]*Instance)
+	for _, instance := range instancesResp.Dat {
+		tags, err := dataobj.SplitTagsString(instance.Tags)
+		if err != nil {
+			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
+			continue
+		}
+		if uuid, ok := tags["uuid"]; ok {
+			//基础服务排除 ( basic=true )
+			if basic, ok := tags["basic"]; ok {
+				flag, err := strconv.ParseBool(basic)
+				if err == nil && flag {
+					logger.Debugf("don't process basic app, %v", instance)
+					continue
+				}
+			}
+			instanceMap[uuid] = instance
+		}
+	}
 	InstanceCache.SetAll(instanceMap)
 	return nil
 }
@@ -116,6 +141,11 @@ type EndpointsResp struct {
 	Err string      `json:"err"`
 }
 
+type InstancesResp struct {
+	Dat []*Instance `json:"dat"`
+	Err string      `json:"err"`
+}
+
 type MonitorItemResp struct {
 	Dat map[string]*model.MonitorItem `json:"dat"`
 	Err string                        `json:"err"`
@@ -135,6 +165,29 @@ func getEndpoints() (EndpointsResp, error) {
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
 		url := fmt.Sprintf("http://%s%s", addr, EndpointsApi)
+		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
+		if err != nil {
+			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
+			continue
+		}
+		if res.Dat == nil || len(res.Dat) == 0 {
+			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
+			continue
+		}
+		break
+	}
+	return res, err
+}
+
+func getInstances() (InstancesResp, error) {
+	var res InstancesResp
+	var err error
+
+	addrs := address.GetHTTPAddresses("monapi")
+	count := len(addrs)
+	for _, i := range rand.Perm(count) {
+		addr := addrs[i]
+		url := fmt.Sprintf("http://%s%s", addr, InstancesApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
 			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)

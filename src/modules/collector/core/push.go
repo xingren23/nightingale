@@ -128,7 +128,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		item.Endpoint = instance.Ident
 	case model.EndpointTypeHost:
 		ident := item.Endpoint
-		host, exists := cache.HostCache.Get(ident)
+		host, exists := cache.EndpointCache.Get(ident)
 		if !exists {
 			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
 		}
@@ -146,7 +146,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		item.Endpoint = host.Ident
 	case model.EndpointTypeNetwork:
 		networkIp := item.Endpoint
-		network, exists := cache.HostCache.Get(networkIp)
+		network, exists := cache.EndpointCache.Get(networkIp)
 		if !exists {
 			return nil, fmt.Errorf("ip %s is not exists in networks", networkIp)
 		}
