@@ -1,4 +1,4 @@
-package ecache
+package cache
 
 import (
 	"sync"

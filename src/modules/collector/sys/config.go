@@ -1,16 +1,23 @@
 package sys
 
 type SysSection struct {
-	Enable           bool                `yaml:"enable"`
-	IfacePrefix      []string            `yaml:"ifacePrefix"`
-	MountIgnore      MountIgnoreSection  `yaml:"mountIgnore"`
-	IgnoreMetrics    []string            `yaml:"ignoreMetrics"`
-	IgnoreMetricsMap map[string]struct{} `yaml:"-"`
-	NtpServers       []string            `yaml:"ntpServers"`
-	Plugin           string              `yaml:"plugin"`
-	PluginRemote     bool                `yaml:"pluginRemote"`
-	Interval         int                 `yaml:"interval"`
-	Timeout          int                 `yaml:"timeout"`
+	Enable           bool                  `yaml:"enable"`
+	IfacePrefix      []string              `yaml:"ifacePrefix"`
+	MountIgnore      MountIgnoreSection    `yaml:"mountIgnore"`
+	IgnoreMetrics    []string              `yaml:"ignoreMetrics"`
+	IgnoreMetricsMap map[string]struct{}   `yaml:"-"`
+	NtpServers       []string              `yaml:"ntpServers"`
+	Plugin           string                `yaml:"plugin"`
+	PluginRemote     bool                  `yaml:"pluginRemote"`
+	Interval         int                   `yaml:"interval"`
+	Timeout          int                   `yaml:"timeout"`
+	FalconTransfer   FalconTransferSection `yaml:"falconTransfer"`
+}
+
+type FalconTransferSection struct {
+	Enable  bool     `yaml:"enable"`
+	Addrs   []string `yaml:"addrs"`
+	Timeout int      `yaml:"timeout"`
 }
 
 type MountIgnoreSection struct {

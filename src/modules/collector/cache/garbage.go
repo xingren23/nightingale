@@ -1,4 +1,4 @@
-package ecache
+package cache
 
 import (
 	"strings"
@@ -7,21 +7,21 @@ import (
 	"github.com/didi/nightingale/src/model"
 )
 
-var GarbageFilterCache *GarbageFilterCacheList
+var GarbageCache *GarbageCacheList
 
-type GarbageFilterCacheList struct {
+type GarbageCacheList struct {
 	sync.RWMutex
 	Data []string
 }
 
-func NewGarbageFilterCache() *GarbageFilterCacheList {
-	pc := GarbageFilterCacheList{
+func NewGarbageCache() *GarbageCacheList {
+	pc := GarbageCacheList{
 		Data: make([]string, 0),
 	}
 	return &pc
 }
 
-func (sc *GarbageFilterCacheList) SetAll(vals []model.ConfigInfo) {
+func (sc *GarbageCacheList) SetAll(vals []model.ConfigInfo) {
 	vs := []string{}
 	for _, val := range vals {
 		for _, v := range strings.Split(val.CfgValue, ",") {
@@ -33,7 +33,7 @@ func (sc *GarbageFilterCacheList) SetAll(vals []model.ConfigInfo) {
 	sc.Data = vs
 }
 
-func (sc *GarbageFilterCacheList) Get() []string {
+func (sc *GarbageCacheList) Get() []string {
 	sc.RLock()
 	defer sc.RUnlock()
 	return sc.Data

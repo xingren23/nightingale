@@ -10,7 +10,7 @@ import (
 
 	"github.com/didi/nightingale/src/modules/collector/cache"
 	"github.com/didi/nightingale/src/modules/collector/config"
-	"github.com/didi/nightingale/src/modules/collector/ecache"
+	"github.com/didi/nightingale/src/modules/collector/core"
 	"github.com/didi/nightingale/src/modules/collector/http/routes"
 	"github.com/didi/nightingale/src/modules/collector/log/worker"
 	"github.com/didi/nightingale/src/modules/collector/stra"
@@ -73,11 +73,10 @@ func main() {
 		log.Println("endpoint:", identity.Identity)
 	}
 
-	ecache.Init()
 	sys.Init(cfg.Sys)
 	stra.Init(cfg.Stra)
 
-	funcs.InitRpcClients()
+	core.InitRpcClients()
 	funcs.BuildMappers()
 	funcs.Collect()
 
@@ -91,6 +90,7 @@ func main() {
 	ports.Detect()
 
 	//初始化缓存，用作保存COUNTER类型数据
+	//初始化endpoint&instance缓存, 用于辅助标签转换
 	cache.Init()
 
 	//日志采集

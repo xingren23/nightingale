@@ -11,11 +11,6 @@ import (
 var MetricHistory *History
 var ProcsCache *ProcessCache
 
-func Init() {
-	MetricHistory = NewHistory()
-	ProcsCache = NewProcsCache()
-}
-
 func NewHistory() *History {
 	h := History{
 		Data: make(map[string]dataobj.MetricValue),

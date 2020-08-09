@@ -17,7 +17,6 @@ import (
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/collector/cache"
-	"github.com/didi/nightingale/src/modules/collector/ecache"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
@@ -27,7 +26,7 @@ func Push(metricItems []*dataobj.MetricValue) error {
 	var err error
 	var items []*dataobj.MetricValue
 	now := time.Now().Unix()
-	filterStr := ecache.GarbageFilterCache.Get()
+	filterStr := cache.GarbageCache.Get()
 
 	for _, item := range metricItems {
 		logger.Debug("->recv: ", item)
@@ -96,7 +95,7 @@ func Push(metricItems []*dataobj.MetricValue) error {
 // TODO: 优化
 func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) {
 	//指标白名单
-	monitorItem, exists := ecache.MonitorItemCache.Get(item.Metric)
+	monitorItem, exists := cache.MonitorItemCache.Get(item.Metric)
 	if !exists {
 		return nil, fmt.Errorf("metric:%v not exists in monitorItem", item)
 	}
@@ -105,50 +104,54 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 	case model.EndpointTypeInstance:
 		index := strings.LastIndex(item.Endpoint, "_inst.")
 		if index < 0 {
-			return nil, fmt.Errorf("metric [%s] is not exists in monitor_item ", item.Metric)
+			return nil, fmt.Errorf("metric %s is not exists in monitor_item ", item.Metric)
 		}
 		uuid := item.Endpoint[index+6:]
-		instance, exists := ecache.InstanceCache.GetByUUID(uuid)
+		instance, exists := cache.InstanceCache.Get(uuid)
 		if !exists {
-			return nil, fmt.Errorf("instance [%s] is not found in instance Cache ", item.Endpoint)
+			return nil, fmt.Errorf("instance %s is not found in instance Cache ", item.Endpoint)
 		}
-		item.TagsMap["app"] = instance.AppCode
-		item.TagsMap["group"] = instance.GroupCode
-		item.TagsMap["env"] = instance.EnvCode
-		item.TagsMap["ip"] = instance.IP
+		tags, err := dataobj.SplitTagsString(instance.Tags)
+		if err != nil {
+			return nil, fmt.Errorf("instance %s is split tags %s failed", item.Endpoint, item.Tags)
+		}
+		item.TagsMap["app"] = tags["app"]
+		item.TagsMap["group"] = tags["group"]
+		item.TagsMap["env"] = tags["env"]
 		// 如果指标本身不上报port,并且cmdb中存在端口信息，添加此标签
-		if _, exists := item.TagsMap["port"]; !exists && instance.Port != 0 {
-			item.TagsMap["port"] = string(instance.Port)
+		if _, exists := item.TagsMap["port"]; !exists {
+			if port, ok := tags["port"]; ok && port != "0" {
+				item.TagsMap["port"] = port
+			}
 		}
-		item.Endpoint = instance.IP
+		item.TagsMap["ip"] = instance.Ident
+		item.Endpoint = instance.Ident
 	case model.EndpointTypeHost:
-		ip := item.Endpoint
-		host, exists := ecache.HostCache.GetByIp(ip)
+		ident := item.Endpoint
+		host, exists := cache.HostCache.Get(ident)
 		if !exists {
-			return nil, fmt.Errorf("ip [%s] is not exists in hosts", ip)
+			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
 		}
-		item.TagsMap["env"] = host.EnvCode
-		item.TagsMap["ip"] = host.Ip
-
-		insts, exists := ecache.IpInstsCache.GetByIp(ip)
-		// 宿主机无实例，不打应用标签
-		if !exists || len(insts) == 0 {
-			return item, nil
+		tags, err := dataobj.SplitTagsString(host.Tags)
+		if err != nil {
+			return nil, fmt.Errorf("instance %s is split tags %s failed", item.Endpoint, item.Tags)
 		}
-		// 单机多实例，不打应用标签
-		if len(insts) > 1 {
-			return item, nil
+		hostType := tags["type"]
+		if hostType == "DOCKER" {
+			item.TagsMap["app"] = tags["app"]
+			item.TagsMap["group"] = tags["group"]
 		}
-		// 单机单实例，打上应用标签
-		item.TagsMap["app"] = insts[0].AppCode
-		item.TagsMap["group"] = insts[0].GroupCode
+		item.TagsMap["env"] = tags["env"]
+		item.TagsMap["ip"] = host.Ident
+		item.Endpoint = host.Ident
 	case model.EndpointTypeNetwork:
 		networkIp := item.Endpoint
-		network, exists := ecache.NetworkCache.GetByIp(networkIp)
+		network, exists := cache.HostCache.Get(networkIp)
 		if !exists {
-			return nil, fmt.Errorf("ip [%s] is not exists in networks", networkIp)
+			return nil, fmt.Errorf("ip %s is not exists in networks", networkIp)
 		}
-		item.TagsMap["ip"] = network.ManageIp
+		item.TagsMap["ip"] = network.Ident
+		item.Endpoint = network.Ident
 	default:
 		// 其他类型丢弃
 		return nil, fmt.Errorf("metric type is not found.item :%v", monitorItem)

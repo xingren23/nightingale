@@ -8,7 +8,7 @@ import (
 	"github.com/toolkits/pkg/logger"
 
 	"github.com/didi/nightingale/src/dataobj"
-	"github.com/didi/nightingale/src/modules/collector/sys"
+	"github.com/didi/nightingale/src/modules/collector/config"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 )
 
 func SendMetrics(metrics []*dataobj.MetricValue, resp *TransferResponse) {
-	addrs := sys.Config.FalconTransfer.Addrs
+	addrs := config.Get().Sys.FalconTransfer.Addrs
 	for _, i := range rand.Perm(len(addrs)) {
 		addr := addrs[i]
 		if _, ok := TransferClients[addr]; !ok {
@@ -35,7 +35,7 @@ func initTransferClient(addr string) {
 	if _, exists := TransferClients[addr]; !exists {
 		TransferClients[addr] = &SingleConnRpcClient{
 			RpcServer: addr,
-			Timeout:   time.Duration(sys.Config.FalconTransfer.Timeout) * time.Millisecond,
+			Timeout:   time.Duration(config.Get().Sys.FalconTransfer.Timeout) * time.Millisecond,
 		}
 	}
 }
