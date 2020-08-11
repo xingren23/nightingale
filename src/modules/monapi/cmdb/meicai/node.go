@@ -120,14 +120,14 @@ func (m *Meicai) NodeValid(name, path string) error {
 	return nil
 }
 
-// 包括自身节点
 func (m *Meicai) LeafIds(n *dataobj.Node) ([]int64, error) {
 	if n.Leaf == 1 {
 		return []int64{n.Id}, nil
 	}
 
 	var nodes []dataobj.Node
-	err := m.DB["mon"].Where("path like ? and leaf=1", n.Path+".%").Find(&nodes)
+	// todo : 与夜莺逻辑不同
+	err := m.DB["mon"].Where("path like ? and leaf=1", "%"+n.Path+"%").Find(&nodes)
 	if err != nil {
 		return []int64{}, err
 	}
