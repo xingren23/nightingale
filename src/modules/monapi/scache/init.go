@@ -3,7 +3,15 @@ package scache
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/config"
+
+	"github.com/didi/nightingale/src/dataobj"
+
+	"github.com/didi/nightingale/src/modules/monapi/mcache"
+	"github.com/toolkits/pkg/container/set"
 
 	"github.com/toolkits/pkg/logger"
 
@@ -43,8 +51,21 @@ func syncStras() {
 	}
 	strasMap := make(map[string][]*model.Stra)
 	for _, stra := range stras {
-		//增加叶子节点nid
-		stra.LeafNids, err = GetLeafNids(stra.Nid, stra.ExclNid)
+		//获取策略 endpoint type
+		item, exists := mcache.MonitorItemCache.Get(stra.Exprs[0].Metric)
+		if !exists {
+			fmt.Errorf("stra %s metric %s is not exists", stra.Name, stra.Exprs[0].Metric)
+			continue
+		}
+		endpointType := buildEndpointType(item)
+
+		// 环境标签
+		envE, envN := analysisTag(stra, "env")
+		hostE, hostN := analysisTag(stra, "host")
+		nodePathE, nodePathN := analysisTag(stra, "nodePath")
+
+		//增加叶子节点nid(排除子节点)
+		stra.LeafNids, err = GetLeafNids(stra.Nid, stra.ExclNid, nodePathE.ToSlice(), nodePathN.ToSlice())
 		if err != nil {
 			logger.Warningf("get LeafNids err:%v %v", err, stra)
 			continue
@@ -56,8 +77,37 @@ func syncStras() {
 			continue
 		}
 
+		// 根据指标元数据类型加载 endpoint
 		for _, e := range endpoints {
-			stra.Endpoints = append(stra.Endpoints, e.Ident)
+			// host filter
+			if hostE.Exists(e.Ident) || hostE.Exists(e.Alias) {
+				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			}
+			if !hostN.Exists(e.Ident) && !hostN.Exists(e.Alias) {
+				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			}
+
+			tags, err := dataobj.SplitTagsString(e.Tags)
+			if err != nil {
+				logger.Errorf("split endpoint %s tags %s error, %s", e.Ident, e.Tags, err)
+				continue
+			}
+			// env filter
+			if envTag, ok := tags["env"]; ok {
+				if envE.Exists(envTag) {
+					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				}
+				if !envN.Exists(envTag) {
+					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				}
+			}
+
+			// endpoint type filter
+			if typeTag, ok := tags["type"]; ok {
+				if typeTag == endpointType {
+					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				}
+			}
 		}
 
 		node, err := JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
@@ -95,7 +145,7 @@ func syncCollects() {
 	}
 
 	for _, p := range ports {
-		leafNids, err := GetLeafNids(p.Nid, []int64{})
+		leafNids, err := GetLeafNids(p.Nid, []int64{}, []string{}, []string{})
 		if err != nil {
 			logger.Warningf("get LeafNids err:%v %v", err, p)
 			continue
@@ -125,7 +175,7 @@ func syncCollects() {
 	}
 
 	for _, p := range procs {
-		leafNids, err := GetLeafNids(p.Nid, []int64{})
+		leafNids, err := GetLeafNids(p.Nid, []int64{}, []string{}, []string{})
 		if err != nil {
 			logger.Warningf("get LeafNids err:%v %v", err, p)
 			continue
@@ -155,7 +205,7 @@ func syncCollects() {
 
 	for _, l := range logConfigs {
 		l.Decode()
-		leafNids, err := GetLeafNids(l.Nid, []int64{})
+		leafNids, err := GetLeafNids(l.Nid, []int64{}, []string{}, []string{})
 		if err != nil {
 			logger.Warningf("get LeafNids err:%v %v", err, l)
 			continue
@@ -184,7 +234,7 @@ func syncCollects() {
 	}
 
 	for _, p := range pluginConfigs {
-		leafNids, err := GetLeafNids(p.Nid, []int64{})
+		leafNids, err := GetLeafNids(p.Nid, []int64{}, []string{}, []string{})
 		if err != nil {
 			logger.Warningf("get LeafNids err:%v %v", err, p)
 			continue
@@ -212,7 +262,8 @@ func syncCollects() {
 	CollectCache.SetAll(collectMap)
 }
 
-func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
+// 支持排除节点串
+func GetLeafNids(nid int64, exclNid []int64, includeNodes []string, excludeNodes []string) ([]int64, error) {
 	leafIds := []int64{}
 	idsMap := make(map[int64]bool)
 	node, err := cmdb.GetCmdb().NodeGet("id", nid)
@@ -251,18 +302,6 @@ func GetLeafNids(nid int64, exclNid []int64) ([]int64, error) {
 	return leafIds, err
 }
 
-func removeDuplicateElement(addrs []string) []string {
-	result := make([]string, 0, len(addrs))
-	temp := map[string]struct{}{}
-	for _, item := range addrs {
-		if _, ok := temp[item]; !ok {
-			temp[item] = struct{}{}
-			result = append(result, item)
-		}
-	}
-	return result
-}
-
 // GetExclLeafIds 获取排除节点下的叶子节点
 func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
 	for _, nid := range exclNid {
@@ -283,4 +322,36 @@ func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
 		leafIds = append(leafIds, ids...)
 	}
 	return leafIds, nil
+}
+
+func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notequals *set.StringSet) {
+	for _, tag := range stra.Tags {
+		if tag.Tkey == key {
+			if tag.Topt == "=" {
+				for _, value := range tag.Tval {
+					equals.Add(value)
+				}
+			} else if tag.Topt == "!=" {
+				for _, value := range tag.Tval {
+					notequals.Add(value)
+				}
+			}
+		}
+	}
+	return
+}
+
+// TODO : 指标元数据中定义一个类型 ？
+// 指标元数据类型 -> endpoint type
+func buildEndpointType(item *model.MonitorItem) string {
+	if item.EndpointType == "NETWORK" {
+		return config.EndpointKeyNetwork
+	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {
+		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
+			return config.EndpointKeyDocker
+		} else {
+			return config.EndpointKeyPM
+		}
+	}
+	return ""
 }

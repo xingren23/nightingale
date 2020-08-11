@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
@@ -311,13 +312,22 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 		extra := make(map[string]string, 0)
 		extra["env"] = host.EnvCode
 		extra["idc"] = host.DataCenterCode
-		extra["type"] = CmdbSourceHost
+		extra["type"] = convertHostType2EndpointType(host.Type)
 		extra["ip"] = host.Ip
 		endpoint.Tags = str.SortedTags(extra)
 
 		ret = append(ret, endpoint)
 	}
 	return ret
+}
+
+// host type : PM（物理机）、ALI_VM（阿里云）、TENCENT_VM（腾讯云）、KSC_VM（金山云）、KSC_PM（金山云物理机）、DOCKER（容器）、LOCAL_VM（虚拟机）
+func convertHostType2EndpointType(host string) string {
+	if strings.ToUpper(host) == "DOCKER" {
+		return config.EndpointKeyDocker
+	} else {
+		return config.EndpointKeyPM
+	}
 }
 
 func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
@@ -335,7 +345,7 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 		extra := make(map[string]string, 0)
 		extra["env"] = network.EnvCode
 		extra["idc"] = network.DataCenterCode
-		extra["type"] = CmdbSourceNet
+		extra["type"] = config.EndpointKeyNetwork
 		extra["ip"] = network.ManageIp
 		endpoint.Tags = str.SortedTags(extra)
 
@@ -363,7 +373,6 @@ func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
 		extra["port"] = strconv.Itoa(instance.Port)
 		extra["app"] = instance.AppCode
 		extra["ip"] = instance.IP
-		extra["type"] = CmdbSourceInst
 
 		endpoint.Tags = str.SortedTags(extra)
 

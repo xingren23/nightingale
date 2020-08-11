@@ -14,7 +14,7 @@ const (
 	FilterTagEnv      = "env"
 )
 
-// SrvTagEndpointCache 缓存key
+// endpoint type
 const (
 	EndpointKeyDocker  = "docker"
 	EndpointKeyPM      = "pm"
