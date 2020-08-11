@@ -71,16 +71,24 @@ func (meicai *Meicai) Init() {
 	meicai.DB = map[string]*xorm.Engine{}
 	meicai.DB[name] = db
 
-	// init srvtree & endpoint
-	err = meicai.InitOps()
-	if err != nil {
-		logger.Errorf("init meicai node failed, %s", err)
-		panic(err)
+	// 定时全量同步
+	go meicai.SyncOpsLoop()
+}
+
+func (meicai *Meicai) SyncOpsLoop() {
+	duration := time.Hour * time.Duration(24)
+	for {
+		// sync srvtree & endpoint
+		err := meicai.SyncOps()
+		if err != nil {
+			logger.Errorf("sync meicai node failed, %s", err)
+		}
+		time.Sleep(duration)
 	}
 }
 
 // init nodes & endpoints from ops
-func (meicai *Meicai) InitOps() error {
+func (meicai *Meicai) SyncOps() error {
 	start := time.Now()
 	logger.Info("start init ops")
 	nodes, err := meicai.InitNode()
