@@ -86,6 +86,7 @@ func (meicai *Meicai) InitOps() error {
 	nodes, err := meicai.InitNode()
 	if err != nil {
 		logger.Errorf("get nodes failed, %s", err)
+		return err
 	}
 	// 遍历节点
 	for _, node := range nodes {
@@ -110,9 +111,11 @@ func (meicai *Meicai) InitOps() error {
 				// 实例资源
 				meicai.initNodeInstances(url, nodeStr, node.Id, appMap)
 			}
+
+			//time.Sleep(time.Duration(time.Millisecond) * 100)
 		}
 	}
-	logger.Infof("end init ops, elapsed %s ms", time.Since(start))
+	logger.Infof("end init ops, elapsed %s", time.Since(start))
 	return nil
 }
 
@@ -126,11 +129,43 @@ func (m *Meicai) InitNode() ([]*dataobj.Node, error) {
 		return nil, err
 	}
 
+	err = m.commitNodes(nodes)
 	logger.Info("srvtree node init done")
-	return nodes, nil
+	return nodes, err
+}
+
+func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
+	start := time.Now()
+	session := meicai.DB["mon"].NewSession()
+	defer session.Close()
+
+	for _, node := range nodes {
+		has, err := session.Exist(&dataobj.Node{Id: node.Id})
+		if err != nil || !has {
+			logger.Infof("insert node %v", node)
+			_, err = session.Insert(node)
+			if err != nil {
+				logger.Errorf("insert node %v failed, %s", node, err)
+				session.Rollback()
+				return err
+			}
+		} else {
+			logger.Infof("update node %v", node)
+			_, err = session.ID(node.Id).Update(node)
+			if err != nil {
+				logger.Errorf("update node %v failed, %s", node, err)
+				session.Rollback()
+				return err
+			}
+		}
+	}
+	err := session.Commit()
+	logger.Infof("commit nodes elasped %s", time.Since(start))
+	return err
 }
 
 func (meicai *Meicai) initNodeHosts(url string, nodeStr string, nid int64) error {
+	// TODO 请求失败，如何处理 ？
 	hosts, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceHost)
 	if err != nil {
 		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceHost, err)
@@ -141,6 +176,7 @@ func (meicai *Meicai) initNodeHosts(url string, nodeStr string, nid int64) error
 }
 
 func (meicai *Meicai) initNodeNetworks(url string, nodeStr string, nid int64) error {
+	// TODO 请求失败，如何处理 ？
 	networks, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceNet)
 	if err != nil {
 		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceNet, err)
@@ -151,6 +187,7 @@ func (meicai *Meicai) initNodeNetworks(url string, nodeStr string, nid int64) er
 }
 
 func (meicai *Meicai) initNodeInstances(url string, nodeStr string, nid int64, apps map[string]*App) error {
+	// TODO 请求失败，如何处理 ？
 	instances, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceInst)
 	if err != nil {
 		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceInst, err)
@@ -169,18 +206,34 @@ func (meicai *Meicai) initNodeInstances(url string, nodeStr string, nid int64, a
 			}
 		}
 	}
-
-	return meicai.commitEndpoints(instances, nid)
+	return nil
+	//return meicai.commitEndpoints(instances, nid)
 }
 
 func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) error {
+	start := time.Now()
 	session := meicai.DB["mon"].NewSession()
+	defer session.Close()
+
 	for _, host := range endpoints {
 		// endpoint
-		_, err := session.Insert(host)
-		if err != nil {
-			logger.Errorf("insert endpoint %v failed, %s", host, err)
-			return err
+		has, err := session.Exist(&dataobj.Endpoint{Id: host.Id})
+		if err != nil || !has {
+			logger.Infof("insert nid %d host %v", nid, host)
+			_, err = session.Insert(host)
+			if err != nil {
+				logger.Errorf("insert endpoint %v failed, %s", host, err)
+				session.Rollback()
+				return err
+			}
+		} else {
+			logger.Infof("update nid %d host %v", nid, host)
+			_, err = session.ID(host.Id).Update(host)
+			if err != nil {
+				logger.Errorf("update endpoint %v failed, %s", host, err)
+				session.Rollback()
+				return err
+			}
 		}
 
 		// node - endpoint
@@ -188,11 +241,21 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 			NodeId:     nid,
 			EndpointId: host.Id,
 		}
-		_, err = session.Insert(nodeEndpoint)
-		if err != nil {
-			logger.Errorf("insert node-endpoint %v failed, %s", nodeEndpoint, err)
-			return err
+		exist, err := session.Exist(nodeEndpoint)
+		if err != nil || !exist {
+			logger.Infof("insert %v", nodeEndpoint)
+			_, err = session.Insert(nodeEndpoint)
+			if err != nil {
+				logger.Errorf("insert node-endpoint %v failed, %s", nodeEndpoint, err)
+				session.Rollback()
+				return err
+			}
+		} else {
+			logger.Infof("exist %v", nodeEndpoint)
 		}
+
 	}
-	return session.Commit()
+	err := session.Commit()
+	logger.Infof("commit endpoints elapsed %s", time.Since(start))
+	return err
 }

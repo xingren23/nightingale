@@ -122,6 +122,7 @@ type CmdbAppPageResult struct {
 type CmdbAppResult struct {
 	Message string             `json:"message"`
 	Result  *CmdbAppPageResult `json:"result"`
+	Status  int                `json:"status"`
 }
 
 type CmdbHost struct {
@@ -141,6 +142,7 @@ type CmdbHostPageResult struct {
 type CmdbHostResult struct {
 	Message string              `json:"message"`
 	Result  *CmdbHostPageResult `json:"result"`
+	Status  int                 `json:"status"`
 }
 
 type Instance struct {
@@ -164,6 +166,7 @@ type CmdbInstancePageResult struct {
 type CmdbInstanceResult struct {
 	Message string                  `json:"message"`
 	Result  *CmdbInstancePageResult `json:"result"`
+	Status  int                     `json:"status"`
 }
 
 type Network struct {
@@ -184,6 +187,7 @@ type CmdbNetworkPageResult struct {
 type CmdbNetworkResult struct {
 	Message string                 `json:"message"`
 	Result  *CmdbNetworkPageResult `json:"result"`
+	Status  int                    `json:"status"`
 }
 
 func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
@@ -211,8 +215,8 @@ func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
 
 		var appPageResult CmdbAppResult
 		err = json.Unmarshal(data, &appPageResult)
-		if err != nil || appPageResult.Result == nil {
-			logger.Errorf("Error: Parse %s JSON %v.", CmdbSourceApp, err)
+		if err != nil || appPageResult.Status != 200 || appPageResult.Result == nil {
+			logger.Errorf("Error: Parse %s JSON %v.", data, err)
 			return nil, err
 		}
 		pageRet = appPageResult.Result.Pagination
@@ -257,8 +261,8 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		case config.CmdbSourceHost:
 			var hostResult CmdbHostResult
 			err = json.Unmarshal(data, &hostResult)
-			if err != nil || hostResult.Result == nil {
-				logger.Errorf("Error: Parse %s JSON %v.", source, err)
+			if err != nil || hostResult.Status != 200 || hostResult.Result == nil {
+				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
 			}
 			pageRet = hostResult.Result.Pagination
@@ -266,8 +270,8 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		case config.CmdbSourceNet:
 			var networkResult CmdbNetworkResult
 			err = json.Unmarshal(data, &networkResult)
-			if err != nil || networkResult.Result == nil {
-				logger.Errorf("Error: Parse %s JSON %v.", source, err)
+			if err != nil || networkResult.Status != 200 || networkResult.Result == nil {
+				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
 			}
 			pageRet = networkResult.Result.Pagination
@@ -275,8 +279,8 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		case config.CmdbSourceInst:
 			var instResult CmdbInstanceResult
 			err = json.Unmarshal(data, &instResult)
-			if err != nil || instResult.Result == nil {
-				logger.Errorf("Error: Parse %s JSON %v.", source, err)
+			if err != nil || instResult.Status != 200 || instResult.Result == nil {
+				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
 			}
 			pageRet = instResult.Result.Pagination
@@ -289,7 +293,6 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		page.PageNo++
 		page.TotalPage = pageRet.TotalPage
 	}
-
 	return ret, nil
 }
 
@@ -308,7 +311,7 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 		extra := make(map[string]string, 0)
 		extra["env"] = host.EnvCode
 		extra["idc"] = host.DataCenterCode
-		extra["type"] = host.Type
+		extra["type"] = CmdbSourceHost
 		extra["ip"] = host.Ip
 		endpoint.Tags = str.SortedTags(extra)
 
@@ -332,7 +335,7 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 		extra := make(map[string]string, 0)
 		extra["env"] = network.EnvCode
 		extra["idc"] = network.DataCenterCode
-		extra["type"] = network.Type
+		extra["type"] = CmdbSourceNet
 		extra["ip"] = network.ManageIp
 		endpoint.Tags = str.SortedTags(extra)
 
@@ -360,6 +363,7 @@ func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
 		extra["port"] = strconv.Itoa(instance.Port)
 		extra["app"] = instance.AppCode
 		extra["ip"] = instance.IP
+		extra["type"] = CmdbSourceInst
 
 		endpoint.Tags = str.SortedTags(extra)
 
@@ -369,6 +373,7 @@ func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
 }
 
 func RequestByPost(url string, timeout int, params map[string]interface{}) ([]byte, error) {
+	start := time.Now()
 	b, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -395,7 +400,7 @@ func RequestByPost(url string, timeout int, params map[string]interface{}) ([]by
 		logger.Errorf("Request post Read Resp %v.", err)
 		return nil, err
 	}
-
+	logger.Infof("request %s %v elapsed %s", url, params, time.Since(start))
 	return data, err
 }
 
