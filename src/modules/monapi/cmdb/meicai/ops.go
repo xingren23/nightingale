@@ -259,7 +259,7 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 
 		var pageRet Pagination
 		switch source {
-		case config.CmdbSourceHost:
+		case CmdbSourceHost:
 			var hostResult CmdbHostResult
 			err = json.Unmarshal(data, &hostResult)
 			if err != nil || hostResult.Status != 200 || hostResult.Result == nil {
@@ -268,7 +268,7 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 			}
 			pageRet = hostResult.Result.Pagination
 			ret = append(ret, convertHost2Endpoint(hostResult.Result.Hosts)...)
-		case config.CmdbSourceNet:
+		case CmdbSourceNet:
 			var networkResult CmdbNetworkResult
 			err = json.Unmarshal(data, &networkResult)
 			if err != nil || networkResult.Status != 200 || networkResult.Result == nil {
@@ -277,7 +277,7 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 			}
 			pageRet = networkResult.Result.Pagination
 			ret = append(ret, convertNetwork2Endpoint(networkResult.Result.Networks)...)
-		case config.CmdbSourceInst:
+		case CmdbSourceInst:
 			var instResult CmdbInstanceResult
 			err = json.Unmarshal(data, &instResult)
 			if err != nil || instResult.Status != 200 || instResult.Result == nil {

@@ -20,10 +20,3 @@ const (
 	EndpointKeyPM      = "pm"
 	EndpointKeyNetwork = "network"
 )
-
-const (
-	CmdbSourceInst = "instance"
-	CmdbSourceApp  = "app"
-	CmdbSourceNet  = "network"
-	CmdbSourceHost = "host"
-)

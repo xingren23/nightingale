@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	PushUrl string = "http://127.0.0.1:1998/api/collector/push"
+	PushUrl string = "http://127.0.0.1:2058/api/collector/push"
 )
 
 func Init(prefix string, addr ...string) {

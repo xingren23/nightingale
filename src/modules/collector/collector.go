@@ -89,8 +89,7 @@ func main() {
 	//端口采集
 	ports.Detect()
 
-	//初始化缓存，用作保存COUNTER类型数据
-	//初始化endpoint&instance缓存, 用于辅助标签转换
+	//初始化缓存，用作保存COUNTER类型数据，初始化endpoint&instance缓存, 用于辅助标签转换
 	cache.Init()
 
 	//日志采集
@@ -98,6 +97,10 @@ func main() {
 	go worker.UpdateConfigsLoop()
 	go worker.PusherStart()
 	go worker.Zeroize()
+
+	if cfg.Logger.Level != "DEBUG" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	r := gin.New()
 	routes.Config(r)

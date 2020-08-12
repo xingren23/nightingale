@@ -6,17 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/didi/nightingale/src/modules/monapi/config"
-
 	"github.com/didi/nightingale/src/dataobj"
-
-	"github.com/didi/nightingale/src/modules/monapi/mcache"
-	"github.com/toolkits/pkg/container/set"
-
-	"github.com/toolkits/pkg/logger"
-
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/didi/nightingale/src/modules/monapi/mcache"
+
+	"github.com/toolkits/pkg/container/set"
+	"github.com/toolkits/pkg/logger"
 )
 
 var JudgeHashRing *ConsistentHashRing
@@ -60,9 +57,9 @@ func syncStras() {
 		endpointType := buildEndpointType(item)
 
 		// 环境标签
-		envE, envN := analysisTag(stra, "env")
-		hostE, hostN := analysisTag(stra, "host")
-		nodePathE, nodePathN := analysisTag(stra, "nodePath")
+		envE, envN := analysisTag(stra, config.FilterTagEnv)
+		hostE, hostN := analysisTag(stra, config.FilterTagHost)
+		nodePathE, nodePathN := analysisTag(stra, config.FilterTagNodePath)
 
 		//增加叶子节点nid(排除子节点)
 		stra.LeafNids, err = GetLeafNids(stra.Nid, stra.ExclNid, nodePathE.ToSlice(), nodePathN.ToSlice())

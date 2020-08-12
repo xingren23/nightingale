@@ -67,22 +67,7 @@ func main() {
 
 	model.InitMySQL("uic", "mon", "hbs")
 	model.InitRoot()
-
-	redisc.InitRedis()
 	cmdb.Init(config.Get().Cmdb)
-
-	//// cmdb缓存
-	//if err := cron.SyncResource(); err != nil {
-	//	log.Fatalf("sync cmdb resource fail: %v", err)
-	//}
-	//// 服务树缓存
-	//if err := meicai.SyncSrvTree(); err != nil {
-	//	log.Fatalf("sync srvtree fail: %v", err)
-	//}
-	//// 全量endpoint缓存
-	//if err := cron.SyncEndpoints(); err != nil {
-	//	log.Fatalf("sync endpoints fail: %v", err)
-	//}
 
 	scache.Init()
 	mcache.Init()
@@ -103,10 +88,9 @@ func main() {
 		log.Fatalf("sync monitor item fail: %v", err)
 	}
 
+	redisc.InitRedis()
+
 	go cron.SyncMonitorItemLoop()
-	//go cron.SyncResourceLoop()
-	//go meicai.SyncSrvTreeLoop()
-	//go cron.SyncEndpointsLoop()
 	go cron.SyncMaskconfLoop()
 	go cron.SyncStraLoop()
 	go cron.CleanStraLoop()

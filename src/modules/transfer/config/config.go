@@ -142,6 +142,15 @@ func Parse(conf string) error {
 		"callTimeout": 3000, //访问超时时间，单位毫秒
 	})
 
+	viper.SetDefault("report", map[string]interface{}{
+		"mod":      "transfer",
+		"enabled":  true,
+		"interval": 4000,
+		"timeout":  3000,
+		"api":      "api/hbs/heartbeat",
+		"remark":   "",
+	})
+
 	err = viper.Unmarshal(&Config)
 	if err != nil {
 		return fmt.Errorf("cannot read yml[%s]: %v", conf, err)
