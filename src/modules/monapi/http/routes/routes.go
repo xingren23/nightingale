@@ -138,6 +138,8 @@ func Config(r *gin.Engine) {
 
 	hawkeye := r.Group("/api/portal/hawkeye").Use(middleware.Logined())
 	{
+		hawkeye.GET("/stra", strasHawkeyeGet)
+
 		hawkeye.GET("/team", teamHawkeyeListGet)
 		hawkeye.POST("/team", teamHawkeyeAddPost)
 		hawkeye.PUT("/team/:id", teamHawkeyePut)
