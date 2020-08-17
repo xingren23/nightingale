@@ -24,6 +24,17 @@ type EndpointBinding struct {
 	Nodes []Node `json:"nodes"`
 }
 
+type AppInstance struct {
+	Id     int64  `json:"id"`
+	App    string `json:"app"`
+	Env    string `json:"env"`
+	Group  string `json:"group"`
+	Ident  string `json:"ident"`
+	Port   int    `json:"port"`
+	Tags   string `json:"tags"`
+	NodeId int64  `json:"nodeId"`
+}
+
 func Paths(longPath string) []string {
 	names := strings.Split(longPath, ".")
 	count := len(names)

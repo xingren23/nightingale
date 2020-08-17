@@ -13,6 +13,19 @@ ALTER TABLE node modify column `id` int unsigned ;
 ALTER TABLE endpoint Add COLUMN `tags` VARCHAR(256) NULL COMMENT '标签';
 
 use n9e_mon;
+CREATE TABLE `app_instance` (
+    `id` int unsigned NOT NULL COMMENT '应用实例id',
+    `app` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '应用编码',
+    `ident` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '实例标识',
+    `env` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '环境',
+    `group` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '分组',
+    `port` int unsigned DEFAULT NULL COMMENT '实例端口',
+    `node_id` int unsigned NOT NULL COMMENT '服务树id',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+use n9e_mon;
 CREATE TABLE `config_info`
 (
     `id`          BIGINT(20)    NOT NULL AUTO_INCREMENT,

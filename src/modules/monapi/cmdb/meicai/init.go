@@ -59,7 +59,6 @@ func (meicai *Meicai) Init() {
 	db, err := xorm.NewEngine("mysql", conf.Addr)
 	if err != nil {
 		log.Fatalf("cannot connect mysql[%s]: %v", conf.Addr, err)
-		panic(err)
 	}
 
 	db.SetMaxIdleConns(conf.Idle)
@@ -105,19 +104,25 @@ func (meicai *Meicai) SyncOps() error {
 			url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
 
 			// 主机资源
-			meicai.initNodeHosts(url, nodeStr, node.Id)
+			if err := meicai.initNodeHosts(url, nodeStr, node.Id); err != nil {
+				logger.Errorf("init node %s hosts failed, %s ", nodeStr, err)
+			}
 			// 网络资源
-			meicai.initNodeNetworks(url, nodeStr, node.Id)
+			if err := meicai.initNodeNetworks(url, nodeStr, node.Id); err != nil {
+				logger.Errorf("init node %s network failed, %s", nodeStr, err)
+			}
 
 			// instance & app
 			apps, err := QueryAppByNode(url, meicai.Timeout, nodeStr)
-			if err != nil {
+			if err == nil {
 				appMap := make(map[string]*App, 0)
 				for _, app := range apps {
 					appMap[app.Code] = app
 				}
 				// 实例资源
-				meicai.initNodeInstances(url, nodeStr, node.Id, appMap)
+				if err := meicai.initNodeAppInstances(url, nodeStr, node.Id, appMap); err != nil {
+					logger.Errorf("init node %s app-instance failed, %s", nodeStr, err)
+				}
 			}
 
 			//time.Sleep(time.Duration(time.Millisecond) * 100)
@@ -151,18 +156,16 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 		has, err := session.Exist(&dataobj.Node{Id: node.Id})
 		if err != nil || !has {
 			logger.Infof("insert node %v", node)
-			_, err = session.Insert(node)
-			if err != nil {
+			if _, err := session.Insert(node); err != nil {
 				logger.Errorf("insert node %v failed, %s", node, err)
-				session.Rollback()
+				_ = session.Rollback()
 				return err
 			}
 		} else {
 			logger.Infof("update node %v", node)
-			_, err = session.ID(node.Id).Update(node)
-			if err != nil {
+			if _, err := session.ID(node.Id).Update(node); err != nil {
 				logger.Errorf("update node %v failed, %s", node, err)
-				session.Rollback()
+				_ = session.Rollback()
 				return err
 			}
 		}
@@ -194,28 +197,59 @@ func (meicai *Meicai) initNodeNetworks(url string, nodeStr string, nid int64) er
 	return meicai.commitEndpoints(networks, nid)
 }
 
-func (meicai *Meicai) initNodeInstances(url string, nodeStr string, nid int64, apps map[string]*App) error {
+func (meicai *Meicai) initNodeAppInstances(url string, nodeStr string, nid int64, apps map[string]*App) error {
 	// TODO 请求失败，如何处理 ？
-	instances, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceInst)
+	appInstances, err := QueryAppInstanceByNode(url, meicai.Timeout, nodeStr, CmdbSourceInst)
 	if err != nil {
 		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceInst, err)
 		return err
 	}
 
 	// 补充instance信息（app：basic）
-	for _, instance := range instances {
+	for _, instance := range appInstances {
 		tags, err := dataobj2.SplitTagsString(instance.Tags)
 		if err != nil {
 			logger.Errorf("split instance tags %s failed, %s", instance.Tags, err)
 		}
-		if appcode, exist := tags["app"]; exist {
-			if app, ok := apps[appcode]; ok {
-				tags["basic"] = strconv.FormatBool(app.Basic)
+		if app, ok := apps[instance.App]; ok {
+			tags["basic"] = strconv.FormatBool(app.Basic)
+		} else {
+			tags["basic"] = strconv.FormatBool(false)
+		}
+		instance.Tags = dataobj2.SortedTags(tags)
+		instance.NodeId = nid
+	}
+	return meicai.commitAppInstances(appInstances, nid)
+}
+
+func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, nid int64) error {
+	start := time.Now()
+	session := meicai.DB["mon"].NewSession()
+	defer session.Close()
+
+	for _, instance := range appInstances {
+		// app instance
+		has, err := session.Table("app_instance").Exist(&dataobj.AppInstance{Id: instance.Id})
+		if err != nil || !has {
+			logger.Infof("insert nid %d host %v", nid, instance)
+			if _, err := session.Table("app_instance").Insert(instance); err != nil {
+				logger.Errorf("insert app-instance %v failed, %s", instance, err)
+				_ = session.Rollback()
+				return err
+			}
+		} else {
+			logger.Infof("update nid %d host %v", nid, instance)
+			if _, err := session.Table("app_instance").ID(instance.Id).Update(instance); err != nil {
+				logger.Errorf("update app-instance %v failed, %s", instance, err)
+				_ = session.Rollback()
+				return err
 			}
 		}
+
 	}
-	return nil
-	//return meicai.commitEndpoints(instances, nid)
+	err := session.Commit()
+	logger.Infof("commit app-instances elapsed %s", time.Since(start))
+	return err
 }
 
 func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) error {
@@ -228,18 +262,16 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 		has, err := session.Exist(&dataobj.Endpoint{Id: host.Id})
 		if err != nil || !has {
 			logger.Infof("insert nid %d host %v", nid, host)
-			_, err = session.Insert(host)
-			if err != nil {
+			if _, err := session.Insert(host); err != nil {
 				logger.Errorf("insert endpoint %v failed, %s", host, err)
-				session.Rollback()
+				_ = session.Rollback()
 				return err
 			}
 		} else {
 			logger.Infof("update nid %d host %v", nid, host)
-			_, err = session.ID(host.Id).Update(host)
-			if err != nil {
+			if _, err := session.ID(host.Id).Update(host); err != nil {
 				logger.Errorf("update endpoint %v failed, %s", host, err)
-				session.Rollback()
+				_ = session.Rollback()
 				return err
 			}
 		}
@@ -252,10 +284,9 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 		exist, err := session.Exist(nodeEndpoint)
 		if err != nil || !exist {
 			logger.Infof("insert %v", nodeEndpoint)
-			_, err = session.Insert(nodeEndpoint)
-			if err != nil {
+			if _, err := session.Insert(nodeEndpoint); err != nil {
 				logger.Errorf("insert node-endpoint %v failed, %s", nodeEndpoint, err)
-				session.Rollback()
+				_ = session.Rollback()
 				return err
 			}
 		} else {
