@@ -96,13 +96,12 @@ func (meicai *Meicai) SyncOps() error {
 		return err
 	}
 	// 遍历节点
+	url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
 	for _, node := range nodes {
 		//初始化叶子节点的资源
 		if node.Leaf == 1 {
 			logger.Infof("init leaf node endpoint, id=%d path=%s", node.Id, node.Path)
 			nodeStr := node.Path
-			url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
-
 			// 主机资源
 			if err := meicai.initNodeHosts(url, nodeStr, node.Id); err != nil {
 				logger.Errorf("init node %s hosts failed, %s ", nodeStr, err)
@@ -258,7 +257,8 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 
 	for _, host := range endpoints {
 		// endpoint
-		has, err := session.Exist(&dataobj.Endpoint{Ident: host.Ident})
+		endpointModel := &dataobj.Endpoint{Ident: host.Ident}
+		has, err := session.Get(endpointModel)
 		if err != nil || !has {
 			logger.Infof("insert nid %d host %v", nid, host)
 			if _, err := session.Insert(host); err != nil {
@@ -268,6 +268,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 			}
 		} else {
 			logger.Infof("update nid %d host %v", nid, host)
+			host.Id = endpointModel.Id
 			if _, err := session.ID(host.Id).Update(host); err != nil {
 				logger.Errorf("update endpoint %v failed, %s", host, err)
 				_ = session.Rollback()

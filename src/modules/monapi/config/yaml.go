@@ -25,7 +25,7 @@ type Config struct {
 }
 
 type CmdbSection struct {
-	Default string        `yaml:"name"`
+	Default string        `yaml:"default"`
 	N9e     N9eSection    `yaml:"n9e"`
 	Meicai  MeicaiSection `yaml:"meicai"`
 }

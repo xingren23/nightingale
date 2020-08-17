@@ -321,7 +321,9 @@ func GetExclLeafIds(exclNid []int64) (leafIds []int64, err error) {
 	return leafIds, nil
 }
 
-func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notequals *set.StringSet) {
+func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notEquals *set.StringSet) {
+	equals = set.NewStringSet()
+	notEquals = set.NewStringSet()
 	for _, tag := range stra.Tags {
 		if tag.Tkey == key {
 			if tag.Topt == "=" {
@@ -330,12 +332,12 @@ func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notequals
 				}
 			} else if tag.Topt == "!=" {
 				for _, value := range tag.Tval {
-					notequals.Add(value)
+					notEquals.Add(value)
 				}
 			}
 		}
 	}
-	return
+	return equals, notEquals
 }
 
 // TODO : 指标元数据中定义一个类型 ？
