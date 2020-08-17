@@ -17,7 +17,7 @@ import (
 
 const (
 	EndpointsApi   = "/api/portal/endpoints"
-	InstancesApi   = "/api/portal/instances"
+	InstancesApi   = "/api/portal/appinstances"
 	MonitorItemApi = "/api/portal/monitor_item"
 	GarbageApi     = "/api/portal/garbage"
 
@@ -29,7 +29,7 @@ func Init() {
 	ProcsCache = NewProcsCache()
 
 	EndpointCache = NewEndpointCache()
-	InstanceCache = NewInstanceCache()
+	AppInstanceCache = NewAppInstanceCache()
 	MonitorItemCache = NewMonitorItemCache()
 	GarbageCache = NewGarbageCache()
 
@@ -50,7 +50,7 @@ func loopSyncResource() {
 
 func syncResource() error {
 	err := buildEndpointCache()
-	err = buildInstanceCache()
+	err = buildAppInstanceCache()
 	err = buildGarbageCache()
 	err = buildMonitorItemCache()
 	return err
@@ -81,13 +81,13 @@ func buildEndpointCache() error {
 }
 
 // instances, retry monapi addr
-func buildInstanceCache() error {
-	instancesResp, err := getInstances()
+func buildAppInstanceCache() error {
+	instancesResp, err := getAppInstances()
 	if err != nil {
 		logger.Error("build endpoints cache fail:", err)
 		return err
 	}
-	instanceMap := make(map[string]*Instance)
+	instanceMap := make(map[string]*AppInstance)
 	for _, instance := range instancesResp.Dat {
 		tags, err := dataobj.SplitTagsString(instance.Tags)
 		if err != nil {
@@ -106,7 +106,7 @@ func buildInstanceCache() error {
 			instanceMap[uuid] = instance
 		}
 	}
-	InstanceCache.SetAll(instanceMap)
+	AppInstanceCache.SetAll(instanceMap)
 	return nil
 }
 
@@ -142,8 +142,8 @@ type EndpointsResp struct {
 }
 
 type InstancesResp struct {
-	Dat []*Instance `json:"dat"`
-	Err string      `json:"err"`
+	Dat []*AppInstance `json:"dat"`
+	Err string         `json:"err"`
 }
 
 type MonitorItemResp struct {
@@ -179,7 +179,7 @@ func getEndpoints() (EndpointsResp, error) {
 	return res, err
 }
 
-func getInstances() (InstancesResp, error) {
+func getAppInstances() (InstancesResp, error) {
 	var res InstancesResp
 	var err error
 

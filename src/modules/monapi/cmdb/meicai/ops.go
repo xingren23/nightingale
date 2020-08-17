@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -50,14 +49,14 @@ type SrvTreeNodeResult struct {
 
 // 获取整棵服务树
 func SrvTreeGets(url string, timeout int) ([]*dataobj.Node, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var jsonlib = jsoniter.ConfigCompatibleWithStandardLibrary
 	data, err := RequestByPost(url, timeout, map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}
 
 	var srvTreeNodesResult SrvTreeNodesResult
-	err = json.Unmarshal(data, &srvTreeNodesResult)
+	err = jsonlib.Unmarshal(data, &srvTreeNodesResult)
 	if err != nil {
 		logger.Errorf("Parse JSON %v.", err)
 		return nil, err
@@ -192,7 +191,7 @@ type CmdbNetworkResult struct {
 }
 
 func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var jsonLib = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,
@@ -215,7 +214,7 @@ func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
 		var pageRet Pagination
 
 		var appPageResult CmdbAppResult
-		err = json.Unmarshal(data, &appPageResult)
+		err = jsonLib.Unmarshal(data, &appPageResult)
 		if err != nil || appPageResult.Status != 200 || appPageResult.Result == nil {
 			logger.Errorf("Error: Parse %s JSON %v.", data, err)
 			return nil, err
@@ -237,7 +236,7 @@ func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
 // source ： 资源类型
 // 参考：https://meicai.feishu.cn/docs/doccniuHjuYFzFQAT0kBO52e1kf?sidebarOpen=1#EDzlgz
 func QueryResourceByNode(url string, timeout int, query string, source string) ([]*dataobj.Endpoint, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var jsonLib = jsoniter.ConfigCompatibleWithStandardLibrary
 	params := make(map[string]interface{})
 	page := Pagination{
 		PageNo:    1,
@@ -261,7 +260,7 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		switch source {
 		case CmdbSourceHost:
 			var hostResult CmdbHostResult
-			err = json.Unmarshal(data, &hostResult)
+			err = jsonLib.Unmarshal(data, &hostResult)
 			if err != nil || hostResult.Status != 200 || hostResult.Result == nil {
 				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
@@ -270,22 +269,59 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 			ret = append(ret, convertHost2Endpoint(hostResult.Result.Hosts)...)
 		case CmdbSourceNet:
 			var networkResult CmdbNetworkResult
-			err = json.Unmarshal(data, &networkResult)
+			err = jsonLib.Unmarshal(data, &networkResult)
 			if err != nil || networkResult.Status != 200 || networkResult.Result == nil {
 				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
 			}
 			pageRet = networkResult.Result.Pagination
 			ret = append(ret, convertNetwork2Endpoint(networkResult.Result.Networks)...)
+		}
+
+		if pageRet.PageNo == 0 {
+			return ret, fmt.Errorf("page result is nil")
+		}
+		page.PageNo++
+		page.TotalPage = pageRet.TotalPage
+	}
+	return ret, nil
+}
+
+// query : cmdb 服务树节点串
+// source ： 资源类型
+// 参考：https://meicai.feishu.cn/docs/doccniuHjuYFzFQAT0kBO52e1kf?sidebarOpen=1#EDzlgz
+func QueryAppInstanceByNode(url string, timeout int, query string, source string) ([]*dataobj.AppInstance, error) {
+	var jsonLib = jsoniter.ConfigCompatibleWithStandardLibrary
+	params := make(map[string]interface{})
+	page := Pagination{
+		PageNo:    1,
+		PageSize:  100,
+		TotalPage: 999,
+	}
+	params["sourceType"] = source
+	params["expression"] = query
+
+	ret := make([]*dataobj.AppInstance, 0)
+	for page.PageNo <= page.TotalPage {
+		params["pagination"] = page
+
+		data, err := RequestByPost(url, timeout, params)
+		if err != nil {
+			logger.Errorf("request url %s params %s failed, %s", url, params, err)
+			return nil, err
+		}
+
+		var pageRet Pagination
+		switch source {
 		case CmdbSourceInst:
 			var instResult CmdbInstanceResult
-			err = json.Unmarshal(data, &instResult)
+			err = jsonLib.Unmarshal(data, &instResult)
 			if err != nil || instResult.Status != 200 || instResult.Result == nil {
 				logger.Errorf("Error: Parse %s JSON %v.", data, err)
 				return nil, err
 			}
 			pageRet = instResult.Result.Pagination
-			ret = append(ret, convertInstance2Endpoint(instResult.Result.Instances)...)
+			ret = append(ret, convertInstance2AppInstance(instResult.Result.Instances)...)
 		}
 
 		if pageRet.PageNo == 0 {
@@ -352,25 +388,24 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 	return ret
 }
 
-func convertInstance2Endpoint(instances []Instance) []*dataobj.Endpoint {
+func convertInstance2AppInstance(instances []Instance) []*dataobj.AppInstance {
 	if len(instances) == 0 {
-		return make([]*dataobj.Endpoint, 0)
+		return make([]*dataobj.AppInstance, 0)
 	}
 
-	ret := make([]*dataobj.Endpoint, 0)
+	ret := make([]*dataobj.AppInstance, 0)
 	for _, instance := range instances {
-		endpoint := &dataobj.Endpoint{
+		endpoint := &dataobj.AppInstance{
 			Id:    instance.Id,
 			Ident: instance.IP,
-			Alias: instance.HostName,
+			App:   instance.AppCode,
+			Env:   instance.EnvCode,
+			Group: instance.GroupCode,
+			Port:  instance.Port,
 		}
 		extra := make(map[string]string, 0)
-		extra["env"] = instance.EnvCode
-		extra["group"] = instance.GroupCode
 		extra["idc"] = instance.DataCenterCode
-		extra["port"] = strconv.Itoa(instance.Port)
-		extra["app"] = instance.AppCode
-		extra["ip"] = instance.IP
+		extra["uuid"] = instance.UUID
 
 		endpoint.Tags = str.SortedTags(extra)
 
@@ -400,8 +435,8 @@ func RequestByPost(url string, timeout int, params map[string]interface{}) ([]by
 		logger.Errorf("Request post error %v.", err)
 		return nil, err
 	}
-
 	defer resp.Body.Close()
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logger.Errorf("Request post Read Resp %v.", err)

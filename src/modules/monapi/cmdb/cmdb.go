@@ -74,15 +74,25 @@ type INodeEndpoint interface {
 	NodeEndpointBind(nid, eid int64) error
 }
 
+type IAppInstanceReadable interface {
+	AppInstanceGets(query, batch, field string, limit, offset int) ([]dataobj.AppInstance, int64, error)
+}
+
+type IAppInstance interface {
+	IAppInstanceReadable
+}
+
 type ICmdbReadable interface {
 	IEndpointReadable
 	INodeReadable
 	INodeEndpointReadable
+	IAppInstanceReadable
 }
 type ICmdb interface {
 	IEndpoint
 	INode
 	INodeEndpoint
+	IAppInstance
 }
 
 var defaultCmdb string
