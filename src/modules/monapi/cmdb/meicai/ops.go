@@ -341,7 +341,6 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 	ret := make([]*dataobj.Endpoint, 0)
 	for _, host := range hosts {
 		endpoint := &dataobj.Endpoint{
-			Id:    host.Id,
 			Ident: host.Ip,
 			Alias: host.HostName,
 		}
@@ -374,7 +373,6 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 	ret := make([]*dataobj.Endpoint, 0)
 	for _, network := range networks {
 		endpoint := &dataobj.Endpoint{
-			Id:    network.Id,
 			Ident: network.ManageIp,
 			Alias: network.Name,
 		}
@@ -407,6 +405,7 @@ func convertInstance2AppInstance(instances []Instance) []*dataobj.AppInstance {
 		}
 		extra := make(map[string]string, 0)
 		extra["idc"] = instance.DataCenterCode
+		extra["uuid"] = instance.UUID
 
 		endpoint.Tags = str.SortedTags(extra)
 

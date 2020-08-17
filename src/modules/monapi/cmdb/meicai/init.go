@@ -231,21 +231,20 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 		// app instance
 		has, err := session.Table("app_instance").Exist(&dataobj.AppInstance{Id: instance.Id})
 		if err != nil || !has {
-			logger.Infof("insert nid %d host %v", nid, instance)
+			logger.Infof("insert nid %d app-instance %v", nid, instance)
 			if _, err := session.Table("app_instance").Insert(instance); err != nil {
 				logger.Errorf("insert app-instance %v failed, %s", instance, err)
 				_ = session.Rollback()
 				return err
 			}
 		} else {
-			logger.Infof("update nid %d host %v", nid, instance)
+			logger.Infof("update nid %d app-instance %v", nid, instance)
 			if _, err := session.Table("app_instance").ID(instance.Id).Update(instance); err != nil {
 				logger.Errorf("update app-instance %v failed, %s", instance, err)
 				_ = session.Rollback()
 				return err
 			}
 		}
-
 	}
 	err := session.Commit()
 	logger.Infof("commit app-instances elapsed %s", time.Since(start))
@@ -259,7 +258,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 
 	for _, host := range endpoints {
 		// endpoint
-		has, err := session.Exist(&dataobj.Endpoint{Id: host.Id})
+		has, err := session.Exist(&dataobj.Endpoint{Ident: host.Ident})
 		if err != nil || !has {
 			logger.Infof("insert nid %d host %v", nid, host)
 			if _, err := session.Insert(host); err != nil {

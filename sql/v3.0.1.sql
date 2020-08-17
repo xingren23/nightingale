@@ -1,28 +1,35 @@
 set names utf8;
 use n9e_uic;
-ALTER TABLE team ADD COLUMN `nid` int unsigned NOT NULL COMMENT '关联服务树id';
-ALTER TABLE team DROP INDEX ident;
-CREATE UNIQUE INDEX u_ident_nid ON team (ident,nid);
+ALTER TABLE team
+    ADD COLUMN `nid` int unsigned NOT NULL COMMENT '关联服务树id';
+ALTER TABLE team
+    DROP INDEX ident;
+CREATE UNIQUE INDEX u_ident_nid ON team (ident, nid);
 
 use n9e_mon;
-ALTER TABLE event_cur ADD COLUMN `alert_users` VARCHAR(1000) NOT NULL COMMENT '已报警用户';
+ALTER TABLE event_cur
+    ADD COLUMN `alert_users` VARCHAR(1000) NOT NULL COMMENT '已报警用户';
 
 use n9e_mon;
-ALTER TABLE endpoint modify column `id` int unsigned ;
-ALTER TABLE node modify column `id` int unsigned ;
-ALTER TABLE endpoint Add COLUMN `tags` VARCHAR(256) NULL COMMENT '标签';
+ALTER TABLE node
+    modify column `id` int unsigned;
+ALTER TABLE endpoint
+    Add COLUMN `tags` VARCHAR(256) NULL COMMENT '标签';
 
 use n9e_mon;
-CREATE TABLE `app_instance` (
-    `id` int unsigned NOT NULL COMMENT '应用实例id',
-    `app` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '应用编码',
-    `ident` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '实例标识',
-    `env` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '环境',
-    `group` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '分组',
-    `port` int unsigned DEFAULT NULL COMMENT '实例端口',
+CREATE TABLE `app_instance`
+(
+    `id`      int unsigned NOT NULL COMMENT '实例id',
+    `app`     varchar(255) NOT NULL COMMENT '应用编码',
+    `ident`   varchar(255) NOT NULL COMMENT '实例标识',
+    `env`     varchar(255) NOT NULL COMMENT '环境',
+    `group`   varchar(255) NOT NULL COMMENT '分组',
+    `port`    int unsigned DEFAULT NULL COMMENT '实例端口',
+    `tags`   varchar(1024) NOT NULL COMMENT '标签',
     `node_id` int unsigned NOT NULL COMMENT '服务树id',
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
 
 
 use n9e_mon;

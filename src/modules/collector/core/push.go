@@ -107,22 +107,16 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 			return nil, fmt.Errorf("metric %s is not exists in monitor_item ", item.Metric)
 		}
 		uuid := item.Endpoint[index+6:]
-		instance, exists := cache.InstanceCache.Get(uuid)
+		instance, exists := cache.AppInstanceCache.Get(uuid)
 		if !exists {
 			return nil, fmt.Errorf("instance %s is not found in instance Cache ", item.Endpoint)
 		}
-		tags, err := dataobj.SplitTagsString(instance.Tags)
-		if err != nil {
-			return nil, fmt.Errorf("instance %s is split tags %s failed", item.Endpoint, item.Tags)
-		}
-		item.TagsMap["app"] = tags["app"]
-		item.TagsMap["group"] = tags["group"]
-		item.TagsMap["env"] = tags["env"]
+		item.TagsMap["app"] = instance.App
+		item.TagsMap["group"] = instance.Group
+		item.TagsMap["env"] = instance.Env
 		// 如果指标本身不上报port,并且cmdb中存在端口信息，添加此标签
-		if _, exists := item.TagsMap["port"]; !exists {
-			if port, ok := tags["port"]; ok && port != "0" {
-				item.TagsMap["port"] = port
-			}
+		if instance.Port > 0 {
+			item.TagsMap["port"] = string(instance.Port)
 		}
 		item.TagsMap["ip"] = instance.Ident
 		item.Endpoint = instance.Ident
