@@ -8,8 +8,8 @@ use n9e_mon;
 ALTER TABLE event_cur ADD COLUMN `alert_users` VARCHAR(1000) NOT NULL COMMENT '已报警用户';
 
 use n9e_mon;
-ALTER TABLE endpoint modify column `id` int unsigned ;
-ALTER TABLE node modify column `id` int unsigned ;
+ALTER TABLE endpoint modify column `id` int unsigned AUTO_INCREMENT;
+ALTER TABLE node modify column `id` int unsigned AUTO_INCREMENT;
 ALTER TABLE endpoint Add COLUMN `tags` VARCHAR(256) NULL COMMENT '标签';
 
 use n9e_mon;

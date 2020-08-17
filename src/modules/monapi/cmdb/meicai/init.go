@@ -2,7 +2,6 @@ package meicai
 
 import (
 	"fmt"
-	"log"
 	"path"
 	"strconv"
 	"time"
@@ -48,17 +47,17 @@ func (meicai *Meicai) Init() {
 	confs := make(map[string]MySQLConf)
 	err := file.ReadYaml(mysqlYml, &confs)
 	if err != nil {
-		log.Fatalf("cannot read yml[%s]: %v", mysqlYml, err)
+		logger.Errorf("cannot read yml[%s]: %v", mysqlYml, err)
 	}
 	name := "mon"
 	conf, has := confs[name]
 	if !has {
-		log.Fatalf("no such mysql conf: %s", name)
+		logger.Errorf("no such mysql conf: %s", name)
 	}
 
 	db, err := xorm.NewEngine("mysql", conf.Addr)
 	if err != nil {
-		log.Fatalf("cannot connect mysql[%s]: %v", conf.Addr, err)
+		logger.Errorf("cannot connect mysql[%s]: %v", conf.Addr, err)
 		panic(err)
 	}
 
@@ -97,13 +96,12 @@ func (meicai *Meicai) SyncOps() error {
 		return err
 	}
 	// 遍历节点
+	url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
 	for _, node := range nodes {
 		//初始化叶子节点的资源
 		if node.Leaf == 1 {
 			logger.Infof("init leaf node endpoint, id=%d path=%s", node.Id, node.Path)
 			nodeStr := node.Path
-			url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
-
 			// 主机资源
 			meicai.initNodeHosts(url, nodeStr, node.Id)
 			// 网络资源
@@ -225,7 +223,8 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 
 	for _, host := range endpoints {
 		// endpoint
-		has, err := session.Exist(&dataobj.Endpoint{Id: host.Id})
+		endpointModel := &dataobj.Endpoint{Ident: host.Ident}
+		has, err := session.Get(endpointModel)
 		if err != nil || !has {
 			logger.Infof("insert nid %d host %v", nid, host)
 			_, err = session.Insert(host)
@@ -236,6 +235,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 			}
 		} else {
 			logger.Infof("update nid %d host %v", nid, host)
+			host.Id = endpointModel.Id
 			_, err = session.ID(host.Id).Update(host)
 			if err != nil {
 				logger.Errorf("update endpoint %v failed, %s", host, err)
