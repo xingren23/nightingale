@@ -45,7 +45,6 @@ func (n9e *N9e) Init() {
 	db, err := xorm.NewEngine("mysql", conf.Addr)
 	if err != nil {
 		log.Fatalf("cannot connect mysql[%s]: %v", conf.Addr, err)
-		panic(err)
 	}
 
 	db.SetMaxIdleConns(conf.Idle)
@@ -61,6 +60,5 @@ func (n9e *N9e) Init() {
 	err = n9e.InitNode()
 	if err != nil {
 		log.Fatalf("init n9e cmdb failed, %s", err)
-		panic(err)
 	}
 }
