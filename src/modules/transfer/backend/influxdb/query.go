@@ -160,6 +160,14 @@ func (influxdb *InfluxdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *da
 	}
 
 	influxql := fmt.Sprintf("SHOW MEASUREMENTS ON \"%s\"", influxdb.Section.Database)
+	if len(recv.Endpoints) > 0 {
+		endpointPart := ""
+		for _, endpoint := range recv.Endpoints {
+			endpointPart += fmt.Sprintf(" \"endpoint\"='%s' OR", endpoint)
+		}
+		endpointPart = endpointPart[:len(endpointPart)-len("OR")]
+		influxql = fmt.Sprintf("%s WHERE %s", influxql, endpointPart)
+	}
 	query := client.NewQuery(influxql, c.Database, c.Precision)
 	if response, err := c.Client.Query(query); err == nil && response.Error() == nil {
 		resp := &dataobj.MetricResp{
