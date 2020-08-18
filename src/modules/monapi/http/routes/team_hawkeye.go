@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/didi/nightingale/src/modules/monapi/auth/meicai"
-
 	"github.com/didi/nightingale/src/model"
+	"github.com/didi/nightingale/src/modules/monapi/auth/meicai"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
 )
@@ -15,31 +15,30 @@ func teamHawkeyeListGet(c *gin.Context) {
 	limit := queryInt(c, "limit", 10000)
 	query := queryStr(c, "query", "")
 	nid := mustQueryInt64(c, "nid")
-	//edit := queryInt(c, "edit", 1)
+	edit := queryInt(c, "edit", 1)
 	var nids []int64
 	m := make(map[int64]string)
 
-	//if edit == 1 {
-	//	srvTrees, err := ops.SrvTreeAncestors(nid)
-	//	errors.Dangerous(err)
-	//
-	//	for _, srvTree := range srvTrees {
-	//		nids = append(nids, srvTree.Id)
-	//		m[srvTree.Id] = srvTree.NodeCode
-	//	}
-	//} else {
-	//	nids = append(nids, nid)
-	//	srvTree, err := ops.GetNodeById(nid)
-	//	if err != nil {
-	//
-	//	}
-	//	m[srvTree.Id] = srvTree.Note
-	//}
+	curNode, err := cmdb.GetCmdb().NodeGet("id", nid)
+	errors.Dangerous(err)
+	nids = append(nids, nid)
+	m[curNode.Id] = curNode.Name
 
+	if edit == 1 {
+		pids, err := cmdb.GetCmdb().Pids(curNode)
+		errors.Dangerous(err)
+
+		pNodes, err := cmdb.GetCmdb().NodeByIds(pids)
+		for _, node := range pNodes {
+			nids = append(nids, node.Id)
+			m[node.Id] = node.Name
+		}
+	}
+
+	// 策略编辑id反查team
 	var ids []int64
 	if query != "" {
-		idsStrs := strings.Split(query, ",")
-		for _, idStr := range idsStrs {
+		for _, idStr := range strings.Split(query, ",") {
 			id, _ := strconv.ParseInt(idStr, 10, 64)
 			ids = append(ids, id)
 		}
