@@ -10,17 +10,17 @@ import (
 )
 
 func Init(cmdb config.CmdbSection) {
-	log.Printf("init cmdb section %s", cmdb)
+	log.Printf("init cmdb section %v", cmdb)
 
 	if cmdb.N9e.Enabled {
 		if cmdb.N9e.Name == cmdb.Default {
-			log.Print("init n9e cmdb")
+			log.Println("init n9e cmdb")
 			n9eCmdb := &n9e.N9e{}
 			n9eCmdb.Init()
 			RegisterCmdb(cmdb.N9e.Name, n9eCmdb)
 			defaultCmdb = cmdb.Default
 		} else {
-			log.Println("config invalid %s", cmdb.Default)
+			log.Printf("config invalid %s", cmdb.Default)
 		}
 	}
 
@@ -32,7 +32,7 @@ func Init(cmdb config.CmdbSection) {
 			RegisterCmdb(cmdb.Meicai.Name, meicaiCmdb)
 			defaultCmdb = cmdb.Default
 		} else {
-			log.Println("config invalid %s", cmdb.Default)
+			log.Printf("config invalid %s", cmdb.Default)
 		}
 	}
 }
