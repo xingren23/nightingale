@@ -21,8 +21,8 @@ import (
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
 
-// 指标转换，补充必要的标签数据
-func Push(metricItems []*dataobj.MetricValue) error {
+// openfalcon v1/push 接口：指标转换，补充必要的标签数据
+func PushV1(metricItems []*dataobj.MetricValue) error {
 	var err error
 	var items []*dataobj.MetricValue
 	now := time.Now().Unix()
@@ -44,6 +44,71 @@ func Push(metricItems []*dataobj.MetricValue) error {
 		item, err := convertMetricItem(item)
 		if err != nil {
 			logger.Errorf("convert error metric:%v err:%v", item, err)
+			continue
+		}
+		if item.CounterType == dataobj.COUNTER {
+			item = CounterToGauge(item)
+			if item == nil {
+				continue
+			}
+		}
+		if item.CounterType == dataobj.SUBTRACT {
+			item = SubtractToGauge(item)
+			if item == nil {
+				continue
+			}
+		}
+		logger.Debug("push item: ", item)
+		items = append(items, item)
+	}
+
+	addrs := address.GetRPCAddresses("transfer")
+	count := len(addrs)
+	retry := 0
+	for {
+		for _, i := range rand.Perm(count) {
+			addr := addrs[i]
+			reply, err := rpcCall(addr, items)
+			if err != nil {
+				logger.Error(err)
+				continue
+			} else {
+				if reply.Msg != "ok" {
+					err = fmt.Errorf("some item push err: %s", reply.Msg)
+					logger.Error(err)
+				}
+				return err
+			}
+		}
+
+		time.Sleep(time.Millisecond * 500)
+
+		retry += 1
+		if retry == 3 {
+			break
+		}
+	}
+
+	return err
+}
+
+// 指标转换，补充必要的标签数据
+func Push(metricItems []*dataobj.MetricValue) error {
+	var err error
+	var items []*dataobj.MetricValue
+	now := time.Now().Unix()
+	filterStr := cache.GarbageCache.Get()
+
+	for _, item := range metricItems {
+		logger.Debug("->recv: ", item)
+		if item.Endpoint == "" {
+			item.Endpoint = identity.Identity
+		}
+		err = item.CheckMetricValidity(filterStr, now)
+		if err != nil {
+			msg := fmt.Errorf("metric:%v err:%v", item, err)
+			logger.Warning(msg)
+			// 如果数据有问题，直接跳过吧，比如mymon采集的到的数据，其实只有一个有问题，剩下的都没问题
 			continue
 		}
 		if item.CounterType == dataobj.COUNTER {

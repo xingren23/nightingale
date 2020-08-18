@@ -42,7 +42,7 @@ func pushData(c *gin.Context) {
 }
 
 // push data to n9e & falcon
-func pushData2(c *gin.Context) {
+func pushDataV1(c *gin.Context) {
 	if c.Request.ContentLength == 0 {
 		render.Message(c, "blank body")
 		return
@@ -52,8 +52,8 @@ func pushData2(c *gin.Context) {
 	errors.Dangerous(c.ShouldBindJSON(&recvMetricValues))
 	// send to falcon
 	falcon.Push(recvMetricValues)
-	// send to n9e
-	err := core.Push(recvMetricValues)
+	// send to n9e (指标兼容)
+	err := core.PushV1(recvMetricValues)
 	render.Message(c, err)
 }
 
