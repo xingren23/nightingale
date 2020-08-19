@@ -331,6 +331,16 @@ func (tsdb *TsdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.Me
 	return result.Data
 }
 
+func (tsdb *TsdbDataSource) QueryTagKeys(recv dataobj.EndpointMetricRecv) []dataobj.TagKeysResp {
+	//nothing to do
+	return nil
+}
+
+func (tsdb *TsdbDataSource) QueryTagValsByClude(recv dataobj.TagValsCludeRecv) *dataobj.TagValsXcludeResp {
+	//nothing to do
+	return nil
+}
+
 type IndexTagPairsResp struct {
 	Data []dataobj.IndexTagkvResp `json:"dat"`
 	Err  string                   `json:"err"`

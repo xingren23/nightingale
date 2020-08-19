@@ -186,6 +186,112 @@ func (influxdb *InfluxdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *da
 	return nil
 }
 
+// show tag keys from metric
+func (influxdb *InfluxdbDataSource) QueryTagKeys(recv dataobj.EndpointMetricRecv) []dataobj.TagKeysResp {
+	logger.Debugf("query tag keys, recv: %+v", recv)
+
+	c, err := NewInfluxdbClient(influxdb.Section)
+	defer c.Client.Close()
+
+	if err != nil {
+		logger.Errorf("init influxdb client fail: %v", err)
+		return nil
+	}
+	resp := make([]dataobj.TagKeysResp, 0)
+	for _, metric := range recv.Metrics {
+		tagkvResp := dataobj.TagKeysResp{
+			Endpoints: recv.Endpoints,
+			Metric:    metric,
+			TagKeys:   make([]string, 0),
+		}
+		// show tag keys
+		tagkvResp.TagKeys = showTagKeys(c, metric, influxdb.Section.Database, recv.Endpoints)
+		resp = append(resp, tagkvResp)
+	}
+
+	return resp
+}
+
+// show tag value from metric
+func (influxdb *InfluxdbDataSource) QueryTagValsByClude(recv dataobj.TagValsCludeRecv) *dataobj.TagValsXcludeResp {
+	logger.Debugf("query tag values, recv: %+v", recv)
+
+	c, err := NewInfluxdbClient(influxdb.Section)
+	defer c.Client.Close()
+
+	if err != nil {
+		logger.Errorf("init influxdb client fail: %v", err)
+		return nil
+	}
+
+	if recv.QueryPair == nil || len(recv.QueryPair) == 0 {
+		logger.Error("query tag values by clude error, query pair is nil: %v")
+		return nil
+	}
+
+	withKeys := make([]string, 0)
+	for _, q := range recv.QueryPair {
+		withKeys = append(withKeys, q.Key)
+	}
+
+	showSeries := ShowSeries{
+		Database:  influxdb.Section.Database,
+		Metric:    recv.Metric,
+		Endpoints: recv.Endpoints,
+		Start:     time.Now().AddDate(0, 0, -7).Unix(),
+		End:       time.Now().Unix(),
+		Include:   recv.Include,
+		Exclude:   recv.Exclude,
+		WithKeys:  withKeys,
+		LikeParam: recv.QueryPair,
+		Limit:     recv.Limit,
+	}
+	showSeries.renderShowTagValues()
+	showSeries.renderEndpoints()
+	showSeries.renderInclude()
+	showSeries.renderExclude()
+	showSeries.renderLike()
+	showSeries.renderTimeRange()
+	showSeries.renderLimit()
+
+	tagkvResp := &dataobj.TagValsXcludeResp{
+		Endpoints: recv.Endpoints,
+		Metric:    recv.Metric,
+	}
+
+	query := client.NewQuery(showSeries.RawQuery, c.Database, c.Precision)
+	if response, err := c.Client.Query(query); err == nil && response.Error() == nil {
+		tagMap := make(map[string][]string)
+		for _, result := range response.Results {
+			for _, series := range result.Series {
+				for _, valuePair := range series.Values {
+					// process
+					if len(valuePair) != 2 {
+						logger.Errorf("parse tagkv error: %s", valuePair)
+						continue
+					}
+					// proc.port.listen,endpoint=localhost,port=22,service=sshd
+					tagk := valuePair[0].(string)
+					tagv := valuePair[1].(string)
+					if _, exists := tagMap[tagk]; !exists {
+						tagMap[tagk] = make([]string, 0)
+					}
+					tagMap[tagk] = append(tagMap[tagk], tagv)
+				}
+			}
+		}
+
+		resTagPairs := make([]*dataobj.TagPair, 0)
+		for k, v := range tagMap {
+			tp := &dataobj.TagPair{Key: k, Values: v}
+			resTagPairs = append(resTagPairs, tp)
+		}
+		tagkvResp.Tagkvs = resTagPairs
+	}
+
+	return tagkvResp
+}
+
 // show tag keys / values from metric ...
 func (influxdb *InfluxdbDataSource) QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp {
 	logger.Debugf("query tag pairs, recv: %+v", recv)
@@ -206,7 +312,7 @@ func (influxdb *InfluxdbDataSource) QueryTagPairs(recv dataobj.EndpointMetricRec
 			Tagkv:     make([]*dataobj.TagPair, 0),
 		}
 		// show tag keys
-		keys := showTagKeys(c, metric, influxdb.Section.Database)
+		keys := showTagKeys(c, metric, influxdb.Section.Database, recv.Endpoints)
 		if len(keys) > 0 {
 			// show tag values
 			tagkvResp.Tagkv = showTagValues(c, keys, metric, influxdb.Section.Database)
@@ -219,9 +325,17 @@ func (influxdb *InfluxdbDataSource) QueryTagPairs(recv dataobj.EndpointMetricRec
 
 // show tag keys on n9e from metric where ...
 // (exclude default endpoint tag)
-func showTagKeys(c *InfluxClient, metric, database string) []string {
+func showTagKeys(c *InfluxClient, metric, database string, endpoints []string) []string {
 	keys := make([]string, 0)
 	influxql := fmt.Sprintf("SHOW TAG KEYS ON \"%s\" FROM \"%s\"", database, metric)
+	if len(endpoints) > 0 {
+		endpointPart := ""
+		for _, endpoint := range endpoints {
+			endpointPart += fmt.Sprintf(" \"endpoint\"='%s' OR", endpoint)
+		}
+		endpointPart = endpointPart[:len(endpointPart)-len("OR")]
+		influxql = fmt.Sprintf("%s WHERE %s", influxql, endpointPart)
+	}
 	query := client.NewQuery(influxql, c.Database, c.Precision)
 	if response, err := c.Client.Query(query); err == nil && response.Error() == nil {
 		for _, result := range response.Results {
@@ -283,17 +397,21 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 	}
 	resp := make([]dataobj.XcludeResp, 0)
 	for _, recv := range recvs {
-		xcludeResp := dataobj.XcludeResp{
-			Endpoints: recv.Endpoints,
-			Metric:    recv.Metric,
-			Tags:      make([]string, 0),
-			Step:      -1, // fixme
-			DsType:    "GAUGE",
-		}
 
 		if len(recv.Endpoints) == 0 {
-			resp = append(resp, xcludeResp)
 			continue
+		}
+
+		xcludeRespMap := make(map[string]*dataobj.XcludeResp)
+		for _, endpoint := range recv.Endpoints {
+			key := fmt.Sprintf("endpoint=%s", endpoint)
+			xcludeRespMap[key] = &dataobj.XcludeResp{
+				Endpoint: endpoint,
+				Metric:   recv.Metric,
+				Tags:     make([]string, 0),
+				Step:     60,
+				DsType:   "GAUGE",
+			}
 		}
 
 		showSeries := ShowSeries{
@@ -315,7 +433,7 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 			for _, result := range response.Results {
 				for _, series := range result.Series {
 					for _, valuePair := range series.Values {
-
+						var curItem string
 						// proc.port.listen,endpoint=localhost,port=22,service=sshd
 						tagKey := valuePair[0].(string)
 
@@ -323,21 +441,31 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 						items := strings.Split(tagKey, ",")
 						newItems := make([]string, 0)
 						for _, item := range items {
-							if item != recv.Metric && !strings.Contains(item, "endpoint") {
+							if strings.HasPrefix(item, "endpoint=") {
+								curItem = item
+								continue
+							}
+							if item != recv.Metric {
 								newItems = append(newItems, item)
 							}
 						}
 
+						if curItem == "" {
+							continue
+						}
+
 						if len(newItems) > 0 {
 							if tags, err := dataobj.SplitTagsString(strings.Join(newItems, ",")); err == nil {
-								xcludeResp.Tags = append(xcludeResp.Tags, dataobj.SortedTags(tags))
+								xcludeRespMap[curItem].Tags = append(xcludeRespMap[curItem].Tags, dataobj.SortedTags(tags))
 							}
 						}
 					}
 				}
 			}
 		}
-		resp = append(resp, xcludeResp)
+		for _, xcludeResp := range xcludeRespMap {
+			resp = append(resp, *xcludeResp)
+		}
 	}
 
 	return resp

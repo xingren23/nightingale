@@ -62,6 +62,27 @@ type EndpointMetricRecv struct {
 	Metrics   []string `json:"metrics"`
 }
 
+type TagKeysResp struct {
+	Endpoints []string `json:"endpoints"`
+	Metric    string   `json:"metric"`
+	TagKeys   []string `json:"tagKeys"`
+}
+
+type TagValsCludeRecv struct {
+	Endpoints []string   `json:"endpoints"`
+	Metric    string     `json:"metric"`
+	Include   []*TagPair `json:"include"`
+	Exclude   []*TagPair `json:"exclude"`
+	QueryPair []*TagPair `json:"queryPair"`
+	Limit     int        `json:"limit"`
+}
+
+type TagValsXcludeResp struct {
+	Endpoints []string   `json:"endpoints"`
+	Metric    string     `json:"metric"`
+	Tagkvs    []*TagPair `json:"tagkvs"`
+}
+
 type IndexTagkvResp struct {
 	Endpoints []string   `json:"endpoints"`
 	Metric    string     `json:"metric"`
@@ -81,11 +102,11 @@ type CludeRecv struct {
 }
 
 type XcludeResp struct {
-	Endpoints []string `json:"endpoints"`
-	Metric    string   `json:"metric"`
-	Tags      []string `json:"tags"`
-	Step      int      `json:"step"`
-	DsType    string   `json:"dstype"`
+	Endpoint string   `json:"endpoint"`
+	Metric   string   `json:"metric"`
+	Tags     []string `json:"tags"`
+	Step     int      `json:"step"`
+	DsType   string   `json:"dstype"`
 }
 
 type IndexByFullTagsRecv struct {

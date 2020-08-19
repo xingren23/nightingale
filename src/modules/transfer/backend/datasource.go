@@ -28,8 +28,13 @@ type DataSource interface {
 
 	// query metrics & tags
 	QueryMetrics(recv dataobj.EndpointsRecv) *dataobj.MetricResp
-	QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp
+	// query tags keys for web
+	QueryTagKeys(recv dataobj.EndpointMetricRecv) []dataobj.TagKeysResp
+	// query tags value for web
+	QueryTagValsByClude(recv dataobj.TagValsCludeRecv) *dataobj.TagValsXcludeResp
+	// query index for judge
 	QueryIndexByClude(recv []dataobj.CludeRecv) []dataobj.XcludeResp
+	QueryTagPairs(recv dataobj.EndpointMetricRecv) []dataobj.IndexTagkvResp
 	QueryIndexByFullTags(recv []dataobj.IndexByFullTagsRecv) []dataobj.IndexByFullTagsResp
 
 	// tsdb instance
