@@ -17,6 +17,9 @@ type ShowSeries struct {
 	Exclude   []*dataobj.TagPair
 	Start     int64
 	End       int64
+	WithKeys  []string
+	LikeParam []*dataobj.TagPair
+	Limit     int
 
 	RawQuery string
 }
@@ -24,6 +27,13 @@ type ShowSeries struct {
 func (query *ShowSeries) renderShow() {
 	query.RawQuery = fmt.Sprintf("SHOW SERIES ON \"%s\" FROM \"%s\"", query.Database,
 		query.Metric)
+}
+
+func (query *ShowSeries) renderShowTagValues() {
+	if len(query.WithKeys) > 0 {
+		query.RawQuery = fmt.Sprintf("SHOW TAG VALUES ON \"%s\" FROM \"%s\" WITH KEY in (\"%s\")", query.Database,
+			query.Metric, strings.Join(query.WithKeys, "\",\""))
+	}
 }
 
 func (query *ShowSeries) renderEndpoints() {
@@ -35,43 +45,52 @@ func (query *ShowSeries) renderEndpoints() {
 		}
 		endpointPart = endpointPart[:len(endpointPart)-len("OR")]
 		endpointPart += ")"
-		query.RawQuery = fmt.Sprintf("\"%s\" WHERE \"%s\"", query.RawQuery, endpointPart)
+		query.RawQuery = fmt.Sprintf("%s WHERE %s", query.RawQuery, endpointPart)
 	}
 }
 
 func (query *ShowSeries) renderInclude() {
 	if len(query.Include) > 0 {
 		// include
+		if len(query.Include) == 1 && query.Include[0] == nil {
+			return
+		}
 		includePart := "("
 		for _, include := range query.Include {
 			for _, value := range include.Values {
-				includePart += fmt.Sprintf(" \"%s\"='%s' OR", include.Key, value)
+				includePart += fmt.Sprintf(" \"%s\"='%s' AND", include.Key, value)
 			}
 		}
-		includePart = includePart[:len(includePart)-len("OR")]
+		includePart = includePart[:len(includePart)-len("AND")]
 		includePart += ")"
 		if !strings.Contains(query.RawQuery, "WHERE") {
-			query.RawQuery += " WHERE"
+			query.RawQuery = fmt.Sprintf(" %s WHERE %s", query.RawQuery, includePart)
+		} else {
+			query.RawQuery = fmt.Sprintf(" %s AND %s", query.RawQuery, includePart)
 		}
-		query.RawQuery = fmt.Sprintf(" %s AND %s", query.RawQuery, includePart)
 	}
 }
 
 func (query *ShowSeries) renderExclude() {
 	if len(query.Exclude) > 0 {
 		// exclude
+		if len(query.Exclude) == 1 && query.Exclude[0] == nil {
+			return
+		}
 		excludePart := "("
 		for _, exclude := range query.Exclude {
 			for _, value := range exclude.Values {
-				excludePart += fmt.Sprintf(" \"%s\"='%s' OR", exclude.Key, value)
+				excludePart += fmt.Sprintf(" \"%s\"!='%s' AND", exclude.Key, value)
 			}
 		}
-		excludePart = excludePart[:len(excludePart)-len("OR")]
+		excludePart = excludePart[:len(excludePart)-len("AND")]
 		excludePart += ")"
 		if !strings.Contains(query.RawQuery, "WHERE") {
-			query.RawQuery += " WHERE"
+			query.RawQuery = fmt.Sprintf(" %s WHERE %s", query.RawQuery, excludePart)
+		} else {
+			query.RawQuery = fmt.Sprintf(" %s AND %s", query.RawQuery, excludePart)
 		}
-		query.RawQuery = fmt.Sprintf(" %s AND %s", query.RawQuery, excludePart)
+
 	}
 }
 
@@ -86,6 +105,34 @@ func (query *ShowSeries) renderTimeRange() {
 			time.Duration(query.Start)*time.Second,
 			time.Duration(query.End)*time.Second)
 	}
+}
+
+func (query *ShowSeries) renderLike() {
+	// like string
+	if len(query.LikeParam) > 0 {
+		// include
+		if len(query.LikeParam) == 1 && query.LikeParam[0] == nil {
+			return
+		}
+		includePart := "("
+		for _, include := range query.LikeParam {
+			for _, value := range include.Values {
+				includePart += fmt.Sprintf(" \"%s\"=~ /%s/ AND", include.Key, value)
+			}
+		}
+		includePart = includePart[:len(includePart)-len("AND")]
+		includePart += ")"
+		if !strings.Contains(query.RawQuery, "WHERE") {
+			query.RawQuery = fmt.Sprintf(" %s WHERE %s", query.RawQuery, includePart)
+		} else {
+			query.RawQuery = fmt.Sprintf(" %s AND %s", query.RawQuery, includePart)
+		}
+	}
+}
+
+func (query *ShowSeries) renderLimit() {
+	// limit
+	query.RawQuery = fmt.Sprintf("%s Limit %d", query.RawQuery, query.Limit)
 }
 
 type QueryData struct {

@@ -138,16 +138,26 @@ func Config(r *gin.Engine) {
 
 	hawkeye := r.Group("/api/portal/hawkeye").Use(middleware.Logined())
 	{
+		// 根据节点查询资源
+		hawkeye.POST("/resource", resourcePost)
+		// 根据节点查询策略
 		hawkeye.GET("/stra", strasHawkeyeGet)
+		// 策略节点查询指标
+		hawkeye.POST("/stra/metrics", straMetricsPost)
+		// 策略节点查询标签
+		hawkeye.POST("/stra/tagKeys", straTagKeysPost)
+		// 策略节点查询标签
+		hawkeye.POST("/stra/tagVals", straTagValsPost)
 
+		// 用户组
 		hawkeye.GET("/team", teamHawkeyeListGet)
 		hawkeye.POST("/team", teamHawkeyeAddPost)
 		hawkeye.PUT("/team/:id", teamHawkeyePut)
 		hawkeye.DELETE("/team/:id", teamDel)
-
+		// 告警事件
 		hawkeye.GET("/event/cur", eventCurGetsHawkeye)
 		hawkeye.GET("/event/his", eventHisGetsHawkeye)
-
+		// 屏蔽
 		hawkeye.GET("/node/:id/maskconf", maskconfGetsHawkeye)
 	}
 

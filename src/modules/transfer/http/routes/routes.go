@@ -25,6 +25,8 @@ func Config(r *gin.Engine) {
 	index := r.Group("/api/index")
 	{
 		index.POST("/metrics", GetMetrics)
+		index.POST("/tagKeys", GetTagKeys)
+		index.POST("/tagVals", GetTagValsByClude)
 		index.POST("/tagkv", GetTagPairs)
 		index.POST("/counter/clude", GetIndexByClude)
 		index.POST("/counter/fullmatch", GetIndexByFullTags)

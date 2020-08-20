@@ -150,11 +150,12 @@ func (m *Meicai) Pids(n *dataobj.Node) ([]int64, error) {
 	arr := []int64{}
 	paths := []string{}
 
-	nodes := strings.Split(n.Path, ".")
+	// corp.spruce,_owt.operations-center,_pdl.arch,_sg.hawkeye,_srv.web
+	nodes := strings.Split(n.Path, "_")
 	cnt := len(nodes)
 
 	for i := 1; i < cnt; i++ {
-		path := strings.Join(nodes[:cnt-i], ".")
+		path := strings.Join(nodes[:cnt-i], "_")
 		paths = append(paths, path)
 	}
 
