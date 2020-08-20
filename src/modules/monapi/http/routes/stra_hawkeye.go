@@ -286,6 +286,19 @@ func straTagValsPost(c *gin.Context) {
 			qEndpoints = append(qEndpoints, e.Ident)
 		}
 	}
+	// 排除nodePath标签
+	for idx, include := range f.Include {
+		if include.Key == config.FilterTagNodePath || include.Key == config.FilterTagHost {
+			f.Include = append(f.Include[:idx], f.Include[idx+1:]...)
+			break
+		}
+	}
+	for idx, exclude := range f.Exclude {
+		if exclude.Key == config.FilterTagNodePath || exclude.Key == config.FilterTagHost {
+			f.Exclude = append(f.Exclude[:idx], f.Exclude[idx+1:]...)
+			break
+		}
+	}
 
 	req := dataobj.TagValsCludeRecv{
 		Endpoints: qEndpoints,

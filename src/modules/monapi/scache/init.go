@@ -79,9 +79,11 @@ func syncStras() {
 			// host filter
 			if hostE.Exists(e.Ident) || hostE.Exists(e.Alias) {
 				stra.Endpoints = append(stra.Endpoints, e.Ident)
+				continue
 			}
 			if !hostN.Exists(e.Ident) && !hostN.Exists(e.Alias) {
 				stra.Endpoints = append(stra.Endpoints, e.Ident)
+				continue
 			}
 
 			tags, err := dataobj.SplitTagsString(e.Tags)
@@ -93,13 +95,15 @@ func syncStras() {
 			if envTag, ok := tags["env"]; ok {
 				if envE.Exists(envTag) {
 					stra.Endpoints = append(stra.Endpoints, e.Ident)
+					continue
 				}
 				if !envN.Exists(envTag) {
 					stra.Endpoints = append(stra.Endpoints, e.Ident)
+					continue
 				}
 			}
 
-			// endpoint type filter
+			//endpoint type filter
 			if typeTag, ok := tags["type"]; ok {
 				if typeTag == endpointType {
 					stra.Endpoints = append(stra.Endpoints, e.Ident)
