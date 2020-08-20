@@ -17,7 +17,7 @@ func Config(r *gin.Engine) {
 		sys.GET("/cached", getLogCached)
 		sys.POST("/push", pushData)
 	}
-	r.POST("/v1/push", pushData2)
+	r.POST("/v1/push", pushDataV1)
 
 	pprof.Register(r, "/api/collector/debug/pprof")
 }
