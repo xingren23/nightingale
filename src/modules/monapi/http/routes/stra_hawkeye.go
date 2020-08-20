@@ -227,12 +227,13 @@ func getTagKeysByTransfer(metric string, endpoints []string) ([]dataobj.TagKeysR
 }
 
 type tagValsQueryForm struct {
-	Nid       int64              `json:"nid"`
-	Metric    string             `json:"metric"`
-	Include   []*dataobj.TagPair `json:"include"`
-	Exclude   []*dataobj.TagPair `json:"exclude"`
-	QueryPair *dataobj.TagPair   `json:"queryPair"`
-	Limit     int                `json:"limit"`
+	Nid      int64              `json:"nid"`
+	Metric   string             `json:"metric"`
+	Include  []*dataobj.TagPair `json:"include"`
+	Exclude  []*dataobj.TagPair `json:"exclude"`
+	QueryKey string             `json:"queryKey"`
+	QueryVal string             `json:"queryVal"`
+	Limit    int                `json:"limit"`
 }
 
 func straTagValsPost(c *gin.Context) {
@@ -244,15 +245,41 @@ func straTagValsPost(c *gin.Context) {
 		limit = f.Limit
 	}
 
+	if f.QueryKey == "" {
+		errors.Dangerous("查询标签为空")
+	}
+
+	res := make([]string, 0)
+	// 查询环境标签，写死
+	if f.QueryKey == config.FilterTagEnv {
+		envs := []string{"test", "stage", "prod"}
+		renderData(c, likeSearch(envs, f.QueryVal, limit), nil)
+		return
+	}
+
 	curNode, err := cmdb.GetCmdb().NodeGet("id", f.Nid)
 	errors.Dangerous(err)
 
+	leafNids, err := cmdb.GetCmdb().LeafIds(curNode)
+	errors.Dangerous(err)
+
 	qEndpoints := make([]string, 0)
-	if curNode.Leaf == 1 {
-		leafIds, err := cmdb.GetCmdb().LeafIds(curNode)
+	// 查询host标签
+	if f.QueryKey == config.FilterTagHost {
+		endpoints, _, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafNids, f.QueryVal, "", "", f.Limit, offset(c, f.Limit,
+			999))
 		errors.Dangerous(err)
 
-		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafIds)
+		for _, e := range endpoints {
+			qEndpoints = append(qEndpoints, e.Ident)
+		}
+		renderData(c, likeSearch(qEndpoints, f.QueryVal, limit), nil)
+		return
+	}
+
+	if curNode.Leaf == 1 {
+		endpoints, _, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafNids, "", "", "", 100, offset(c, f.Limit,
+			999))
 		errors.Dangerous(err)
 
 		for _, e := range endpoints {
@@ -265,13 +292,12 @@ func straTagValsPost(c *gin.Context) {
 		Metric:    f.Metric,
 		Include:   f.Include,
 		Exclude:   f.Exclude,
-		QueryPair: []*dataobj.TagPair{f.QueryPair},
+		QueryPair: []*dataobj.TagPair{{Key: f.QueryKey, Values: []string{f.QueryVal}}},
 		Limit:     limit,
 	}
 	tagVResp, err := getTagValsByTransfer(req)
 	errors.Dangerous(err)
 
-	res := make([]string, 0)
 	for _, tag := range tagVResp.Tagkvs {
 		res = append(res, tag.Values...)
 	}
@@ -312,4 +338,20 @@ func getTagValsByTransfer(req dataobj.TagValsCludeRecv) (*dataobj.TagValsXcludeR
 		return nil, fmt.Errorf("get tag values from transfer failed, error: data is nil")
 	}
 	return result.Data, nil
+}
+
+func likeSearch(items []string, query string, limit int) []string {
+	res := make([]string, 0)
+	var count int
+	for _, item := range items {
+		if query != "" && !strings.Contains(item, query) {
+			continue
+		}
+		count++
+		if count >= limit {
+			break
+		}
+		res = append(res, item)
+	}
+	return res
 }

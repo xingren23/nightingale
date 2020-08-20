@@ -80,7 +80,7 @@ func (query *ShowSeries) renderExclude() {
 		excludePart := "("
 		for _, exclude := range query.Exclude {
 			for _, value := range exclude.Values {
-				excludePart += fmt.Sprintf(" \"%s\"='%s' AND", exclude.Key, value)
+				excludePart += fmt.Sprintf(" \"%s\"!='%s' AND", exclude.Key, value)
 			}
 		}
 		excludePart = excludePart[:len(excludePart)-len("AND")]
