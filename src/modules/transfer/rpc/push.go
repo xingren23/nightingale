@@ -42,8 +42,7 @@ func (t *Transfer) Push(args []*dataobj.MetricValue, reply *dataobj.TransferResp
 	// send to push endpoints
 	pushEndpoints, err := backend.GetPushEndpoints()
 	if err != nil {
-		logger.Errorf("could not find pushendpoint")
-		return err
+		logger.Warningf("could not find pushendpoint")
 	} else {
 		for _, pushendpoint := range pushEndpoints {
 			pushendpoint.Push2Queue(items)

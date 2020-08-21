@@ -49,11 +49,19 @@ func loopSyncResource() {
 }
 
 func syncResource() error {
-	err := buildEndpointCache()
-	err = buildAppInstanceCache()
-	err = buildGarbageCache()
-	err = buildMonitorItemCache()
-	return err
+	if err := buildEndpointCache(); err != nil {
+		return err
+	}
+	if err := buildAppInstanceCache(); err != nil {
+		return err
+	}
+	if err := buildGarbageCache(); err != nil {
+		return err
+	}
+	if err := buildMonitorItemCache(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // endpoints, retry monapi addr
@@ -63,8 +71,8 @@ func buildEndpointCache() error {
 		logger.Error("build endpoints cache fail:", err)
 		return err
 	}
-	hostMap := make(map[string]*Endpoint)
-	for _, endpoint := range endpointsResp.Dat {
+	hostMap := make(map[string]*Endpoint, 0)
+	for _, endpoint := range endpointsResp.Dat.List {
 		tags, err := dataobj.SplitTagsString(endpoint.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", endpoint.Tags, endpoint.Ident, err)
@@ -84,11 +92,11 @@ func buildEndpointCache() error {
 func buildAppInstanceCache() error {
 	instancesResp, err := getAppInstances()
 	if err != nil {
-		logger.Error("build endpoints cache fail:", err)
+		logger.Error("build appInstances cache fail:", err)
 		return err
 	}
 	instanceMap := make(map[string]*AppInstance)
-	for _, instance := range instancesResp.Dat {
+	for _, instance := range instancesResp.Dat.List {
 		tags, err := dataobj.SplitTagsString(instance.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
@@ -117,7 +125,7 @@ func buildMonitorItemCache() error {
 		logger.Error("build monitorItem cache fail:", err)
 		return err
 	}
-	monitorItemMap := make(map[string]*model.MonitorItem)
+	monitorItemMap := make(map[string]*model.MonitorItem, 0)
 	for _, monitorItem := range monitorItemResp.Dat {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}
@@ -136,14 +144,24 @@ func buildGarbageCache() error {
 	return nil
 }
 
+type EndpointList struct {
+	List  []*Endpoint `json:"list"`
+	Total int         `json:"total"`
+}
+
 type EndpointsResp struct {
-	Dat []*Endpoint `json:"dat"`
-	Err string      `json:"err"`
+	Dat *EndpointList `json:"dat"`
+	Err string        `json:"err"`
+}
+
+type InstanceList struct {
+	List  []*AppInstance `json:"list"`
+	Total int            `json:"total"`
 }
 
 type InstancesResp struct {
-	Dat []*AppInstance `json:"dat"`
-	Err string         `json:"err"`
+	Dat *InstanceList `json:"dat"`
+	Err string        `json:"err"`
 }
 
 type MonitorItemResp struct {
@@ -164,14 +182,15 @@ func getEndpoints() (EndpointsResp, error) {
 	count := len(addrs)
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
-		url := fmt.Sprintf("http://%s%s", addr, EndpointsApi)
+		// TODO : 翻页查询
+		url := fmt.Sprintf("http://%s%s?limit=100000", addr, EndpointsApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
-			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
+			err = fmt.Errorf("get endpints from remote:%s failed, error:%v", url, err)
 			continue
 		}
-		if res.Dat == nil || len(res.Dat) == 0 {
-			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
+		if res.Dat == nil || len(res.Dat.List) == 0 {
+			err = fmt.Errorf("get endpoints from remote:%s is nil, error:%v", url, err)
 			continue
 		}
 		break
@@ -187,13 +206,14 @@ func getAppInstances() (InstancesResp, error) {
 	count := len(addrs)
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
-		url := fmt.Sprintf("http://%s%s", addr, InstancesApi)
+		// TODO : 翻页查询
+		url := fmt.Sprintf("http://%s%s?limit=100000", addr, InstancesApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
 			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
 			continue
 		}
-		if res.Dat == nil || len(res.Dat) == 0 {
+		if res.Dat == nil || len(res.Dat.List) == 0 {
 			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
 			continue
 		}
@@ -210,14 +230,14 @@ func getMonitorItem() (MonitorItemResp, error) {
 	count := len(addrs)
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
-		url := fmt.Sprintf("http://%s%s", addr, MonitorItemApi)
+		url := fmt.Sprintf("http://%s%s?limit=100000", addr, MonitorItemApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
 			err = fmt.Errorf("get monitorItem from remote:%s failed, error:%v", url, err)
 			continue
 		}
 		if res.Dat == nil || len(res.Dat) == 0 {
-			err = fmt.Errorf("get monitorItem from remote:%s is nil, error:%v", url, err)
+			logger.Warningf("get monitorItem from remote:%s is nil, error:%v", url, err)
 			continue
 		}
 		break
@@ -233,7 +253,7 @@ func getGarbageFilter() (GarbageFilterResp, error) {
 	count := len(addrs)
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
-		url := fmt.Sprintf("http://%s%s", addr, GarbageApi)
+		url := fmt.Sprintf("http://%s%s?limit=100000", addr, GarbageApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
 			err = fmt.Errorf("get GarbageFilter config from remote:%s failed, error:%v", url, err)
