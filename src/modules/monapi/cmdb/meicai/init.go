@@ -95,8 +95,23 @@ func (meicai *Meicai) SyncOps() error {
 		logger.Errorf("get nodes failed, %s", err)
 		return err
 	}
-	// 遍历节点
+
 	url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
+
+	// 获取app
+	appMap := make(map[string]*App, 0)
+	apps, err := QueryAppByNode(url, meicai.Timeout, "corp.spruce")
+	if err == nil {
+		for _, app := range apps {
+			appMap[app.Code] = app
+		}
+	} else {
+		logger.Errorf("get apps failed, %s", err)
+		return err
+	}
+	logger.Debugf("get apps %s", appMap)
+
+	// 遍历节点
 	for _, node := range nodes {
 		//初始化叶子节点的资源
 		if node.Leaf == 1 {
@@ -110,21 +125,12 @@ func (meicai *Meicai) SyncOps() error {
 			if err := meicai.initNodeNetworks(url, nodeStr, node.Id); err != nil {
 				logger.Errorf("init node %s network failed, %s", nodeStr, err)
 			}
-
-			// instance & app
-			apps, err := QueryAppByNode(url, meicai.Timeout, nodeStr)
-			if err == nil {
-				appMap := make(map[string]*App, 0)
-				for _, app := range apps {
-					appMap[app.Code] = app
-				}
-				// 实例资源
-				if err := meicai.initNodeAppInstances(url, nodeStr, node.Id, appMap); err != nil {
-					logger.Errorf("init node %s app-instance failed, %s", nodeStr, err)
-				}
+			// 实例资源
+			if err := meicai.initNodeAppInstances(url, nodeStr, node.Id, appMap); err != nil {
+				logger.Errorf("init node %s app-instance failed, %s", nodeStr, err)
 			}
 
-			//time.Sleep(time.Duration(time.Millisecond) * 100)
+			time.Sleep(time.Duration(time.Millisecond) * 1)
 		}
 	}
 	logger.Infof("end init ops, elapsed %s", time.Since(start))
@@ -178,7 +184,7 @@ func (meicai *Meicai) initNodeHosts(url string, nodeStr string, nid int64) error
 	// TODO 请求失败，如何处理 ？
 	hosts, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceHost)
 	if err != nil {
-		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceHost, err)
+		logger.Errorf("query resource %s %s failed, %s", nodeStr, CmdbSourceHost, err)
 		return err
 	}
 
@@ -189,7 +195,7 @@ func (meicai *Meicai) initNodeNetworks(url string, nodeStr string, nid int64) er
 	// TODO 请求失败，如何处理 ？
 	networks, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceNet)
 	if err != nil {
-		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceNet, err)
+		logger.Errorf("query resource %s %s failed, %s", nodeStr, CmdbSourceNet, err)
 		return err
 	}
 
@@ -200,7 +206,7 @@ func (meicai *Meicai) initNodeAppInstances(url string, nodeStr string, nid int64
 	// TODO 请求失败，如何处理 ？
 	appInstances, err := QueryAppInstanceByNode(url, meicai.Timeout, nodeStr, CmdbSourceInst)
 	if err != nil {
-		logger.Errorf("query resouce %s %s failed, %s", nodeStr, CmdbSourceInst, err)
+		logger.Errorf("query resource %s %s failed, %s", nodeStr, CmdbSourceInst, err)
 		return err
 	}
 

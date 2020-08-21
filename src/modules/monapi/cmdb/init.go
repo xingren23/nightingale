@@ -20,7 +20,7 @@ func Init(cmdb config.CmdbSection) {
 			RegisterCmdb(cmdb.N9e.Name, n9eCmdb)
 			defaultCmdb = cmdb.Default
 		} else {
-			log.Printf("config invalid %s", cmdb.Default)
+			log.Fatalf("config invalid %s", cmdb.Default)
 		}
 	}
 
@@ -32,7 +32,7 @@ func Init(cmdb config.CmdbSection) {
 			RegisterCmdb(cmdb.Meicai.Name, meicaiCmdb)
 			defaultCmdb = cmdb.Default
 		} else {
-			log.Printf("config invalid %s", cmdb.Default)
+			log.Fatalf("config invalid %s", cmdb.Default)
 		}
 	}
 }

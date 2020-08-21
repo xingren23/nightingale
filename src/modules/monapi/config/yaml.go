@@ -147,8 +147,10 @@ func Parse(ymlfile string) error {
 	})
 
 	viper.SetDefault("cmdb.default", "n9e")
-	viper.SetDefault("cmdb.n9e.enabled", 1)
+	viper.SetDefault("cmdb.n9e.enabled", true)
 	viper.SetDefault("cmdb.n9e.name", "n9e")
+	viper.SetDefault("cmdb.meicai.enabled", false)
+	viper.SetDefault("cmdb.meicai.name", "meicai")
 
 	viper.SetDefault("cleaner", map[string]int{
 		"days":  366,
