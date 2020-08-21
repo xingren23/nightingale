@@ -105,6 +105,40 @@ func GetMetrics(c *gin.Context) {
 	render.Data(c, resp, nil)
 }
 
+func GetTagKeys(c *gin.Context) {
+	stats.Counter.Set("tagKeys.qp10s", 1)
+	recv := dataobj.EndpointMetricRecv{}
+	errors.Dangerous(c.ShouldBindJSON(&recv))
+
+	dataSource, err := backend.GetDataSourceFor("")
+	if err != nil {
+		logger.Warningf("could not find datasource")
+		render.Message(c, err)
+		return
+	}
+
+	resp := dataSource.QueryTagKeys(recv)
+
+	render.Data(c, resp, nil)
+}
+
+func GetTagValsByClude(c *gin.Context) {
+	stats.Counter.Set("tagValsXclude.qp10s", 1)
+	recv := dataobj.TagValsCludeRecv{}
+	errors.Dangerous(c.ShouldBindJSON(&recv))
+
+	dataSource, err := backend.GetDataSourceFor("")
+	if err != nil {
+		logger.Warningf("could not find datasource")
+		render.Message(c, err)
+		return
+	}
+
+	resp := dataSource.QueryTagValsByClude(recv)
+
+	render.Data(c, resp, nil)
+}
+
 func GetTagPairs(c *gin.Context) {
 	stats.Counter.Set("tag.qp10s", 1)
 	recv := dataobj.EndpointMetricRecv{}

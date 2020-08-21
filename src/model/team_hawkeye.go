@@ -132,7 +132,6 @@ func TeamHawkeyeAdd(ident, name string, mgmt int, members []int64, nid int64) er
 func TeamHawkeyeTotal(nids []int64, ids []int64) (int64, error) {
 	if ids != nil && len(ids) > 0 {
 		return DB["uic"].In("nid", nids).In("id", ids).Count(new(Team))
-
 	}
 
 	return DB["uic"].In("nid", nids).Count(new(Team))

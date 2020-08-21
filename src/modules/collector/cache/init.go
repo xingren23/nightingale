@@ -214,9 +214,11 @@ func getMonitorItem() (MonitorItemResp, error) {
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil {
 			err = fmt.Errorf("get monitorItem from remote:%s failed, error:%v", url, err)
+			continue
 		}
 		if res.Dat == nil || len(res.Dat) == 0 {
 			err = fmt.Errorf("get monitorItem from remote:%s is nil, error:%v", url, err)
+			continue
 		}
 		break
 	}
