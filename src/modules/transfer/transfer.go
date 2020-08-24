@@ -121,7 +121,6 @@ func cleanup() {
 func start() {
 	runner.Init()
 	fmt.Println("transfer started, use configuration file:", *conf)
-	runner.Cwd = "/usr/go/src/github.com/didi/nightingale/"
 	fmt.Println("runner.Cwd:", runner.Cwd)
 	fmt.Println("runner.Hostname:", runner.Hostname)
 }
