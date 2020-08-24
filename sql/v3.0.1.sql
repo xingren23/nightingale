@@ -19,7 +19,7 @@ ALTER TABLE endpoint
 use n9e_mon;
 CREATE TABLE `app_instance`
 (
-    `id`      int unsigned NOT NULL COMMENT '实例id',
+    `id`      int unsigned NOT NULL AUTO_INCREMENT COMMENT '实例id',
     `app`     varchar(255) NOT NULL COMMENT '应用编码',
     `ident`   varchar(255) NOT NULL COMMENT '实例标识',
     `env`     varchar(255) NOT NULL COMMENT '环境',

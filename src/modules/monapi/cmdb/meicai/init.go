@@ -99,7 +99,7 @@ func (meicai *Meicai) SyncOps() error {
 	url := fmt.Sprintf("%s%s", meicai.OpsAddr, OpsApiResourcerPath)
 	for _, node := range nodes {
 		//初始化叶子节点的资源
-		if node.Leaf == 1 {
+		if node.Leaf == 1 && node.Note != "buffer" {
 			logger.Infof("init leaf node endpoint, id=%d path=%s", node.Id, node.Path)
 			nodeStr := node.Path
 			// 主机资源
@@ -228,7 +228,8 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 
 	for _, instance := range appInstances {
 		// app instance
-		has, err := session.Table("app_instance").Exist(&dataobj.AppInstance{Id: instance.Id})
+		instModel := &dataobj.AppInstance{Ident: instance.Ident}
+		has, err := session.Table("app_instance").Get(instModel)
 		if err != nil || !has {
 			logger.Infof("insert nid %d app-instance %v", nid, instance)
 			if _, err := session.Table("app_instance").Insert(instance); err != nil {
@@ -238,6 +239,7 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 			}
 		} else {
 			logger.Infof("update nid %d app-instance %v", nid, instance)
+			instance.Id = instModel.Id
 			if _, err := session.Table("app_instance").ID(instance.Id).Update(instance); err != nil {
 				logger.Errorf("update app-instance %v failed, %s", instance, err)
 				_ = session.Rollback()
