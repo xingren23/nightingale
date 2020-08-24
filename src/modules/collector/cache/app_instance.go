@@ -9,6 +9,7 @@ type AppInstance struct {
 	Group  string `json:"group"`
 	Ident  string `json:"ident"`
 	Port   int    `json:"port"`
+	Uuid   string `json:"uuid"`
 	Tags   string `json:"tags"`
 	NodeId int64  `json:"nodeId"`
 }
@@ -35,6 +36,33 @@ func (cache *AppInstanceCacheMap) Get(uuid string) (*AppInstance, bool) {
 }
 
 func (this *AppInstanceCacheMap) SetAll(instances map[string]*AppInstance) {
+	this.Lock()
+	defer this.Unlock()
+	this.instanceMap = instances
+}
+
+var IpInstanceCache *IpInstanceCacheMap
+
+func NewIpInstanceCache() *IpInstanceCacheMap {
+	return &IpInstanceCacheMap{
+		instanceMap: map[string][]*AppInstance{},
+	}
+}
+
+// instance(ip) -> AppInstance
+type IpInstanceCacheMap struct {
+	sync.RWMutex
+	instanceMap map[string][]*AppInstance
+}
+
+func (cache *IpInstanceCacheMap) Get(ip string) ([]*AppInstance, bool) {
+	cache.RLock()
+	defer cache.RUnlock()
+	value, exists := cache.instanceMap[ip]
+	return value, exists
+}
+
+func (this *IpInstanceCacheMap) SetAll(instances map[string][]*AppInstance) {
 	this.Lock()
 	defer this.Unlock()
 	this.instanceMap = instances

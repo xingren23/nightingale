@@ -31,6 +31,7 @@ type AppInstance struct {
 	Group  string `json:"group"`
 	Ident  string `json:"ident"`
 	Port   int    `json:"port"`
+	Uuid   string `json:"uuid"`
 	Tags   string `json:"tags"`
 	NodeId int64  `json:"nodeId"`
 }

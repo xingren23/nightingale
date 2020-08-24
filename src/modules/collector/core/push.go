@@ -191,16 +191,13 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		if !exists {
 			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
 		}
-		tags, err := dataobj.SplitTagsString(host.Tags)
-		if err != nil {
-			return nil, fmt.Errorf("instance %s is split tags %s failed", item.Endpoint, item.Tags)
+		insts, exists := cache.IpInstanceCache.Get(ident)
+		if exists && len(insts) == 1 {
+			// 单机单实例，打上应用标签
+			item.TagsMap["app"] = insts[0].App
+			item.TagsMap["group"] = insts[0].Group
+			item.TagsMap["env"] = insts[0].Env
 		}
-		hostType := tags["type"]
-		if hostType == "DOCKER" {
-			item.TagsMap["app"] = tags["app"]
-			item.TagsMap["group"] = tags["group"]
-		}
-		item.TagsMap["env"] = tags["env"]
 		item.TagsMap["ip"] = host.Ident
 		item.Endpoint = host.Ident
 	case model.EndpointTypeNetwork:
