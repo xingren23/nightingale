@@ -30,6 +30,7 @@ func Init() {
 
 	EndpointCache = NewEndpointCache()
 	AppInstanceCache = NewAppInstanceCache()
+	IpInstanceCache = NewIpInstanceCache()
 	MonitorItemCache = NewMonitorItemCache()
 	GarbageCache = NewGarbageCache()
 
@@ -87,26 +88,30 @@ func buildAppInstanceCache() error {
 		logger.Error("build endpoints cache fail:", err)
 		return err
 	}
-	instanceMap := make(map[string]*AppInstance)
-	for _, instance := range instancesResp.Dat {
+	appInstanceMap := make(map[string]*AppInstance)
+	ipInstanceMap := make(map[string][]*AppInstance)
+	for _, instance := range instancesResp.Dat.AppInstances {
 		tags, err := dataobj.SplitTagsString(instance.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
 			continue
 		}
-		if uuid, ok := tags["uuid"]; ok {
-			//基础服务排除 ( basic=true )
-			if basic, ok := tags["basic"]; ok {
-				flag, err := strconv.ParseBool(basic)
-				if err == nil && flag {
-					logger.Debugf("don't process basic app, %v", instance)
-					continue
-				}
+		//基础服务排除 ( basic=true )
+		if basic, ok := tags["basic"]; ok {
+			flag, err := strconv.ParseBool(basic)
+			if err == nil && flag {
+				logger.Debugf("don't process basic app, %v", instance)
+				continue
 			}
-			instanceMap[uuid] = instance
 		}
+		appInstanceMap[instance.Uuid] = instance
+		if _, exists := ipInstanceMap[instance.Ident]; !exists {
+			ipInstanceMap[instance.Ident] = make([]*AppInstance, 0)
+		}
+		ipInstanceMap[instance.Ident] = append(ipInstanceMap[instance.Ident], instance)
 	}
-	AppInstanceCache.SetAll(instanceMap)
+	AppInstanceCache.SetAll(appInstanceMap)
+	IpInstanceCache.SetAll(ipInstanceMap)
 	return nil
 }
 
@@ -142,8 +147,13 @@ type EndpointsResp struct {
 }
 
 type InstancesResp struct {
-	Dat []*AppInstance `json:"dat"`
-	Err string         `json:"err"`
+	Dat *AppInstanceList `json:"dat"`
+	Err string           `json:"err"`
+}
+
+type AppInstanceList struct {
+	AppInstances []*AppInstance `json:"list"`
+	Total        int            `json:"total"`
 }
 
 type MonitorItemResp struct {
@@ -193,7 +203,7 @@ func getAppInstances() (InstancesResp, error) {
 			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
 			continue
 		}
-		if res.Dat == nil || len(res.Dat) == 0 {
+		if res.Dat == nil || len(res.Dat.AppInstances) == 0 {
 			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
 			continue
 		}
