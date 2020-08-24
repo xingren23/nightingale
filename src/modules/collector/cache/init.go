@@ -73,7 +73,7 @@ func buildEndpointCache() error {
 		return err
 	}
 	hostMap := make(map[string]*Endpoint)
-	for _, endpoint := range endpointsResp.Dat {
+	for _, endpoint := range endpointsResp.Dat.List {
 		tags, err := dataobj.SplitTagsString(endpoint.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", endpoint.Tags, endpoint.Ident, err)
@@ -98,7 +98,7 @@ func buildAppInstanceCache() error {
 	}
 	appInstanceMap := make(map[string]*AppInstance)
 	ipInstanceMap := make(map[string][]*AppInstance)
-	for _, instance := range instancesResp.Dat.AppInstances {
+	for _, instance := range instancesResp.Dat.List {
 		tags, err := dataobj.SplitTagsString(instance.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
@@ -159,19 +159,14 @@ type EndpointsResp struct {
 	Err string        `json:"err"`
 }
 
-type InstanceList struct {
+type AppInstanceList struct {
 	List  []*AppInstance `json:"list"`
 	Total int            `json:"total"`
 }
 
 type InstancesResp struct {
-	Dat *InstanceList `json:"dat"`
-	Err string        `json:"err"`
-}
-
-type AppInstanceList struct {
-	AppInstances []*AppInstance `json:"list"`
-	Total        int            `json:"total"`
+	Dat *AppInstanceList `json:"dat"`
+	Err string           `json:"err"`
 }
 
 type MonitorItemResp struct {
@@ -223,7 +218,7 @@ func getAppInstances() (InstancesResp, error) {
 			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
 			continue
 		}
-		if res.Dat == nil || len(res.Dat) == 0 {
+		if res.Dat == nil || len(res.Dat.List) == 0 {
 			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
 			continue
 		}
