@@ -30,6 +30,7 @@ func Init() {
 
 	EndpointCache = NewEndpointCache()
 	AppInstanceCache = NewAppInstanceCache()
+	IpInstanceCache = NewIpInstanceCache()
 	MonitorItemCache = NewMonitorItemCache()
 	GarbageCache = NewGarbageCache()
 
@@ -71,8 +72,8 @@ func buildEndpointCache() error {
 		logger.Error("build endpoints cache fail:", err)
 		return err
 	}
-	hostMap := make(map[string]*Endpoint, 0)
-	for _, endpoint := range endpointsResp.Dat.List {
+	hostMap := make(map[string]*Endpoint)
+	for _, endpoint := range endpointsResp.Dat {
 		tags, err := dataobj.SplitTagsString(endpoint.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", endpoint.Tags, endpoint.Ident, err)
@@ -95,26 +96,30 @@ func buildAppInstanceCache() error {
 		logger.Error("build appInstances cache fail:", err)
 		return err
 	}
-	instanceMap := make(map[string]*AppInstance)
-	for _, instance := range instancesResp.Dat.List {
+	appInstanceMap := make(map[string]*AppInstance)
+	ipInstanceMap := make(map[string][]*AppInstance)
+	for _, instance := range instancesResp.Dat.AppInstances {
 		tags, err := dataobj.SplitTagsString(instance.Tags)
 		if err != nil {
 			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
 			continue
 		}
-		if uuid, ok := tags["uuid"]; ok {
-			//基础服务排除 ( basic=true )
-			if basic, ok := tags["basic"]; ok {
-				flag, err := strconv.ParseBool(basic)
-				if err == nil && flag {
-					logger.Debugf("don't process basic app, %v", instance)
-					continue
-				}
+		//基础服务排除 ( basic=true )
+		if basic, ok := tags["basic"]; ok {
+			flag, err := strconv.ParseBool(basic)
+			if err == nil && flag {
+				logger.Debugf("don't process basic app, %v", instance)
+				continue
 			}
-			instanceMap[uuid] = instance
 		}
+		appInstanceMap[instance.Uuid] = instance
+		if _, exists := ipInstanceMap[instance.Ident]; !exists {
+			ipInstanceMap[instance.Ident] = make([]*AppInstance, 0)
+		}
+		ipInstanceMap[instance.Ident] = append(ipInstanceMap[instance.Ident], instance)
 	}
-	AppInstanceCache.SetAll(instanceMap)
+	AppInstanceCache.SetAll(appInstanceMap)
+	IpInstanceCache.SetAll(ipInstanceMap)
 	return nil
 }
 
@@ -125,7 +130,7 @@ func buildMonitorItemCache() error {
 		logger.Error("build monitorItem cache fail:", err)
 		return err
 	}
-	monitorItemMap := make(map[string]*model.MonitorItem, 0)
+	monitorItemMap := make(map[string]*model.MonitorItem)
 	for _, monitorItem := range monitorItemResp.Dat {
 		monitorItemMap[monitorItem.Metric] = monitorItem
 	}
@@ -162,6 +167,11 @@ type InstanceList struct {
 type InstancesResp struct {
 	Dat *InstanceList `json:"dat"`
 	Err string        `json:"err"`
+}
+
+type AppInstanceList struct {
+	AppInstances []*AppInstance `json:"list"`
+	Total        int            `json:"total"`
 }
 
 type MonitorItemResp struct {
@@ -213,7 +223,7 @@ func getAppInstances() (InstancesResp, error) {
 			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
 			continue
 		}
-		if res.Dat == nil || len(res.Dat.List) == 0 {
+		if res.Dat == nil || len(res.Dat) == 0 {
 			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
 			continue
 		}
@@ -237,7 +247,7 @@ func getMonitorItem() (MonitorItemResp, error) {
 			continue
 		}
 		if res.Dat == nil || len(res.Dat) == 0 {
-			logger.Warningf("get monitorItem from remote:%s is nil, error:%v", url, err)
+			err = fmt.Errorf("get monitorItem from remote:%s is nil, error:%v", url, err)
 			continue
 		}
 		break

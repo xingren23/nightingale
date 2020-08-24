@@ -19,15 +19,18 @@ ALTER TABLE endpoint
 use n9e_mon;
 CREATE TABLE `app_instance`
 (
-    `id`      int unsigned NOT NULL COMMENT '实例id',
+    `id`      int unsigned NOT NULL AUTO_INCREMENT COMMENT '实例id',
     `app`     varchar(255) NOT NULL COMMENT '应用编码',
     `ident`   varchar(255) NOT NULL COMMENT '实例标识',
     `env`     varchar(255) NOT NULL COMMENT '环境',
     `group`   varchar(255) NOT NULL COMMENT '分组',
     `port`    int unsigned DEFAULT NULL COMMENT '实例端口',
-    `tags`   varchar(1024) NOT NULL COMMENT '标签',
+    `uuid`    varchar(255) NOT NULL COMMENT 'uuid',
+    `tags`    varchar(1024) NOT NULL COMMENT '标签',
     `node_id` int unsigned NOT NULL COMMENT '服务树id',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    KEY `idx_uuid` (`uuid`),
+    KEY `idx_ident` (`ident`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8;
 
