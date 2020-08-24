@@ -228,7 +228,7 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 
 	for _, instance := range appInstances {
 		// app instance
-		instModel := &dataobj.AppInstance{Ident: instance.Ident}
+		instModel := &dataobj.AppInstance{Uuid: instance.Uuid}
 		has, err := session.Table("app_instance").Get(instModel)
 		if err != nil || !has {
 			logger.Infof("insert nid %d app-instance %v", nid, instance)

@@ -396,15 +396,15 @@ func convertInstance2AppInstance(instances []Instance) []*dataobj.AppInstance {
 	ret := make([]*dataobj.AppInstance, 0)
 	for _, instance := range instances {
 		endpoint := &dataobj.AppInstance{
-			Ident: instance.UUID,
+			Ident: instance.IP,
 			App:   instance.AppCode,
 			Env:   instance.EnvCode,
 			Group: instance.GroupCode,
 			Port:  instance.Port,
+			Uuid:  instance.UUID,
 		}
 		extra := make(map[string]string, 0)
 		extra["idc"] = instance.DataCenterCode
-		extra["ip"] = instance.IP
 
 		endpoint.Tags = str.SortedTags(extra)
 
