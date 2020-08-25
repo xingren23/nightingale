@@ -77,12 +77,10 @@ func syncStras() {
 		// 根据指标元数据类型加载 endpoint
 		for _, e := range endpoints {
 			// host filter
-			if hostE.Exists(e.Ident) || hostE.Exists(e.Alias) {
-				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			if len(hostE.M) != 0 && !hostE.Exists(e.Ident) {
 				continue
 			}
-			if !hostN.Exists(e.Ident) && !hostN.Exists(e.Alias) {
-				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			if len(hostN.M) != 0 && hostN.Exists(e.Ident) {
 				continue
 			}
 
@@ -93,12 +91,10 @@ func syncStras() {
 			}
 			// env filter
 			if envTag, ok := tags["env"]; ok {
-				if envE.Exists(envTag) {
-					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				if len(envE.M) != 0 && !envE.Exists(envTag) {
 					continue
 				}
-				if !envN.Exists(envTag) {
-					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				if len(envN.M) != 0 && envN.Exists(envTag) {
 					continue
 				}
 			}
