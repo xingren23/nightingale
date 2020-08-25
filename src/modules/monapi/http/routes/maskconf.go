@@ -1,9 +1,10 @@
 package routes
 
 import (
+	"sort"
+
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
-	"sort"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
@@ -61,12 +62,12 @@ func maskconfGets(c *gin.Context) {
 		objs, err := model.MaskconfGets(node.Id, node.Path)
 		errors.Dangerous(err)
 		maskconfs = append(maskconfs, objs...)
-	}else {
+	} else {
 		// 查询所有子节点
-		nIds, err :=cmdb.GetCmdb().LeafIds(node)
+		nIds, err := cmdb.GetCmdb().LeafIds(node)
 		errors.Dangerous(err)
 
-		for nid := range nIds {
+		for _, nid := range nIds {
 			node, err := cmdb.GetCmdb().NodeGet("id", nid)
 			errors.Dangerous(err)
 

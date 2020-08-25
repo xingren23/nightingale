@@ -51,7 +51,7 @@ func syncStras() {
 		//获取策略 endpoint type
 		item, exists := mcache.MonitorItemCache.Get(stra.Exprs[0].Metric)
 		if !exists {
-			logger.Errorf("stra %s metric %s is not exists", stra.Name, stra.Exprs[0].Metric)
+			logger.Errorf("stra %s metric %s is not in monitorItem cache", stra.Name, stra.Exprs[0].Metric)
 			continue
 		}
 		endpointType := buildEndpointType(item)
