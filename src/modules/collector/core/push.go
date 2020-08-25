@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/rpc"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -181,7 +182,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		item.TagsMap["env"] = instance.Env
 		// 如果指标本身不上报port,并且cmdb中存在端口信息，添加此标签
 		if instance.Port > 0 {
-			item.TagsMap["port"] = string(instance.Port)
+			item.TagsMap["port"] = strconv.Itoa(instance.Port)
 		}
 		item.TagsMap["ip"] = instance.Ident
 		item.Endpoint = instance.Ident
