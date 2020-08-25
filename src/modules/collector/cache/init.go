@@ -190,12 +190,12 @@ func getEndpoints() (EndpointsResp, error) {
 		// TODO : 翻页查询
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, EndpointsApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
-		if err != nil {
-			err = fmt.Errorf("get endpints from remote:%s failed, error:%v", url, err)
+		if err != nil && err.Error() != "" {
+			err = fmt.Errorf("get endpints from %s failed, error:%v", url, err)
 			continue
 		}
 		if res.Dat == nil || len(res.Dat.List) == 0 {
-			err = fmt.Errorf("get endpoints from remote:%s is nil, error:%v", url, err)
+			err = fmt.Errorf("get endpoints from %s is nil, error:%v", url, err)
 			continue
 		}
 		break
@@ -214,12 +214,12 @@ func getAppInstances() (InstancesResp, error) {
 		// TODO : 翻页查询
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, InstancesApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
-		if err != nil {
-			err = fmt.Errorf("get apps from remote:%s failed, error:%v", url, err)
+		if err != nil && err.Error() != "" {
+			err = fmt.Errorf("get apps from %s failed, error:%v", url, err)
 			continue
 		}
 		if res.Dat == nil || len(res.Dat.List) == 0 {
-			err = fmt.Errorf("get apps from remote:%s is nil, error:%v", url, err)
+			err = fmt.Errorf("get apps from %s is nil, error:%v", url, err)
 			continue
 		}
 		break
@@ -237,12 +237,12 @@ func getMonitorItem() (MonitorItemResp, error) {
 		addr := addrs[i]
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, MonitorItemApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
-		if err != nil {
-			err = fmt.Errorf("get monitorItem from remote:%s failed, error:%v", url, err)
+		if err != nil && err.Error() != "" {
+			err = fmt.Errorf("get monitorItem from %s failed, error:%v", url, err)
 			continue
 		}
 		if res.Dat == nil || len(res.Dat) == 0 {
-			err = fmt.Errorf("get monitorItem from remote:%s is nil, error:%v", url, err)
+			err = fmt.Errorf("get monitorItem from %s is nil, error:%v", url, err)
 			continue
 		}
 		break
@@ -260,8 +260,8 @@ func getGarbageFilter() (GarbageFilterResp, error) {
 		addr := addrs[i]
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, GarbageApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
-		if err != nil {
-			err = fmt.Errorf("get GarbageFilter config from remote:%s failed, error:%v", url, err)
+		if err != nil && err.Error() != "" {
+			err = fmt.Errorf("get GarbageFilter config from %s failed, error:%v", url, err)
 			continue
 		}
 		break
