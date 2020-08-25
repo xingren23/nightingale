@@ -157,7 +157,16 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 	session := meicai.DB["mon"].NewSession()
 	defer session.Close()
 
+	oldNodes, err := meicai.NodeGets()
+	if err != nil {
+		logger.Error("get nodes failed, error %s", err)
+		return err
+	}
+
+	// insert or update node
+	nodeMap := make(map[int64]*dataobj.Node)
 	for _, node := range nodes {
+		nodeMap[node.Id] = node
 		has, err := session.Exist(&dataobj.Node{Id: node.Id})
 		if err != nil || !has {
 			logger.Infof("insert node %v", node)
@@ -175,7 +184,16 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 			}
 		}
 	}
-	err := session.Commit()
+
+	// delete old node
+	for _, old := range oldNodes {
+		if _, exist := nodeMap[old.Id]; !exist {
+			logger.Infof("delete node %v", old)
+			session.Delete(old)
+		}
+	}
+
+	err = session.Commit()
 	logger.Infof("commit nodes elasped %s", time.Since(start))
 	return err
 }
@@ -232,8 +250,16 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 	session := meicai.DB["mon"].NewSession()
 	defer session.Close()
 
+	oldInstances, err := meicai.AppInstanceUnderLeafs([]int64{nid})
+	if err != nil {
+		logger.Errorf("get appInstances under node %d failed, error %s", nid, err)
+		return err
+	}
+
+	instanceMap := make(map[string]*dataobj.AppInstance)
+	// insert or update appInstance
 	for _, instance := range appInstances {
-		// app instance
+		instanceMap[instance.Uuid] = instance
 		instModel := &dataobj.AppInstance{Uuid: instance.Uuid}
 		has, err := session.Table("app_instance").Get(instModel)
 		if err != nil || !has {
@@ -244,7 +270,7 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 				return err
 			}
 		} else {
-			logger.Infof("update nid %d app-instance %v", nid, instance)
+			logger.Debugf("update nid %d app-instance %v", nid, instance)
 			instance.Id = instModel.Id
 			if _, err := session.Table("app_instance").ID(instance.Id).Update(instance); err != nil {
 				logger.Errorf("update app-instance %v failed, %s", instance, err)
@@ -253,7 +279,16 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 			}
 		}
 	}
-	err := session.Commit()
+
+	// delete appInstance
+	for _, old := range oldInstances {
+		if _, exist := instanceMap[old.Uuid]; !exist {
+			logger.Infof("delete nid %d app-instance %v", nid, old)
+			session.Delete(old)
+		}
+	}
+
+	err = session.Commit()
 	logger.Infof("commit app-instances elapsed %s", time.Since(start))
 	return err
 }
@@ -263,7 +298,17 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 	session := meicai.DB["mon"].NewSession()
 	defer session.Close()
 
+	oldEndpoints, err := meicai.EndpointUnderLeafs([]int64{nid})
+	if err != nil {
+		logger.Errorf("get endpointIds by node id %d failed, error %s", nid, err)
+		return err
+	}
+
+	endpointMap := make(map[string]*dataobj.Endpoint)
+	// insert or update endpoint and node-endpoint
 	for _, host := range endpoints {
+		endpointMap[host.Ident] = host
+
 		// endpoint
 		endpointModel := &dataobj.Endpoint{Ident: host.Ident}
 		has, err := session.Get(endpointModel)
@@ -275,7 +320,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 				return err
 			}
 		} else {
-			logger.Infof("update nid %d host %v", nid, host)
+			logger.Debugf("update nid %d host %v", nid, host)
 			host.Id = endpointModel.Id
 			if _, err := session.ID(host.Id).Update(host); err != nil {
 				logger.Errorf("update endpoint %v failed, %s", host, err)
@@ -298,11 +343,26 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 				return err
 			}
 		} else {
-			logger.Infof("exist %v", nodeEndpoint)
+			logger.Debugf("exist %v", nodeEndpoint)
 		}
-
 	}
-	err := session.Commit()
+
+	// delete endpoint and node-endpoint
+	for _, old := range oldEndpoints {
+		if _, exist := endpointMap[old.Ident]; !exist {
+			logger.Infof("delete endpoint %v", old)
+			session.Delete(old)
+
+			nodeEndpoint := &NodeEndpoint{
+				NodeId:     nid,
+				EndpointId: old.Id,
+			}
+			logger.Infof("delete node-endpoint %v", nodeEndpoint)
+			session.Delete(nodeEndpoint)
+		}
+	}
+
+	err = session.Commit()
 	logger.Infof("commit endpoints elapsed %s", time.Since(start))
 	return err
 }

@@ -24,6 +24,16 @@ func (m *Meicai) AppInstanceGets(query, batch, field string, limit, offset int) 
 	return objs, total, err
 }
 
+func (m *Meicai) AppInstanceUnderLeafs(leafIds []int64) ([]dataobj.AppInstance, error) {
+	var objs []dataobj.AppInstance
+	if len(leafIds) == 0 {
+		return []dataobj.AppInstance{}, nil
+	}
+
+	err := m.DB["mon"].Where("node_id in (" + str.IdsString(leafIds) + ")").Find(&objs)
+	return objs, err
+}
+
 func (m *Meicai) appInstanceTotal(query, batch, field string) (int64, error) {
 	session := m.buildAppInstanceWhere(query, batch, field)
 	return session.Count(new(dataobj.AppInstance))

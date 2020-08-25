@@ -76,6 +76,7 @@ type INodeEndpoint interface {
 
 type IAppInstanceReadable interface {
 	AppInstanceGets(query, batch, field string, limit, offset int) ([]dataobj.AppInstance, int64, error)
+	AppInstanceUnderLeafs(leafIds []int64) ([]dataobj.AppInstance, error)
 }
 
 type IAppInstance interface {
