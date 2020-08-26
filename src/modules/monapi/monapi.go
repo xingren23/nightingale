@@ -69,9 +69,13 @@ func main() {
 	model.InitRoot()
 	cmdb.Init(config.Get().Cmdb)
 
-	scache.Init()
 	mcache.Init()
+	// 指标元数据
+	if err := cron.SyncMonitorItem(); err != nil {
+		log.Fatalf("sync monitor item fail: %v", err)
+	}
 
+	scache.Init()
 	if err := cron.SyncMaskconf(); err != nil {
 		log.Fatalf("sync maskconf fail: %v", err)
 	}
@@ -82,10 +86,6 @@ func main() {
 
 	if err := cron.CheckJudge(); err != nil {
 		log.Fatalf("check judge fail: %v", err)
-	}
-	// 指标元数据
-	if err := cron.SyncMonitorItem(); err != nil {
-		log.Fatalf("sync monitor item fail: %v", err)
 	}
 
 	redisc.InitRedis()

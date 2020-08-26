@@ -77,12 +77,10 @@ func syncStras() {
 		// 根据指标元数据类型加载 endpoint
 		for _, e := range endpoints {
 			// host filter
-			if hostE.Exists(e.Ident) || hostE.Exists(e.Alias) {
-				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			if len(hostE.M) != 0 && !hostE.Exists(e.Ident) {
 				continue
 			}
-			if !hostN.Exists(e.Ident) && !hostN.Exists(e.Alias) {
-				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			if len(hostN.M) != 0 && hostN.Exists(e.Ident) {
 				continue
 			}
 
@@ -93,12 +91,10 @@ func syncStras() {
 			}
 			// env filter
 			if envTag, ok := tags["env"]; ok {
-				if envE.Exists(envTag) {
-					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				if len(envE.M) != 0 && !envE.Exists(envTag) {
 					continue
 				}
-				if !envN.Exists(envTag) {
-					stra.Endpoints = append(stra.Endpoints, e.Ident)
+				if len(envN.M) != 0 && envN.Exists(envTag) {
 					continue
 				}
 			}
@@ -267,6 +263,7 @@ func syncCollects() {
 func GetLeafNids(nid int64, exclNid []int64, includeNodes []string, excludeNodes []string) ([]int64, error) {
 	leafIds := []int64{}
 	idsMap := make(map[int64]bool)
+	// 当前节点的所有子节点
 	node, err := cmdb.GetCmdb().NodeGet("id", nid)
 	if err != nil {
 		return leafIds, err
@@ -280,26 +277,62 @@ func GetLeafNids(nid int64, exclNid []int64, includeNodes []string, excludeNodes
 	if err != nil {
 		return leafIds, err
 	}
-	//排除节点为空，直接将所有叶子节点返回
-	if len(exclNid) == 0 {
-		return ids, nil
-	}
-
-	exclLeafIds, err := GetExclLeafIds(exclNid)
-	if err != nil {
-		return leafIds, err
-	}
-
 	for _, id := range ids {
-		idsMap[id] = true
+		idsMap[id] = false
 	}
-	for _, id := range exclLeafIds {
-		delete(idsMap, id)
+	//排除节点为空，直接将所有叶子节点返回
+	if len(exclNid) != 0 {
+		exclLeafIds, err := GetExclLeafIds(exclNid)
+		if err != nil {
+			return leafIds, err
+		}
+
+		for _, id := range exclLeafIds {
+			delete(idsMap, id)
+		}
+	}
+	// includeNodes覆盖的所有节点
+	if len(includeNodes) != 0 {
+		for _, iPath := range includeNodes {
+			pathNodes, err := cmdb.GetCmdb().NodeQueryPath(iPath, 9999)
+			if err != nil {
+				return nil, fmt.Errorf("query nodes by path error [%s]", iPath)
+			}
+			for _, pNode := range pathNodes {
+				println(pNode.Id)
+				// 取和nid子节点交集
+				if _, exists := idsMap[pNode.Id]; exists {
+					idsMap[pNode.Id] = true
+				}
+			}
+		}
+
+		for id, exists := range idsMap {
+			if exists == false {
+				delete(idsMap, id)
+			}
+		}
+	}
+
+	if len(excludeNodes) != 0 {
+		for _, ePath := range excludeNodes {
+			pathNodes, err := cmdb.GetCmdb().NodeQueryPath(ePath, 9999)
+			if err != nil {
+				return nil, fmt.Errorf("query nodes by path error [%s]", ePath)
+			}
+			for _, pNode := range pathNodes {
+				// 取和nid子节点交集
+				if _, exists := idsMap[pNode.Id]; exists {
+					delete(idsMap, pNode.Id)
+				}
+			}
+		}
 	}
 
 	for id := range idsMap {
 		leafIds = append(leafIds, id)
 	}
+
 	return leafIds, err
 }
 
