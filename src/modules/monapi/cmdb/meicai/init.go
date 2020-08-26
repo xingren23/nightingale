@@ -117,15 +117,12 @@ func (meicai *Meicai) SyncOps() error {
 		if node.Leaf == 1 && node.Note != "buffer" {
 			logger.Infof("init leaf node endpoint, id=%d path=%s", node.Id, node.Path)
 			nodeStr := node.Path
-			// 主机资源
-			if err := meicai.initNodeHosts(url, nodeStr, node.Id); err != nil {
+			// endpoint: 主机&网络资源
+			if err := meicai.initNodeEndpoints(url, nodeStr, node.Id); err != nil {
 				logger.Errorf("init node %s hosts failed, %s ", nodeStr, err)
 			}
-			// 网络资源
-			if err := meicai.initNodeNetworks(url, nodeStr, node.Id); err != nil {
-				logger.Errorf("init node %s network failed, %s", nodeStr, err)
-			}
-			// 实例资源
+
+			// appInstance: 实例资源
 			if err := meicai.initNodeAppInstances(url, nodeStr, node.Id, appMap); err != nil {
 				logger.Errorf("init node %s app-instance failed, %s", nodeStr, err)
 			}
@@ -198,29 +195,37 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 	return err
 }
 
-func (meicai *Meicai) initNodeHosts(url string, nodeStr string, nid int64) error {
-	// TODO 请求失败，如何处理 ？
-	hosts, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceHost)
+func (meicai *Meicai) initNodeEndpoints(url string, nodeStr string, nid int64) error {
+	oldEndpoints, err := meicai.EndpointUnderLeafs([]int64{nid})
 	if err != nil {
-		logger.Errorf("query resource %s %s failed, %s", nodeStr, CmdbSourceHost, err)
+		logger.Errorf("get endpointIds by node id %d failed, error %s", nid, err)
 		return err
 	}
 
-	return meicai.commitEndpoints(hosts, nid)
-}
-
-func (meicai *Meicai) initNodeNetworks(url string, nodeStr string, nid int64) error {
 	// TODO 请求失败，如何处理 ？
 	networks, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceNet)
 	if err != nil {
-		logger.Errorf("query resource %s %s failed, %s", nodeStr, CmdbSourceNet, err)
+		logger.Errorf("query network resource %s %s failed, %s", nodeStr, CmdbSourceNet, err)
+		return err
+	}
+	hosts, err := QueryResourceByNode(url, meicai.Timeout, nodeStr, CmdbSourceHost)
+	if err != nil {
+		logger.Errorf("query host resource %s %s failed, %s", nodeStr, CmdbSourceHost, err)
 		return err
 	}
 
-	return meicai.commitEndpoints(networks, nid)
+	endpoints := append(networks, hosts...)
+
+	return meicai.commitEndpoints(endpoints, oldEndpoints, nid)
 }
 
 func (meicai *Meicai) initNodeAppInstances(url string, nodeStr string, nid int64, apps map[string]*App) error {
+	oldInstances, err := meicai.AppInstanceUnderLeafs([]int64{nid})
+	if err != nil {
+		logger.Errorf("get appInstances under node %d failed, error %s", nid, err)
+		return err
+	}
+
 	// TODO 请求失败，如何处理 ？
 	appInstances, err := QueryAppInstanceByNode(url, meicai.Timeout, nodeStr, CmdbSourceInst)
 	if err != nil {
@@ -242,19 +247,15 @@ func (meicai *Meicai) initNodeAppInstances(url string, nodeStr string, nid int64
 		instance.Tags = dataobj2.SortedTags(tags)
 		instance.NodeId = nid
 	}
-	return meicai.commitAppInstances(appInstances, nid)
+
+	return meicai.commitAppInstances(appInstances, oldInstances, nid)
 }
 
-func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, nid int64) error {
+func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, oldInstances []dataobj.AppInstance,
+	nid int64) error {
 	start := time.Now()
 	session := meicai.DB["mon"].NewSession()
 	defer session.Close()
-
-	oldInstances, err := meicai.AppInstanceUnderLeafs([]int64{nid})
-	if err != nil {
-		logger.Errorf("get appInstances under node %d failed, error %s", nid, err)
-		return err
-	}
 
 	instanceMap := make(map[string]*dataobj.AppInstance)
 	// insert or update appInstance
@@ -288,21 +289,16 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ni
 		}
 	}
 
-	err = session.Commit()
+	err := session.Commit()
 	logger.Infof("commit app-instances elapsed %s", time.Since(start))
 	return err
 }
 
-func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) error {
+func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, oldEndpoints []dataobj.Endpoint,
+	nid int64) error {
 	start := time.Now()
 	session := meicai.DB["mon"].NewSession()
 	defer session.Close()
-
-	oldEndpoints, err := meicai.EndpointUnderLeafs([]int64{nid})
-	if err != nil {
-		logger.Errorf("get endpointIds by node id %d failed, error %s", nid, err)
-		return err
-	}
 
 	endpointMap := make(map[string]*dataobj.Endpoint)
 	// insert or update endpoint and node-endpoint
@@ -362,7 +358,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, nid int64) 
 		}
 	}
 
-	err = session.Commit()
+	err := session.Commit()
 	logger.Infof("commit endpoints elapsed %s", time.Since(start))
 	return err
 }
