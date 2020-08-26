@@ -3,12 +3,12 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"github.com/didi/nightingale/src/toolkits/address"
 	"strconv"
 	"strings"
 
 	"github.com/didi/nightingale/src/modules/transfer/backend"
 	"github.com/didi/nightingale/src/modules/transfer/backend/tsdb"
+	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/didi/nightingale/src/toolkits/identity"
 	"github.com/didi/nightingale/src/toolkits/logger"
 	"github.com/didi/nightingale/src/toolkits/report"
