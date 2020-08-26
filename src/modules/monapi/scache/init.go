@@ -299,7 +299,6 @@ func GetLeafNids(nid int64, exclNid []int64, includeNodes []string, excludeNodes
 				return nil, fmt.Errorf("query nodes by path error [%s]", iPath)
 			}
 			for _, pNode := range pathNodes {
-				println(pNode.Id)
 				// 取和nid子节点交集
 				if _, exists := idsMap[pNode.Id]; exists {
 					idsMap[pNode.Id] = true
