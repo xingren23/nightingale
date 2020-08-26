@@ -3,10 +3,12 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/didi/nightingale/src/modules/transfer/backend"
 	"github.com/didi/nightingale/src/modules/transfer/backend/tsdb"
+	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/didi/nightingale/src/toolkits/identity"
 	"github.com/didi/nightingale/src/toolkits/logger"
 	"github.com/didi/nightingale/src/toolkits/report"
@@ -157,6 +159,9 @@ func Parse(conf string) error {
 	}
 
 	Config.Backend.Tsdb.ClusterList = formatClusterItems(Config.Backend.Tsdb.Cluster)
+	// reporter port
+	Config.Report.HTTPPort = strconv.Itoa(address.GetHTTPPort("transfer"))
+	Config.Report.RPCPort = strconv.Itoa(address.GetRPCPort("transfer"))
 
 	return err
 }
