@@ -107,6 +107,18 @@ func syncStras() {
 			}
 		}
 
+		// drop filter tag
+		if len(stra.Tags) > 0 {
+			tagArrs := make([]model.Tag, 0)
+			for _, tag := range stra.Tags {
+				if tag.Tkey == config.FilterTagEnv || tag.Tkey == config.FilterTagHost || tag.Tkey == config.FilterTagNodePath {
+					continue
+				}
+				tagArrs = append(tagArrs, tag)
+			}
+			stra.Tags = tagArrs
+		}
+
 		node, err := JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
 		if err != nil {
 			logger.Warningf("get node err:%v %v", err, stra)
