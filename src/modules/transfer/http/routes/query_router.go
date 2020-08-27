@@ -106,7 +106,7 @@ func GetMetrics(c *gin.Context) {
 }
 
 func GetTagKeys(c *gin.Context) {
-	stats.Counter.Set("tagKeys.qp10s", 1)
+	stats.Counter.Set("tagkeys.qp10s", 1)
 	recv := dataobj.EndpointMetricRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
@@ -123,7 +123,7 @@ func GetTagKeys(c *gin.Context) {
 }
 
 func GetTagValsByClude(c *gin.Context) {
-	stats.Counter.Set("tagValsXclude.qp10s", 1)
+	stats.Counter.Set("tagvalsxclude.qp10s", 1)
 	recv := dataobj.TagValsCludeRecv{}
 	errors.Dangerous(c.ShouldBindJSON(&recv))
 
