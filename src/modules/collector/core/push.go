@@ -193,6 +193,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
 		}
 		insts, exists := cache.IpInstanceCache.Get(ident)
+		// todo : 根据 endpoint tags 区分容器和物理机
 		if exists && len(insts) == 1 {
 			// 单机单实例，打上应用标签
 			item.TagsMap["app"] = insts[0].App

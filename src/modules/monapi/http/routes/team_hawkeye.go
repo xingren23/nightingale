@@ -54,7 +54,7 @@ func teamHawkeyeListGet(c *gin.Context) {
 	}
 
 	for _, team := range list {
-		team.NodeCode = m[nid]
+		team.NodeCode = m[team.Nid]
 	}
 
 	renderData(c, gin.H{
