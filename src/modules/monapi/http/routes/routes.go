@@ -131,7 +131,7 @@ func Config(r *gin.Engine) {
 
 		login.POST("/config", cfgPost)
 		login.PUT("/config/:id", cfgPut)
-		login.DELETE("/config:id", cfgDel)
+		login.DELETE("/config/:id", cfgDel)
 		login.GET("/config", cfgListGet)
 		login.GET("/config/:id", cfgGet)
 	}
