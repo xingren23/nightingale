@@ -29,6 +29,10 @@ func Logined() gin.HandlerFunc {
 		}
 
 		if username == "" {
+			username = GrafanaTokenUser(c)
+		}
+
+		if username == "" {
 			errors.Bomb("unauthorized")
 		}
 
@@ -106,7 +110,7 @@ func MeicaiOpsTokenUser(c *gin.Context) string {
 	cookie, err := c.Request.Cookie(config.Get().SSO.CookieName)
 	if err != nil {
 		logger.Error("login get cookie name fail", err)
-		errors.Bomb("login get cookie name fail")
+		return ""
 	}
 
 	//userStr, _ := url.QueryUnescape("%7B%22data%22%3A%7B%22id%22%3A%22201487%22%2C%22name%22%3A%22%E9%AB%98%E6%B3%A2%22%2C%22email%22%3A%22gaobo05%40meicai.cn%22%2C%22phone%22%3A%2213720059830%22%7D%7D")
@@ -138,5 +142,20 @@ func MeicaiOpsTokenUser(c *gin.Context) string {
 		user.Save()
 	}
 
+	return user.Username
+}
+
+func GrafanaTokenUser(c *gin.Context) string {
+	cookie, err := c.Request.Cookie("grafana_session")
+	if err != nil || len(cookie.Value) <= 0 {
+		logger.Error("login get cookie name fail", err)
+		return ""
+	}
+	// 超管用户
+	user, err := model.UserGet("username", "root")
+	if err != nil {
+		logger.Errorf("get root user failed, error %s", err)
+		errors.Bomb("get root user failed")
+	}
 	return user.Username
 }
