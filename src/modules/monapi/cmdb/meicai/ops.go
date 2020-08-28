@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/didi/nightingale/src/toolkits/stats"
+
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/toolkits/str"
@@ -432,6 +434,7 @@ func RequestByPost(url string, timeout int, params map[string]interface{}) ([]by
 	resp, err := c.Do(req)
 	if err != nil {
 		logger.Errorf("Request post error %v.", err)
+		stats.Counter.Set("cmdb.meicai.ops.request.err", 1)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -439,13 +442,19 @@ func RequestByPost(url string, timeout int, params map[string]interface{}) ([]by
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logger.Errorf("Request post Read Resp %v.", err)
+		stats.Counter.Set("cmdb.meicai.ops.request.err", 1)
 		return nil, err
 	}
+	stats.Counter.Set("cmdb.meicai.ops.request", 1)
 	logger.Infof("request %s %v elapsed %s", url, params, time.Since(start))
+	if time.Since(start).Milliseconds() > 100 {
+		stats.Counter.Set("cmdb.meicai.ops.request.slow", 1)
+	}
 	return data, err
 }
 
 func RequestByGet(url string, timeout int) ([]byte, error) {
+	start := time.Now()
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -457,6 +466,7 @@ func RequestByGet(url string, timeout int) ([]byte, error) {
 	resp, err := c.Do(req)
 	if err != nil {
 		logger.Errorf("Request Get %v", err)
+		stats.Counter.Set("cmdb.meicai.ops.request.err", 1)
 		return nil, err
 	}
 
@@ -464,8 +474,13 @@ func RequestByGet(url string, timeout int) ([]byte, error) {
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logger.Errorf("Request Get Read Resp %v", err)
+		stats.Counter.Set("cmdb.meicai.ops.request.err", 1)
 		return nil, err
 	}
-
+	stats.Counter.Set("cmdb.meicai.ops.request", 1)
+	logger.Infof("request %s %v elapsed %s", url, time.Since(start))
+	if time.Since(start).Milliseconds() > 100 {
+		stats.Counter.Set("cmdb.meicai.ops.request.slow", 1)
+	}
 	return data, err
 }

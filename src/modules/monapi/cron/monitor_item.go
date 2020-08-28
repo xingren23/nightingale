@@ -19,7 +19,7 @@ func SyncMonitorItemLoop() {
 		logger.Debug("sync monitorItem begin")
 		err := SyncMaskconf()
 		if err != nil {
-			stats.Counter.Set("monitorItem.sync.err", 1)
+			stats.Counter.Set("monitoritem.sync.err", 1)
 			logger.Error("sync monitorItem fail: ", err)
 		} else {
 			logger.Debug("sync monitorItem succ")

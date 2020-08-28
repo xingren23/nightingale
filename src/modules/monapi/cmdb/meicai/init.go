@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/didi/nightingale/src/toolkits/stats"
+
 	dataobj2 "github.com/didi/nightingale/src/dataobj"
 
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
@@ -80,8 +82,10 @@ func (meicai *Meicai) SyncOpsLoop() {
 		// sync srvtree & endpoint
 		err := meicai.SyncOps()
 		if err != nil {
+			stats.Counter.Set("cmdb.meicai.sync.err", 1)
 			logger.Errorf("sync meicai node failed, %s", err)
 		}
+		stats.Counter.Set("cmdb.meicai.sync.count", 1)
 		time.Sleep(duration)
 	}
 }
@@ -170,15 +174,19 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 			if _, err := session.Insert(node); err != nil {
 				logger.Errorf("insert node %v failed, %s", node, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.node.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.node.insert", 1)
 		} else {
 			logger.Infof("update node %v", node)
 			if _, err := session.ID(node.Id).Update(node); err != nil {
 				logger.Errorf("update node %v failed, %s", node, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.node.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.node.update", 1)
 		}
 	}
 
@@ -187,6 +195,7 @@ func (meicai *Meicai) commitNodes(nodes []*dataobj.Node) error {
 		if _, exist := nodeMap[old.Id]; !exist {
 			logger.Infof("delete node %v", old)
 			session.Delete(old)
+			stats.Counter.Set("cmdb.meicai.node.delete", 1)
 		}
 	}
 
@@ -268,16 +277,21 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ol
 			if _, err := session.Table("app_instance").Insert(instance); err != nil {
 				logger.Errorf("insert app-instance %v failed, %s", instance, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.appinstance.err", 1)
+
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.appinstance.insert", 1)
 		} else {
 			logger.Debugf("update nid %d app-instance %v", nid, instance)
 			instance.Id = instModel.Id
 			if _, err := session.Table("app_instance").ID(instance.Id).Update(instance); err != nil {
 				logger.Errorf("update app-instance %v failed, %s", instance, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.appinstance.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.appinstance.update", 1)
 		}
 	}
 
@@ -286,6 +300,7 @@ func (meicai *Meicai) commitAppInstances(appInstances []*dataobj.AppInstance, ol
 		if _, exist := instanceMap[old.Uuid]; !exist {
 			logger.Infof("delete nid %d app-instance %v", nid, old)
 			session.Delete(old)
+			stats.Counter.Set("cmdb.meicai.appinstance.delete", 1)
 		}
 	}
 
@@ -313,16 +328,20 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, oldEndpoint
 			if _, err := session.Insert(host); err != nil {
 				logger.Errorf("insert endpoint %v failed, %s", host, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.endpoint.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.endpoint.insert", 1)
 		} else {
 			logger.Debugf("update nid %d host %v", nid, host)
 			host.Id = endpointModel.Id
 			if _, err := session.ID(host.Id).Update(host); err != nil {
 				logger.Errorf("update endpoint %v failed, %s", host, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.endpoint.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.endpoint.update", 1)
 		}
 
 		// node - endpoint
@@ -336,8 +355,10 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, oldEndpoint
 			if _, err := session.Insert(nodeEndpoint); err != nil {
 				logger.Errorf("insert node-endpoint %v failed, %s", nodeEndpoint, err)
 				_ = session.Rollback()
+				stats.Counter.Set("cmdb.meicai.node.endpoint.err", 1)
 				return err
 			}
+			stats.Counter.Set("cmdb.meicai.node.endpoint.insert", 1)
 		} else {
 			logger.Debugf("exist %v", nodeEndpoint)
 		}
@@ -348,6 +369,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, oldEndpoint
 		if _, exist := endpointMap[old.Ident]; !exist {
 			logger.Infof("delete endpoint %v", old)
 			session.Delete(old)
+			stats.Counter.Set("cmdb.meicai.endpoint.delete", 1)
 
 			nodeEndpoint := &NodeEndpoint{
 				NodeId:     nid,
@@ -355,6 +377,7 @@ func (meicai *Meicai) commitEndpoints(endpoints []*dataobj.Endpoint, oldEndpoint
 			}
 			logger.Infof("delete node-endpoint %v", nodeEndpoint)
 			session.Delete(nodeEndpoint)
+			stats.Counter.Set("cmdb.meicai.node.endpoint.delete", 1)
 		}
 	}
 
