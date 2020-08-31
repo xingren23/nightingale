@@ -161,16 +161,16 @@ func Push(metricItems []*dataobj.MetricValue) error {
 // TODO: 优化
 func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) {
 	//指标白名单
-	monitorItem, exists := cache.MonitorItemCache.Get(item.Metric)
+	metricInfo, exists := cache.MetricInfoCache.Get(item.Metric)
 	if !exists {
-		return nil, fmt.Errorf("metric:%v not exists in monitorItem", item)
+		return nil, fmt.Errorf("metric:%v not exists in metricInfo", item)
 	}
 
-	switch monitorItem.EndpointType {
+	switch metricInfo.EndpointType {
 	case model.EndpointTypeInstance:
 		index := strings.LastIndex(item.Endpoint, "_inst.")
 		if index < 0 {
-			return nil, fmt.Errorf("metric %s is not exists in monitor_item ", item.Metric)
+			return nil, fmt.Errorf("metric %s is not exists in metricInfo ", item.Metric)
 		}
 		uuid := item.Endpoint[index+6:]
 		instance, exists := cache.AppInstanceCache.Get(uuid)
@@ -212,7 +212,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		item.Endpoint = network.Ident
 	default:
 		// 其他类型丢弃
-		return nil, fmt.Errorf("metric type is not found.item :%v", monitorItem)
+		return nil, fmt.Errorf("metric type is not found.item :%v", metricInfo)
 	}
 	item.Tags = dataobj.SortedTags(item.TagsMap)
 	return item, nil

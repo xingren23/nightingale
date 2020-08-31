@@ -71,8 +71,8 @@ func main() {
 
 	mcache.Init()
 	// 指标元数据
-	if err := cron.SyncMonitorItem(); err != nil {
-		log.Fatalf("sync monitor item fail: %v", err)
+	if err := cron.SyncMetricInfo(); err != nil {
+		log.Fatalf("sync metric info fail: %v", err)
 	}
 
 	scache.Init()
@@ -90,7 +90,7 @@ func main() {
 
 	redisc.InitRedis()
 
-	go cron.SyncMonitorItemLoop()
+	go cron.SyncMetricInfoLoop()
 	go cron.SyncMaskconfLoop()
 	go cron.SyncStraLoop()
 	go cron.CleanStraLoop()

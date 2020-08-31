@@ -89,7 +89,7 @@ func straMetricsPost(c *gin.Context) {
 				continue
 			}
 			var note string
-			if item, exists := mcache.MonitorItemCache.Get(metric); exists {
+			if item, exists := mcache.MetricInfoCache.Get(metric); exists {
 				note = item.Description
 			}
 			m := metricResp{Metric: metric, Note: note}
@@ -100,8 +100,8 @@ func straMetricsPost(c *gin.Context) {
 			}
 		}
 	} else {
-		monitorItemMap := mcache.MonitorItemCache.GetAll()
-		for _, item := range monitorItemMap {
+		metricInfoMap := mcache.MetricInfoCache.GetAll()
+		for _, item := range metricInfoMap {
 			if f.Query != "" && !strings.Contains(item.Metric, f.Query) {
 				continue
 			}

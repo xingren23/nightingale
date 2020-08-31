@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	EndpointsApi   = "/api/portal/endpoints"
-	InstancesApi   = "/api/portal/appinstances"
-	MonitorItemApi = "/api/portal/monitor_item"
-	GarbageApi     = "/api/portal/garbage"
+	EndpointsApi  = "/api/portal/endpoints"
+	InstancesApi  = "/api/portal/appinstances"
+	MetricInfoApi = "/api/portal/metric_info"
+	GarbageApi    = "/api/portal/garbage"
 
 	Timeout = 10000
 )
@@ -31,7 +31,7 @@ func Init() {
 	EndpointCache = NewEndpointCache()
 	AppInstanceCache = NewAppInstanceCache()
 	IpInstanceCache = NewIpInstanceCache()
-	MonitorItemCache = NewMonitorItemCache()
+	MetricInfoCache = NewMetricInfoCache()
 	GarbageCache = NewGarbageCache()
 
 	if err := syncResource(); err != nil {
@@ -59,7 +59,7 @@ func syncResource() error {
 	if err := buildGarbageCache(); err != nil {
 		return err
 	}
-	if err := buildMonitorItemCache(); err != nil {
+	if err := buildMetricInfoCache(); err != nil {
 		return err
 	}
 	return nil
@@ -124,17 +124,17 @@ func buildAppInstanceCache() error {
 }
 
 // 指标元数据, retry monapi addr
-func buildMonitorItemCache() error {
-	monitorItemResp, err := getMonitorItem()
+func buildMetricInfoCache() error {
+	metricInfoResp, err := getMetricInfo()
 	if err != nil {
-		logger.Error("build monitorItem cache fail:", err)
+		logger.Error("build metric info cache fail:", err)
 		return err
 	}
-	monitorItemMap := make(map[string]*model.MonitorItem)
-	for _, monitorItem := range monitorItemResp.Dat {
-		monitorItemMap[monitorItem.Metric] = monitorItem
+	metricInfoMap := make(map[string]*model.MetricInfo)
+	for _, metricInfo := range metricInfoResp.Dat {
+		metricInfoMap[metricInfo.Metric] = metricInfo
 	}
-	MonitorItemCache.SetAll(monitorItemMap)
+	MetricInfoCache.SetAll(metricInfoMap)
 	return nil
 }
 
@@ -169,9 +169,9 @@ type InstancesResp struct {
 	Err string           `json:"err"`
 }
 
-type MonitorItemResp struct {
-	Dat map[string]*model.MonitorItem `json:"dat"`
-	Err string                        `json:"err"`
+type MetricInfoResp struct {
+	Dat map[string]*model.MetricInfo `json:"dat"`
+	Err string                       `json:"err"`
 }
 
 type GarbageFilterResp struct {
@@ -227,22 +227,22 @@ func getAppInstances() (InstancesResp, error) {
 	return res, err
 }
 
-func getMonitorItem() (MonitorItemResp, error) {
-	var res MonitorItemResp
+func getMetricInfo() (MetricInfoResp, error) {
+	var res MetricInfoResp
 	var err error
 
 	addrs := address.GetHTTPAddresses("monapi")
 	count := len(addrs)
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
-		url := fmt.Sprintf("http://%s%s?limit=100000", addr, MonitorItemApi)
+		url := fmt.Sprintf("http://%s%s?limit=100000", addr, MetricInfoApi)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil && err.Error() != "" {
-			err = fmt.Errorf("get monitorItem from %s failed, error:%v", url, err)
+			err = fmt.Errorf("get metricInfo from %s failed, error:%v", url, err)
 			continue
 		}
 		if res.Dat == nil || len(res.Dat) == 0 {
-			err = fmt.Errorf("get monitorItem from %s is nil, error:%v", url, err)
+			err = fmt.Errorf("get metricInfo from %s is nil, error:%v", url, err)
 			continue
 		}
 		break

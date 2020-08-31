@@ -4,7 +4,7 @@ var (
 	MaskCache *MaskCacheMap
 	StraCache *StraCacheMap
 
-	MonitorItemCache *MonitorItemCacheMap
+	MetricInfoCache *MetricInfoCacheMap
 )
 
 func Init() {
@@ -12,5 +12,5 @@ func Init() {
 	StraCache = NewStraCache()
 
 	// 元数据缓存
-	MonitorItemCache = NewMonitorItemCache()
+	MetricInfoCache = NewMetricInfoCache()
 }

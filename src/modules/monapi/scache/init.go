@@ -49,9 +49,9 @@ func syncStras() {
 	strasMap := make(map[string][]*model.Stra)
 	for _, stra := range stras {
 		//获取策略 endpoint type
-		item, exists := mcache.MonitorItemCache.Get(stra.Exprs[0].Metric)
+		item, exists := mcache.MetricInfoCache.Get(stra.Exprs[0].Metric)
 		if !exists {
-			logger.Errorf("stra %s metric %s is not in monitorItem cache", stra.Name, stra.Exprs[0].Metric)
+			logger.Errorf("stra %s metric %s is not in metricInfo cache", stra.Name, stra.Exprs[0].Metric)
 			continue
 		}
 		endpointType := buildEndpointType(item)
@@ -390,7 +390,7 @@ func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notEquals
 
 // TODO : 指标元数据中定义一个类型 ？
 // 指标元数据类型 -> endpoint type
-func buildEndpointType(item *model.MonitorItem) string {
+func buildEndpointType(item *model.MetricInfo) string {
 	if item.EndpointType == "NETWORK" {
 		return config.EndpointKeyNetwork
 	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {

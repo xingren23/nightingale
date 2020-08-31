@@ -5,6 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func monitorItemGet(c *gin.Context) {
-	renderData(c, mcache.MonitorItemCache.GetAll(), nil)
+func metricInfoGet(c *gin.Context) {
+	renderData(c, mcache.MetricInfoCache.GetAll(), nil)
 }

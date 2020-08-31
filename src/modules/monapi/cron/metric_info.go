@@ -12,33 +12,33 @@ import (
 	"github.com/toolkits/pkg/logger"
 )
 
-func SyncMonitorItemLoop() {
+func SyncMetricInfoLoop() {
 	duration := time.Second * time.Duration(60)
 	for {
 		time.Sleep(duration)
-		logger.Debug("sync monitorItem begin")
+		logger.Debug("sync metric info begin")
 		err := SyncMaskconf()
 		if err != nil {
-			stats.Counter.Set("monitoritem.sync.err", 1)
-			logger.Error("sync monitorItem fail: ", err)
+			stats.Counter.Set("metricinfo.sync.err", 1)
+			logger.Error("sync metric info fail: ", err)
 		} else {
-			logger.Debug("sync monitorItem succ")
+			logger.Debug("sync metric info succ")
 		}
 	}
 }
 
-func SyncMonitorItem() error {
-	items, err := model.MonitorItemAll()
+func SyncMetricInfo() error {
+	items, err := model.MetricInfoAll()
 	if err != nil {
-		return fmt.Errorf("get monitorItem fail: %v", err)
+		return fmt.Errorf("get metric info fail: %v", err)
 	}
 
-	m := make(map[string]*model.MonitorItem)
+	m := make(map[string]*model.MetricInfo)
 	size := len(items)
 	for i := 0; i < size; i++ {
 		m[items[i].Metric] = items[i]
 	}
 
-	mcache.MonitorItemCache.SetAll(m)
+	mcache.MetricInfoCache.SetAll(m)
 	return nil
 }

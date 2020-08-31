@@ -38,7 +38,7 @@ func Config(r *gin.Engine) {
 		nolog.GET("/appinstances", appInstanceGets)
 
 		nolog.GET("/garbage", GarbageFilterGet)
-		nolog.GET("/monitor_item", monitorItemGet)
+		nolog.GET("/metric_info", metricInfoGet)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())
