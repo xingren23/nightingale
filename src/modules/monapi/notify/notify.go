@@ -155,6 +155,15 @@ func DoNotify(event *model.Event) {
 			message.Tos = tos
 			message.NotifyType = "voice"
 			send(message)
+		case "ding":
+			var tos []string
+			for j := 0; j < len(users); j++ {
+				tos = append(tos, users[j].Username)
+			}
+
+			message.Tos = tos
+			message.NotifyType = "ding"
+			send(message)
 		case "sms":
 			var tos []string
 			for j := 0; j < len(users); j++ {
