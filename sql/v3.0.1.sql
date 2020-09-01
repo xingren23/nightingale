@@ -75,3 +75,12 @@ CREATE TABLE `metric_info`
     KEY `category_metric_status` (`category`, `metric`, `status`)
 ) ENGINE = INNODB
   DEFAULT CHARSET = utf8 COMMENT = '监控项元数据';
+
+# 指标元数据导数
+INSERT INTO n9e_mon.`metric_info` (id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status`) SELECT id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status` FROM arch_hawkeye.monitor_item WHERE status >-1;
+
+
+# 上线用户组导数
+INSERT INTO n9e_uic.`user` (id,username,dispname,phone,email) SELECT id,code,name,mobile,email FROM arch_hawkeye.user WHERE status >-1;
+INSERT INTO n9e_uic.`team` (id,nid,ident,name) SELECT id,service_tag_id,name,description from arch_hawkeye.team WHERE status >-1;
+INSERT INTO n9e_uic.`team_user` (team_id,user_id) SELECT team_id,user_id from arch_hawkeye.team_user WHERE status >-1;
