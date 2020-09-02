@@ -64,18 +64,18 @@ func teamHawkeyeListGet(c *gin.Context) {
 }
 
 type teamHawkeyeForm struct {
-	Ident     string   `json:"ident"`
-	Name      string   `json:"name"`
-	Mgmt      int      `json:"mgmt"`
-	Admins    []int64  `json:"admins"`
-	Nid       int64    `json:"nid"`
-	UserNames []string `json:"userNames"`
+	Ident  string   `json:"ident"`
+	Name   string   `json:"name"`
+	Mgmt   int      `json:"mgmt"`
+	Admins []int64  `json:"admins"`
+	Nid    int64    `json:"nid"`
+	Emails []string `json:"Emails"`
 }
 
 func teamHawkeyeAddPost(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
-	userIds, err := meicai.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.Emails)
 	if err != nil {
 		errors.Bomb("save user fail, err:[%s], ", err)
 	}
@@ -88,9 +88,9 @@ func teamHawkeyePut(c *gin.Context) {
 	var f teamHawkeyeForm
 	errors.Dangerous(c.ShouldBind(&f))
 
-	userIds, err := meicai.SaveSSOUser(f.UserNames)
+	userIds, err := meicai.SaveSSOUser(f.Emails)
 	if err != nil {
-		errors.Bomb("teamHawkeyePut SaveSSOUser err,userNames:%v", f.UserNames)
+		errors.Bomb("teamHawkeyePut SaveSSOUser err,emails:%v", f.Emails)
 	}
 
 	t, err := model.TeamGet("id", urlParamInt64(c, "id"))
