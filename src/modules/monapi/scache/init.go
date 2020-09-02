@@ -141,27 +141,33 @@ func syncStras() {
 	StraCache.SetAll(strasMap)
 }
 
+/*
+1、策略中没有配app标签，增加app=[]当前节点覆盖的应用code
+2、策略中配置app=[xx,xx]标签的不作处理
+3、策略中配置app!=[xx,xx]标签，用当前节点覆盖的应用过滤后，转换为app=[xx,xx]
+*/
 func convertAppTag(stra *model.Stra) (*model.Stra, error) {
 	insts, err := cmdb.GetCmdb().AppInstanceUnderLeafs(stra.LeafNids)
 	if err != nil {
 		return stra, fmt.Errorf("stra %s node %s get leaf app_instance error", stra.Name, stra.Nid)
 	}
+	// 临时tag数组
+	tagArrs := make([]model.Tag, 0)
+	// appCode map用于过滤
 	instsMap := make(map[string]bool, 0)
 	for _, inst := range insts {
 		instsMap[inst.App] = true
 	}
-
-	tagArrs := make([]model.Tag, 0)
 	for _, tag := range stra.Tags {
 		if tag.Tkey != "app" {
 			tagArrs = append(tagArrs, tag)
 			continue
 		}
-		// 不处理app=xxx
+		// app=[x,x]情况，不处理
 		if tag.Topt == "=" {
 			return stra, nil
 		}
-		// 标记app!=xxx
+		// app!=[x,x]情况，过滤反选的appCode，标记false
 		for _, val := range tag.Tval {
 			if _, exists := instsMap[val]; exists {
 				instsMap[val] = false
@@ -172,11 +178,13 @@ func convertAppTag(stra *model.Stra) (*model.Stra, error) {
 	// 补充app标签
 	appTag := model.Tag{Tkey: "app", Topt: "=", Tval: make([]string, 0)}
 	for inst, ok := range instsMap {
+		// 过滤app code
 		if ok {
 			appTag.Tval = append(appTag.Tval, inst)
 		}
 	}
 	tagArrs = append(tagArrs, appTag)
+	// 新标签赋值
 	stra.Tags = tagArrs
 
 	return stra, nil
