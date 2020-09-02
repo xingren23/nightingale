@@ -58,7 +58,7 @@ func ConfigInfoGet(col string, val interface{}) (*ConfigInfo, error) {
 func ConfigInfoTotal(query string) (int64, error) {
 	if query != "" {
 		q := "%" + query + "%"
-		return DB["mon"].Where("cfg_group like ? or cfg_key like ?", q).Count(new(ConfigInfo))
+		return DB["mon"].Where("cfg_group like ? or cfg_key like ?", q, q).Count(new(ConfigInfo))
 	}
 	return DB["mon"].Count(new(ConfigInfo))
 }
