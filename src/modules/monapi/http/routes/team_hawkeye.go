@@ -69,7 +69,7 @@ type teamHawkeyeForm struct {
 	Mgmt   int      `json:"mgmt"`
 	Admins []int64  `json:"admins"`
 	Nid    int64    `json:"nid"`
-	Emails []string `json:"Emails"`
+	Emails []string `json:"emails"`
 }
 
 func teamHawkeyeAddPost(c *gin.Context) {
