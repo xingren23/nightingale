@@ -119,6 +119,13 @@ func syncStras() {
 			stra.Tags = tagArrs
 		}
 
+		// convert app tags
+		stra, err := convertAppTag(stra)
+		if err != nil {
+			logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
+			continue
+		}
+
 		node, err := JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
 		if err != nil {
 			logger.Warningf("get node err:%v %v", err, stra)
@@ -132,6 +139,47 @@ func syncStras() {
 	}
 
 	StraCache.SetAll(strasMap)
+}
+
+func convertAppTag(stra *model.Stra) (*model.Stra, error) {
+	insts, err := cmdb.GetCmdb().AppInstanceUnderLeafs(stra.LeafNids)
+	if err != nil {
+		return stra, fmt.Errorf("stra %s node %s get leaf app_instance error", stra.Name, stra.Nid)
+	}
+	instsMap := make(map[string]bool, 0)
+	for _, inst := range insts {
+		instsMap[inst.App] = true
+	}
+
+	tagArrs := make([]model.Tag, 0)
+	for _, tag := range stra.Tags {
+		if tag.Tkey != "app" {
+			tagArrs = append(tagArrs, tag)
+			continue
+		}
+		// 不处理app=xxx
+		if tag.Topt == "=" {
+			return stra, nil
+		}
+		// 标记app!=xxx
+		for _, val := range tag.Tval {
+			if _, exists := instsMap[val]; exists {
+				instsMap[val] = false
+			}
+		}
+		break
+	}
+	// 补充app标签
+	appTag := model.Tag{Tkey: "app", Topt: "=", Tval: make([]string, 0)}
+	for inst, ok := range instsMap {
+		if ok {
+			appTag.Tval = append(appTag.Tval, inst)
+		}
+	}
+	tagArrs = append(tagArrs, appTag)
+	stra.Tags = tagArrs
+
+	return stra, nil
 }
 
 func SyncCollects() {
