@@ -25,15 +25,34 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 		return nil
 	}
 
+	respMap := make(map[string]*dataobj.TsdbQueryResponse)
 	queryResponse := make([]*dataobj.TsdbQueryResponse, 0)
 	for _, input := range inputs {
 		for _, counter := range input.Counters {
-			items := strings.Split(counter, "/")
+			items := strings.SplitN(counter, "/", 2)
 			metric := items[0]
-			var tags = make([]string, 0)
-			if len(items) > 1 && len(items[1]) > 0 {
+			tags := make([]string, 0)
+			if len(items) > 1 {
 				tags = strings.Split(items[1], ",")
+				tagMap := dataobj.DictedTagstring(items[1])
+				if counter, err = dataobj.GetCounter(metric, "", tagMap); err != nil {
+					logger.Warningf("get counter error: %+v", err)
+					continue
+				}
 			}
+
+			for _, endpoint := range input.Endpoints {
+				key := fmt.Sprintf("%s%s", endpoint, counter)
+				respMap[key] = &dataobj.TsdbQueryResponse{
+					Start:    input.Start,
+					End:      input.End,
+					Endpoint: endpoint,
+					Counter:  counter,
+					DsType:   input.DsType,
+					Step:     input.Step,
+				}
+			}
+
 			influxdbQuery := QueryData{
 				Start:     input.Start,
 				End:       input.End,
@@ -42,11 +61,13 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 				Tags:      tags,
 				Step:      input.Step,
 				DsType:    input.DsType,
+				GroupKey:  []string{"*"},
 			}
 			influxdbQuery.renderSelect()
 			influxdbQuery.renderEndpoints()
 			influxdbQuery.renderTags()
 			influxdbQuery.renderTimeRange()
+			influxdbQuery.renderGroupBy()
 			logger.Debugf("query influxql %s", influxdbQuery.RawQuery)
 
 			query := client.NewQuery(influxdbQuery.RawQuery, c.Database, c.Precision)
@@ -54,30 +75,27 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 				for _, result := range response.Results {
 					for _, series := range result.Series {
 
-						// fixme : influx client get series.Tags is nil
 						endpoint := series.Tags["endpoint"]
-						delete(series.Tags, endpoint)
-						counter, err := dataobj.GetCounter(series.Name, "", series.Tags)
+						delete(series.Tags, "endpoint")
+
+						influxCounter, err := dataobj.GetCounter(series.Name, "", series.Tags)
 						if err != nil {
 							logger.Warningf("get counter error: %+v", err)
 							continue
 						}
-						values := convertValues(series)
 
-						resp := &dataobj.TsdbQueryResponse{
-							Start:    influxdbQuery.Start,
-							End:      influxdbQuery.End,
-							Endpoint: endpoint,
-							Counter:  counter,
-							DsType:   influxdbQuery.DsType,
-							Step:     influxdbQuery.Step,
-							Values:   values,
+						key := fmt.Sprintf("%s%s", endpoint, influxCounter)
+						if _, exists := respMap[key]; exists {
+							respMap[key].Values = convertValues(series)
 						}
-						queryResponse = append(queryResponse, resp)
+
 					}
 				}
 			}
 		}
+	}
+	for _, resp := range respMap {
+		queryResponse = append(queryResponse, resp)
 	}
 	return queryResponse
 }
