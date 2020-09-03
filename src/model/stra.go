@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"strconv"
 	"strings"
 	"time"
@@ -477,6 +478,41 @@ func (s *Stra) Decode() error {
 	err = json.Unmarshal([]byte(s.NotifyGroupStr), &s.NotifyGroup)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *Stra) CheckGroups() error {
+	node, err := cmdb.GetCmdb().NodeGet("id", s.Nid)
+	if err != nil {
+		return err
+	}
+
+	allGroups := make([]int64, 0)
+	if s.NeedUpgrade == 1 && len(s.AlertUpgrade.Groups) > 0 {
+		for _, group := range s.AlertUpgrade.Groups {
+			allGroups = append(allGroups, group)
+		}
+	}
+	for _, group := range s.NotifyGroup {
+		allGroups = append(allGroups, int64(group))
+	}
+
+	for _, group := range allGroups {
+		team, err := TeamGet("id", group)
+		if err != nil {
+			return err
+		}
+
+		teamNode, err := cmdb.GetCmdb().NodeGet("id", team.Nid)
+		if err != nil {
+			return err
+		}
+
+		if !strings.HasPrefix(teamNode.Path, node.Path) {
+			return fmt.Errorf("告警组[%s]不在当前服务树节点下", team.Ident)
+		}
 	}
 
 	return nil
