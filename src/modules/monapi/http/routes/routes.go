@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/didi/nightingale/src/modules/monapi/http/middleware"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 )
 
@@ -9,6 +10,8 @@ import (
 func Config(r *gin.Engine) {
 	r.Static("/pub", "./pub")
 	r.StaticFile("/favicon.ico", "./pub/favicon.ico")
+
+	pprof.Register(r, "/api/monapi/debug/pprof")
 
 	hbs := r.Group("/api/hbs")
 	{
