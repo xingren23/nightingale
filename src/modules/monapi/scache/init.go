@@ -120,10 +120,13 @@ func syncStras() {
 		}
 
 		// convert app tags
-		stra, err := convertAppTag(stra)
-		if err != nil {
-			logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
-			continue
+		if endpointType == config.EndpointKeyDocker {
+			// 容器打应用标签
+			stra, err := convertAppTag(stra)
+			if err != nil {
+				logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
+				continue
+			}
 		}
 
 		node, err := JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
