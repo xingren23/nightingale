@@ -1,7 +1,7 @@
 package model
 
 func EventTotalHawkeye(stime, etime, nid int64, metric, eventType string, endpoints, priorities, sendTypes []string) (int64, error) {
-	session := DB["mon"].Where("etime > ? and etime < ? and node_path = ?", stime, etime, nid)
+	session := DB["mon"].Where("etime > ? and etime < ? and nid = ?", stime, etime, nid)
 	if len(priorities) > 0 && priorities[0] != "" {
 		session = session.In("priority", priorities)
 	}
