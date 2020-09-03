@@ -206,6 +206,7 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 				item.TagsMap["group"] = insts[0].Group
 				item.TagsMap["env"] = insts[0].Env
 			}
+			logger.Warningf("docker host is empty ,the number of instance is wrong ,endpoint %s ", host.Ident)
 		}
 		item.TagsMap["ip"] = host.Ident
 		item.Endpoint = host.Ident
