@@ -510,8 +510,8 @@ func (s *Stra) CheckGroups() error {
 			return err
 		}
 
-		if !strings.HasPrefix(teamNode.Path, node.Path) {
-			return fmt.Errorf("告警组[%s]不在当前服务树节点下", team.Ident)
+		if !strings.HasPrefix(node.Path, teamNode.Path) {
+			return fmt.Errorf("告警组[%s][id=%d]不在当前服务树节点下", team.Ident, group)
 		}
 	}
 

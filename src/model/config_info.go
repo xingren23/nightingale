@@ -30,7 +30,7 @@ func (c *ConfigInfo) Del() error {
 }
 
 func ConfigInfoGets(query string, limit, offest int) ([]*ConfigInfo, error) {
-	session := DB["mon"].Limit(limit, offest).OrderBy("id")
+	session := DB["mon"].Limit(limit, offest).Desc("id")
 	if query != "" {
 		q := "%" + query + "%"
 		session = session.Where("cfg_group like ? or cfg_key like ? and status > -1", q, q)
