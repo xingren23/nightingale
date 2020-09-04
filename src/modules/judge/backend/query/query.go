@@ -54,7 +54,7 @@ func Query(reqs []*dataobj.QueryData, sid int64, expFunc string) []*dataobj.Tsdb
 		}
 		if err != nil {
 			stats.Counter.Set("query.data.transfer.err", 1)
-			logger.Warning("get data err:%v msg:%+v, query data from mem", err, resp)
+			logger.Warningf("get data err:%v msg:%+v, query data from mem", err, resp)
 		} else {
 			respData = append(respData, resp.Data...)
 		}
