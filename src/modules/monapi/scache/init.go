@@ -54,7 +54,7 @@ func syncStras() {
 			logger.Errorf("stra %s metric %s is not in metricInfo cache", stra.Name, stra.Exprs[0].Metric)
 			continue
 		}
-		endpointType := buildEndpointType(item)
+		endpointTypes := buildEndpointType(item)
 
 		// 环境标签
 		envE, envN := analysisTag(stra, config.FilterTagEnv)
@@ -99,10 +99,12 @@ func syncStras() {
 				}
 			}
 
-			//endpoint type filter
-			if typeTag, ok := tags["type"]; ok {
-				if typeTag == endpointType {
-					stra.Endpoints = append(stra.Endpoints, e.Ident)
+			for _, endpointType := range endpointTypes {
+				//endpoint type filter
+				if typeTag, ok := tags["type"]; ok {
+					if typeTag == endpointType {
+						stra.Endpoints = append(stra.Endpoints, e.Ident)
+					}
 				}
 			}
 		}
@@ -120,12 +122,14 @@ func syncStras() {
 		}
 
 		// convert app tags
-		if endpointType == config.EndpointKeyDocker {
-			// 容器打应用标签
-			stra, err := convertAppTag(stra)
-			if err != nil {
-				logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
-				continue
+		for _, endpointType := range endpointTypes {
+			if endpointType == config.EndpointKeyDocker {
+				// 容器打应用标签
+				stra, err := convertAppTag(stra)
+				if err != nil {
+					logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
+					continue
+				}
 			}
 		}
 
@@ -449,15 +453,17 @@ func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notEquals
 
 // TODO : 指标元数据中定义一个类型 ？
 // 指标元数据类型 -> endpoint type
-func buildEndpointType(item *model.MetricInfo) string {
+func buildEndpointType(item *model.MetricInfo) []string {
 	if item.EndpointType == "NETWORK" {
-		return config.EndpointKeyNetwork
-	} else if item.EndpointType == "HOST" || item.EndpointType == "INSTANCE" {
+		return []string{config.EndpointKeyNetwork}
+	} else if item.EndpointType == "HOST" {
 		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
-			return config.EndpointKeyDocker
+			return []string{config.EndpointKeyDocker}
 		} else {
-			return config.EndpointKeyPM
+			return []string{config.EndpointKeyPM}
 		}
+	} else if item.EndpointType == "INSTANCE" {
+		return []string{config.EndpointKeyDocker, config.EndpointKeyPM}
 	}
-	return ""
+	return []string{}
 }
