@@ -84,10 +84,8 @@ func (meicai *Meicai) SyncOpsLoop() {
 	syncIntervalSecs := 30 * 60
 
 	for {
-		exists := redisc.HasKey(lockName)
-		if exists {
-			logger.Error("lock exist")
-			ttl := redisc.TTL(lockName)
+		ttl := redisc.TTL(lockName)
+		if ttl != -2 {
 			if ttl == -1 {
 				if err := redisc.EXPIRE(lockName, syncIntervalSecs); err != nil {
 					logger.Errorf("expire %s %d failed, %s", lockName, syncIntervalSecs, err)
