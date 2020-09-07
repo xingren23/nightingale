@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
@@ -30,7 +29,6 @@ func Init() {
 
 	EndpointCache = NewEndpointCache()
 	AppInstanceCache = NewAppInstanceCache()
-	IpInstanceCache = NewIpInstanceCache()
 	MetricInfoCache = NewMetricInfoCache()
 	GarbageCache = NewGarbageCache()
 
@@ -97,29 +95,10 @@ func buildAppInstanceCache() error {
 		return err
 	}
 	appInstanceMap := make(map[string]*AppInstance)
-	ipInstanceMap := make(map[string][]*AppInstance)
 	for _, instance := range instancesResp.Dat.List {
-		tags, err := dataobj.SplitTagsString(instance.Tags)
-		if err != nil {
-			logger.Warningf("split tags %s failed, host % %s", instance.Tags, instance.Ident, err)
-			continue
-		}
-		//基础服务排除 ( basic=true )
-		if basic, ok := tags["basic"]; ok {
-			flag, err := strconv.ParseBool(basic)
-			if err == nil && flag {
-				logger.Debugf("don't process basic app, %v", instance)
-				continue
-			}
-		}
 		appInstanceMap[instance.Uuid] = instance
-		if _, exists := ipInstanceMap[instance.Ident]; !exists {
-			ipInstanceMap[instance.Ident] = make([]*AppInstance, 0)
-		}
-		ipInstanceMap[instance.Ident] = append(ipInstanceMap[instance.Ident], instance)
 	}
 	AppInstanceCache.SetAll(appInstanceMap)
-	IpInstanceCache.SetAll(ipInstanceMap)
 	return nil
 }
 

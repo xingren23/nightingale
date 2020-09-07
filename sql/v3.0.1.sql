@@ -78,7 +78,11 @@ CREATE TABLE `metric_info`
 
 # 指标元数据导数
 INSERT INTO n9e_mon.`metric_info` (id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status`) SELECT id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status` FROM arch_hawkeye.monitor_item WHERE status >-1;
-
+# 指标元数据洗容器类型
+UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'container.%';
+UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric = 'docker.alive';
+# 指标元数据洗物理机类型
+UPDATE metric_info SET endpoint_type = 'PM' WHERE endpoint_type = 'HOST';
 
 # 上线用户组导数
 INSERT INTO n9e_uic.`user` (id,username,dispname,phone,email) SELECT id,code,name,mobile,email FROM arch_hawkeye.user WHERE status >-1;

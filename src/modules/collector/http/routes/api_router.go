@@ -2,6 +2,7 @@ package routes
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/didi/nightingale/src/dataobj"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
+	"github.com/toolkits/pkg/logger"
 )
 
 func ping(c *gin.Context) {
@@ -49,12 +51,23 @@ func pushDataV1(c *gin.Context) {
 	}
 
 	var recvMetricValues []*dataobj.MetricValue
-	errors.Dangerous(c.ShouldBindJSON(&recvMetricValues))
+	err := c.ShouldBindJSON(&recvMetricValues)
+	if err != nil {
+		logger.Errorf("decoder error is %v", err)
+		http.Error(c.Writer, "connot decode body", http.StatusBadRequest)
+		return
+	}
 	// send to falcon
 	falcon.Push(recvMetricValues)
 	// send to n9e (指标兼容)
-	err := core.PushV1(recvMetricValues)
-	render.Message(c, err)
+	err = core.PushV1(recvMetricValues)
+	if err != nil {
+		logger.Errorf("send to n9e transfer error %v", err)
+		http.Error(c.Writer, "send to n9e transfer error", http.StatusBadRequest)
+		return
+	}
+
+	c.Writer.Write([]byte("success"))
 }
 
 func getStrategy(c *gin.Context) {

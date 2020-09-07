@@ -34,13 +34,3 @@ func (this *MetricInfoCacheMap) SetAll(items map[string]*model.MetricInfo) {
 
 	this.Data = items
 }
-
-func (this *MetricInfoCacheMap) GetAll() map[string]*model.MetricInfo {
-	this.RLock()
-	defer this.RUnlock()
-	var metricInfoMap map[string]*model.MetricInfo
-	for _, metricInfo := range this.Data {
-		metricInfoMap[metricInfo.Metric] = metricInfo
-	}
-	return metricInfoMap
-}

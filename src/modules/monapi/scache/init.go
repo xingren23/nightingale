@@ -3,12 +3,12 @@ package scache
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb"
+	cmdbobj "github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
 	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 
@@ -54,7 +54,7 @@ func syncStras() {
 			logger.Errorf("stra %s metric %s is not in metricInfo cache", stra.Name, stra.Exprs[0].Metric)
 			continue
 		}
-		endpointTypes := buildEndpointType(item)
+		endpointType := buildEndpointType(item)
 
 		// 环境标签
 		envE, envN := analysisTag(stra, config.FilterTagEnv)
@@ -68,7 +68,7 @@ func syncStras() {
 			continue
 		}
 
-		endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(stra.LeafNids)
+		endpoints, err := endpointUnderLeafsByType(stra.LeafNids, item.EndpointType)
 		if err != nil {
 			logger.Warningf("get endpoints err:%v %v", err, stra)
 			continue
@@ -99,8 +99,11 @@ func syncStras() {
 				}
 			}
 
-			for _, endpointType := range endpointTypes {
-				//endpoint type filter
+			if endpointType == config.EndpointKeyInstance {
+				// instance endpoint type doesn't need filter
+				stra.Endpoints = append(stra.Endpoints, e.Ident)
+			} else {
+				// docker,pm,networt endpoint type filter
 				if typeTag, ok := tags["type"]; ok {
 					if typeTag == endpointType {
 						stra.Endpoints = append(stra.Endpoints, e.Ident)
@@ -122,14 +125,12 @@ func syncStras() {
 		}
 
 		// convert app tags
-		for _, endpointType := range endpointTypes {
-			if endpointType == config.EndpointKeyDocker {
-				// 容器打应用标签
-				stra, err := convertAppTag(stra)
-				if err != nil {
-					logger.Errorf("stra %s convert app tags error %v", stra.Name, err)
-					continue
-				}
+		if endpointType == config.EndpointKeyInstance {
+			// 容器打应用标签
+			stra, err := convertAppTag(stra)
+			if err != nil {
+				logger.Errorf("stra %v convert app tags error %v", stra, err)
+				continue
 			}
 		}
 
@@ -146,6 +147,39 @@ func syncStras() {
 	}
 
 	StraCache.SetAll(strasMap)
+}
+
+func endpointUnderLeafsByType(leafNids []int64, endpointType string) ([]cmdbobj.Endpoint, error) {
+	if endpointType == model.EndpointTypeInstance {
+		endpoints := []cmdbobj.Endpoint{}
+		appInstances, err := cmdb.GetCmdb().AppInstanceUnderLeafs(leafNids)
+		if err != nil {
+			return nil, fmt.Errorf("get appInstance err: %v", err)
+		}
+		// convert appInstance to endpoint
+		tmpIdentMap := make(map[string]bool, 0)
+		for _, inst := range appInstances {
+			if tmpIdentMap[inst.Ident] {
+				continue
+			}
+			endpoint := cmdbobj.Endpoint{
+				Ident: inst.Ident,
+				Alias: "",
+				Tags:  "",
+			}
+
+			tmpIdentMap[inst.Ident] = true
+			endpoints = append(endpoints, endpoint)
+		}
+		return endpoints, nil
+	}
+	// docker,pm,network endpoints
+	endpoints, err := cmdb.GetCmdb().EndpointUnderLeafs(leafNids)
+	if err != nil {
+		return nil, fmt.Errorf("get endpoints under leafs err: %v", err)
+	}
+
+	return endpoints, nil
 }
 
 /*
@@ -453,17 +487,16 @@ func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notEquals
 
 // TODO : 指标元数据中定义一个类型 ？
 // 指标元数据类型 -> endpoint type
-func buildEndpointType(item *model.MetricInfo) []string {
-	if item.EndpointType == "NETWORK" {
-		return []string{config.EndpointKeyNetwork}
-	} else if item.EndpointType == "HOST" {
-		if strings.HasPrefix(item.Metric, "container") || strings.HasPrefix(item.Metric, "docker") {
-			return []string{config.EndpointKeyDocker}
-		} else {
-			return []string{config.EndpointKeyPM}
-		}
-	} else if item.EndpointType == "INSTANCE" {
-		return []string{config.EndpointKeyDocker, config.EndpointKeyPM}
+func buildEndpointType(item *model.MetricInfo) string {
+	switch item.EndpointType {
+	case model.EndpointTypeNetwork:
+		return config.EndpointKeyNetwork
+	case model.EndpointTypeDocker:
+		return config.EndpointKeyDocker
+	case model.EndpointTypePm:
+		return config.EndpointKeyPM
+	case model.EndpointTypeInstance:
+		return config.EndpointKeyInstance
 	}
-	return []string{}
+	return ""
 }
