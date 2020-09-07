@@ -189,21 +189,15 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 	case model.EndpointTypePm:
 		fallthrough
 	case model.EndpointTypeDocker:
-		ident := item.Endpoint
-		host, exists := cache.EndpointCache.Get(ident)
-		if !exists {
-			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
-		}
-		item.TagsMap["ip"] = host.Ident
-		item.Endpoint = host.Ident
+		fallthrough
 	case model.EndpointTypeNetwork:
-		networkIp := item.Endpoint
-		network, exists := cache.EndpointCache.Get(networkIp)
+		ident := item.Endpoint
+		endpointItem, exists := cache.EndpointCache.Get(ident)
 		if !exists {
-			return nil, fmt.Errorf("ip %s is not exists in networks", networkIp)
+			return nil, fmt.Errorf("ident %s is not exists in endpoint cache", ident)
 		}
-		item.TagsMap["ip"] = network.Ident
-		item.Endpoint = network.Ident
+		item.TagsMap["ip"] = endpointItem.Ident
+		item.Endpoint = endpointItem.Ident
 	default:
 		// 其他类型丢弃
 		return nil, fmt.Errorf("metric type is not found.item :%v", metricInfo)
