@@ -35,6 +35,8 @@ const (
 	OpsApiResourcerPath = "/api/resource/query"
 )
 
+var M *Meicai
+
 type MySQLConf struct {
 	Addr  string `yaml:"addr"`
 	Max   int    `yaml:"max"`
@@ -74,6 +76,8 @@ func (meicai *Meicai) Init() {
 
 	meicai.DB = map[string]*xorm.Engine{}
 	meicai.DB[name] = db
+
+	M = meicai
 
 	// 定时全量同步
 	go meicai.SyncOpsLoop()
