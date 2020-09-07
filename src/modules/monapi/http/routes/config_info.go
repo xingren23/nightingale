@@ -1,10 +1,11 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/didi/nightingale/src/model"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
-	"time"
 )
 
 func cfgListGet(c *gin.Context) {
@@ -90,5 +91,11 @@ func cfgGet(c *gin.Context) {
 
 func GarbageFilterGet(c *gin.Context) {
 	cfgs, err := model.ConfigInfoGetByQ("collector", "illegal_chars")
+	errors.Dangerous(err)
+
+	if cfgs == nil {
+		renderMessage(c, nil)
+		return
+	}
 	renderData(c, cfgs, err)
 }

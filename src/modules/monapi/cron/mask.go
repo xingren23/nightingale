@@ -29,7 +29,7 @@ func SyncMaskconfLoop() {
 }
 
 func SyncMaskconf() error {
-	err := model.CleanExpireMask(time.Now().Unix())
+	err := model.CleanExpireMask(time.Now().Unix() * 1000)
 	if err != nil {
 		return fmt.Errorf("clean expire mask fail: %v", err)
 	}

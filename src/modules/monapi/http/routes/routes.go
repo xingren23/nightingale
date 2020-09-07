@@ -141,8 +141,6 @@ func Config(r *gin.Engine) {
 
 	hawkeye := r.Group("/api/portal/hawkeye").Use(middleware.Logined())
 	{
-		// 根据节点查询资源
-		hawkeye.POST("/resource", resourcePost)
 		// 根据节点查询策略
 		hawkeye.GET("/stra", strasHawkeyeGet)
 		// 策略节点查询指标

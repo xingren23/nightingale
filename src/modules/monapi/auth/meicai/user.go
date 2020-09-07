@@ -30,21 +30,26 @@ const (
 	SsoSearchUserPath = "/adminuser/searchadmin"
 )
 
-func SaveSSOUser(userNames []string) ([]int64, error) {
-	cnt := len(userNames)
+func SaveSSOUser(emails []string) ([]int64, error) {
+	cnt := len(emails)
 	ret := make([]int64, 0, cnt)
 
-	for _, userName := range userNames {
-		user, err := model.UserGet("username", userName)
+	for _, email := range emails {
+		if !strings.HasSuffix(email, "@meicai.cn") {
+			return nil, fmt.Errorf("不合法邮箱:%s", email)
+		}
+
+		user, err := model.UserGet("email", email)
 		if err != nil {
 			return nil, err
 		}
 
 		if user == nil {
 			url := config.Get().SSO.SSOAddr + SsoSearchUserPath
+			userName := strings.Split(email, "@")[0]
 
 			m := map[string]string{
-				"email": userName,
+				"email": email,
 			}
 
 			var resp AuthResp
@@ -64,7 +69,18 @@ func SaveSSOUser(userNames []string) ([]int64, error) {
 				return nil, fmt.Errorf("用户[%v]不存在", userName)
 			}
 
-			authUser := resp.AuthUser[0]
+			var authUser AuthUser
+			var uExists bool
+			for _, u := range resp.AuthUser {
+				if u.Email == email {
+					authUser = u
+					uExists = true
+				}
+			}
+			if !uExists {
+				return nil, fmt.Errorf("用户[%v]不存在", userName)
+			}
+
 			if authUser.Status == "0" {
 				return nil, fmt.Errorf("用户[%v]为禁用状态", userName)
 			}

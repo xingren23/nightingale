@@ -17,6 +17,7 @@ func straPost(c *gin.Context) {
 	stra.LastUpdator = me.Username
 
 	errors.Dangerous(stra.Encode())
+	errors.Dangerous(stra.CheckGroups())
 
 	exist, err := model.StraExist(stra.Nid, 0, stra.Name)
 	if err != nil {

@@ -194,39 +194,29 @@ pack()
 {
 	v=$1
 	if [ "x${v}" = "x" ]; then
-		v=$(date +%Y-%m-%d-%H-%M-%S)
+		echo "arg: <mod> is necessary"
+        return
 	fi
 
-	tar zcvf n9e-$v.tar.gz control sql plugin pub etc/log etc/port etc/service etc/nginx.conf etc/mysql.yml etc/address.yml \
-	n9e-collector etc/collector.yml \
-	n9e-tsdb etc/tsdb.yml \
-	n9e-index etc/index.yml \
-	n9e-judge etc/judge.yml \
-	n9e-transfer etc/transfer.yml \
-	n9e-monapi etc/monapi.yml
+	tar zcvf n9e-$v.tar.gz control plugin pub etc/$v.yml n9e-$v
 }
 
 function deploy() {
     v=$1
 	if [ "x${v}" = "x" ]; then
-		v=$(date +%Y-%m-%d-%H-%M-%S)
+		echo "arg: <mod> is necessary"
+        return
 	fi
-    build
+    build $v
     git log -1 --pretty=%h > gitversion
     version=`./$app -v`
     rm -rf $packdir
     mkdir -p $packdir
 
-    file_list="control n9e-$v sql plugin pub etc/log etc/port etc/service etc/nginx.conf etc/mysql.yml etc/address.yml \
-    n9e-collector etc/collector.yml \
-    n9e-tsdb etc/tsdb.yml \
-    n9e-index etc/index.yml \
-    n9e-judge etc/judge.yml \
-    n9e-transfer etc/transfer.yml \
-    n9e-monapi etc/monapi.yml"
+    file_list="control n9e-$v plugin pub etc/log etc/port etc/service etc/mysql.yml etc/address.yml etc/$v.yml"
 
     echo "...cp $file_list to $packdir"
-    cp -r $file_list $packdir
+    cp -r --parent $file_list $packdir
 }
 
 case "$1" in
