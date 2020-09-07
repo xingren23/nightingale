@@ -51,3 +51,8 @@ _test
 /web/yarn.lock
 
 /release
+
+/src/modules/collector/collector.go
+/src/modules/transfer/transfer.go
+/src/modules/monapi/monapi.go
+/src/modules/judge/judge.go
