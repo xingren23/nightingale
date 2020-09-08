@@ -5,23 +5,25 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/didi/nightingale/src/toolkits/identity"
 	"github.com/spf13/viper"
 	"github.com/toolkits/pkg/file"
 )
 
 type Config struct {
-	Salt    string              `yaml:"salt"`
-	Logger  loggerSection       `yaml:"logger"`
-	HTTP    httpSection         `yaml:"http"`
-	LDAP    ldapSection         `yaml:"ldap"`
-	Redis   redisSection        `yaml:"redis"`
-	Queue   queueSection        `yaml:"queue"`
-	Cleaner cleanerSection      `yaml:"cleaner"`
-	Link    linkSection         `yaml:"link"`
-	Notify  map[string][]string `yaml:"notify"`
-	Tokens  []string            `yaml:"tokens"`
-	SSO     ssoSection          `yaml:"sso"`
-	Cmdb    CmdbSection         `yaml:"cmdb"`
+	Salt     string                   `yaml:"salt"`
+	Logger   loggerSection            `yaml:"logger"`
+	HTTP     httpSection              `yaml:"http"`
+	LDAP     ldapSection              `yaml:"ldap"`
+	Redis    redisSection             `yaml:"redis"`
+	Queue    queueSection             `yaml:"queue"`
+	Cleaner  cleanerSection           `yaml:"cleaner"`
+	Link     linkSection              `yaml:"link"`
+	Notify   map[string][]string      `yaml:"notify"`
+	Tokens   []string                 `yaml:"tokens"`
+	SSO      ssoSection               `yaml:"sso"`
+	Cmdb     CmdbSection              `yaml:"cmdb"`
+	Identity identity.IdentitySection `yaml:"identity"`
 }
 
 type CmdbSection struct {
