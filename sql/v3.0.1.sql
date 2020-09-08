@@ -85,6 +85,6 @@ UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'fpm.%';
 UPDATE metric_info SET endpoint_type = 'PM' WHERE endpoint_type = 'HOST';
 
 # 上线用户组导数
-INSERT INTO n9e_uic.`user` (id,username,dispname,phone,email) SELECT id,code,name,mobile,email FROM arch_hawkeye.user WHERE status >-1;
+INSERT INTO n9e_uic.`user` (id,username,dispname,email) SELECT id,code,name,email FROM arch_hawkeye.user WHERE status >-1;
 INSERT INTO n9e_uic.`team` (id,nid,ident,name) SELECT id,service_tag_id,name,description from arch_hawkeye.team WHERE status >-1;
 INSERT INTO n9e_uic.`team_user` (team_id,user_id) SELECT team_id,user_id from arch_hawkeye.team_user WHERE status >-1;
