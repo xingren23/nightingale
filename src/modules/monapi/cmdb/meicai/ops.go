@@ -228,6 +228,7 @@ func QueryAppByNode(url string, timeout int, query string) ([]*App, error) {
 		}
 		page.PageNo++
 		page.TotalPage = pageRet.TotalPage
+		page.TotalRecord = pageRet.TotalRecord
 	}
 
 	return ret, nil
@@ -284,6 +285,7 @@ func QueryResourceByNode(url string, timeout int, query string, source string) (
 		}
 		page.PageNo++
 		page.TotalPage = pageRet.TotalPage
+		page.TotalRecord = pageRet.TotalRecord
 	}
 	return ret, nil
 }
@@ -330,6 +332,7 @@ func QueryAppInstanceByNode(url string, timeout int, query string, source string
 		}
 		page.PageNo++
 		page.TotalPage = pageRet.TotalPage
+		page.TotalRecord = pageRet.TotalRecord
 	}
 	return ret, nil
 }
