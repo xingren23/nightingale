@@ -54,7 +54,7 @@ func syncStras() {
 			logger.Errorf("stra %s metric %s is not in metricInfo cache", stra.Name, stra.Exprs[0].Metric)
 			continue
 		}
-		endpointType := buildEndpointType(item)
+		endpointType := item.EndpointType
 
 		// 环境标签
 		envE, envN := analysisTag(stra, config.FilterTagEnv)
@@ -483,20 +483,4 @@ func analysisTag(stra *model.Stra, key string) (equals *set.StringSet, notEquals
 		}
 	}
 	return equals, notEquals
-}
-
-// TODO : 指标元数据中定义一个类型 ？
-// 指标元数据类型 -> endpoint type
-func buildEndpointType(item *model.MetricInfo) string {
-	switch item.EndpointType {
-	case model.EndpointTypeNetwork:
-		return config.EndpointKeyNetwork
-	case model.EndpointTypeDocker:
-		return config.EndpointKeyDocker
-	case model.EndpointTypePm:
-		return config.EndpointKeyPM
-	case model.EndpointTypeInstance:
-		return config.EndpointKeyInstance
-	}
-	return ""
 }

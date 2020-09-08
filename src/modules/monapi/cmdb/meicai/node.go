@@ -126,7 +126,7 @@ func (m *Meicai) LeafIds(n *dataobj.Node) ([]int64, error) {
 	}
 
 	var nodes []dataobj.Node
-	// todo : 与夜莺逻辑不同
+	//与夜莺逻辑差异：美菜path为全路径
 	err := m.DB["mon"].Where("path like ? and leaf=1", "%"+n.Path+"%").Find(&nodes)
 	if err != nil {
 		return []int64{}, err

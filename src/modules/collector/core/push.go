@@ -158,7 +158,6 @@ func Push(metricItems []*dataobj.MetricValue) error {
 	return err
 }
 
-// TODO: 优化
 func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) {
 	//指标白名单
 	metricInfo, exists := cache.MetricInfoCache.Get(item.Metric)
