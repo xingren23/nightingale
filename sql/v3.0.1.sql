@@ -63,7 +63,6 @@ CREATE TABLE `metric_info`
     `description`   VARCHAR(255)          DEFAULT '' COMMENT '描述信息',
     `category`      VARCHAR(32)  NOT NULL COMMENT '监控项类别',
     `endpoint_type` VARCHAR(50)  NOT NULL DEFAULT 'HOST' COMMENT 'Endpoint类型',
-    `machine_type`  VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '指标机器类型',
     `create_time`   datetime     NOT NULL COMMENT '创建时间',
     `create_by`     BIGINT(20)   NOT NULL DEFAULT '0' COMMENT '创建人',
     `update_time`   datetime     NOT NULL COMMENT '修改时间',
@@ -77,8 +76,13 @@ CREATE TABLE `metric_info`
   DEFAULT CHARSET = utf8 COMMENT = '监控项元数据';
 
 # 指标元数据导数
-INSERT INTO n9e_mon.`metric_info` (id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status`) SELECT id,name,metric,type,step,unit,description,category,endpoint_type,machine_type,create_time,create_by,update_time,update_by,`status` FROM arch_hawkeye.monitor_item WHERE status >-1;
-
+INSERT INTO n9e_mon.`metric_info` (id,name,metric,type,step,unit,description,category,endpoint_type,create_time,create_by,update_time,update_by,`status`) SELECT id,name,metric,type,step,unit,description,machine_type,endpoint_type,create_time,create_by,update_time,update_by,`status` FROM arch_hawkeye.monitor_item WHERE status >-1;
+# 指标元数据洗容器类型
+UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric = 'docker.alive';
+UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'container.%';
+UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'fpm.%';
+# 指标元数据洗物理机类型
+UPDATE metric_info SET endpoint_type = 'PM' WHERE endpoint_type = 'HOST';
 
 # 上线用户组导数
 INSERT INTO n9e_uic.`user` (id,username,dispname,phone,email) SELECT id,code,name,mobile,email FROM arch_hawkeye.user WHERE status >-1;

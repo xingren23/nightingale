@@ -2,10 +2,11 @@ package model
 
 import (
 	"fmt"
-	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 
 	"xorm.io/xorm"
 )

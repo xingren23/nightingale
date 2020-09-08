@@ -67,6 +67,9 @@ func main() {
 
 	model.InitMySQL("uic", "mon", "hbs")
 	model.InitRoot()
+
+	redisc.InitRedis()
+
 	cmdb.Init(config.Get().Cmdb)
 
 	mcache.Init()
@@ -87,8 +90,6 @@ func main() {
 	if err := cron.CheckJudge(); err != nil {
 		log.Fatalf("check judge fail: %v", err)
 	}
-
-	redisc.InitRedis()
 
 	go cron.SyncMetricInfoLoop()
 	go cron.SyncMaskconfLoop()

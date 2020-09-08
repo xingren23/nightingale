@@ -116,3 +116,19 @@ func SETNX(key, value string, expireTime int) (bool, error) {
 
 	return ret == "OK", err
 }
+
+func EXPIRE(key string, expireSecs int) error {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+
+	_, err := rc.Do("EXPIRE", key, expireSecs)
+	return err
+}
+
+func TTL(key string) int {
+	rc := RedisConnPool.Get()
+	defer rc.Close()
+
+	ttl, _ := redis.Int(rc.Do("TTL", key))
+	return ttl
+}

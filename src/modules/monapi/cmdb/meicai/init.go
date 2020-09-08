@@ -2,7 +2,10 @@ package meicai
 
 import (
 	"fmt"
+	"github.com/didi/nightingale/src/modules/monapi/redisc"
+	"github.com/didi/nightingale/src/toolkits/identity"
 	"log"
+	"math/rand"
 	"path"
 	"strconv"
 	"time"
@@ -31,6 +34,8 @@ const (
 	OpsSrvtreeRootPath  = "/srv_tree/tree"
 	OpsApiResourcerPath = "/api/resource/query"
 )
+
+var M *Meicai
 
 type MySQLConf struct {
 	Addr  string `yaml:"addr"`
@@ -72,21 +77,40 @@ func (meicai *Meicai) Init() {
 	meicai.DB = map[string]*xorm.Engine{}
 	meicai.DB[name] = db
 
+	M = meicai
+
 	// 定时全量同步
 	go meicai.SyncOpsLoop()
 }
 
 func (meicai *Meicai) SyncOpsLoop() {
-	duration := time.Hour * time.Duration(24)
+	lockName := "monapi_sync_ops_lock"
+	syncIntervalSecs := 30 * 60
+
 	for {
-		// sync srvtree & endpoint
-		err := meicai.SyncOps()
-		if err != nil {
-			stats.Counter.Set("cmdb.meicai.sync.err", 1)
-			logger.Errorf("sync meicai node failed, %s", err)
+		ttl := redisc.TTL(lockName)
+		if ttl != -2 {
+			if ttl == -1 {
+				if err := redisc.EXPIRE(lockName, syncIntervalSecs); err != nil {
+					logger.Errorf("expire %s %d failed, %s", lockName, syncIntervalSecs, err)
+				}
+			}
+		} else {
+			ok, err := redisc.SETNX(lockName, identity.Identity, syncIntervalSecs)
+			if ok {
+				err := meicai.SyncOps()
+				if err != nil {
+					stats.Counter.Set("cmdb.meicai.sync.err", 1)
+					logger.Errorf("sync meicai node failed, %s", err)
+				}
+				stats.Counter.Set("cmdb.meicai.sync.count", 1)
+			} else {
+				logger.Errorf("'set %s %s nx ex %d' not ok, %s",
+					lockName, identity.Identity, syncIntervalSecs, err)
+			}
 		}
-		stats.Counter.Set("cmdb.meicai.sync.count", 1)
-		time.Sleep(duration)
+
+		time.Sleep(5*time.Minute + time.Duration(rand.Int()%10000000000))
 	}
 }
 

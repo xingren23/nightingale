@@ -40,30 +40,3 @@ func (this *AppInstanceCacheMap) SetAll(instances map[string]*AppInstance) {
 	defer this.Unlock()
 	this.instanceMap = instances
 }
-
-var IpInstanceCache *IpInstanceCacheMap
-
-func NewIpInstanceCache() *IpInstanceCacheMap {
-	return &IpInstanceCacheMap{
-		instanceMap: map[string][]*AppInstance{},
-	}
-}
-
-// instance(ip) -> AppInstance
-type IpInstanceCacheMap struct {
-	sync.RWMutex
-	instanceMap map[string][]*AppInstance
-}
-
-func (cache *IpInstanceCacheMap) Get(ip string) ([]*AppInstance, bool) {
-	cache.RLock()
-	defer cache.RUnlock()
-	value, exists := cache.instanceMap[ip]
-	return value, exists
-}
-
-func (this *IpInstanceCacheMap) SetAll(instances map[string][]*AppInstance) {
-	this.Lock()
-	defer this.Unlock()
-	this.instanceMap = instances
-}
