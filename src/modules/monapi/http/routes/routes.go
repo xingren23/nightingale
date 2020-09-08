@@ -151,6 +151,8 @@ func Config(r *gin.Engine) {
 		hawkeye.POST("/stra/tagKeys", straTagKeysPost)
 		// 策略节点查询标签
 		hawkeye.POST("/stra/tagVals", straTagValsPost)
+		// 生效查询
+		hawkeye.GET("/stra/effective", straEffectiveGet)
 
 		// 用户组
 		hawkeye.GET("/team", teamHawkeyeListGet)

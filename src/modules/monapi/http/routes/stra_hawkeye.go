@@ -30,7 +30,8 @@ func strasHawkeyeGet(c *gin.Context) {
 	for _, stra := range list {
 		node, err := scache.JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
 		if err != nil {
-			logger.Warningf("get node err:%v %v", err, stra)
+			logger.Errorf("get node err:%v %v", err, stra)
+			continue
 		}
 
 		stras := scache.StraCache.GetByNode(node)
@@ -367,4 +368,29 @@ func likeSearch(items []string, query string, limit int) []string {
 		res = append(res, item)
 	}
 	return res
+}
+
+func straEffectiveGet(c *gin.Context) {
+	sid := queryInt64(c, "id", 0)
+	stra, err := model.StraGet("id", sid)
+	errors.Dangerous(err)
+
+	node, err := scache.JudgeHashRing.GetNode(strconv.FormatInt(stra.Id, 10))
+	errors.Dangerous(err)
+
+	stras := scache.StraCache.GetByNode(node)
+	if stras != nil && len(stras) > 0 {
+		for _, item := range stras {
+			if item.Id == stra.Id {
+				stra.Endpoints = item.Endpoints
+				stra.Tags = item.Tags
+				judgeNode, err := scache.JudgeActiveNode.GetInstanceBy(node)
+				errors.Dangerous(err)
+
+				stra.JudgeInstance = judgeNode
+				break
+			}
+		}
+	}
+	renderData(c, stra, nil)
 }
