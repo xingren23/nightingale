@@ -18,7 +18,6 @@ import (
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/collector/cache"
-	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/didi/nightingale/src/toolkits/identity"
 )
@@ -187,37 +186,18 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		}
 		item.TagsMap["ip"] = instance.Ident
 		item.Endpoint = instance.Ident
-	case model.EndpointTypeHost:
-		ident := item.Endpoint
-		host, exists := cache.EndpointCache.Get(ident)
-		if !exists {
-			return nil, fmt.Errorf("ident %s is not exists in hosts", ident)
-		}
-		tags, err := dataobj.SplitTagsString(host.Tags)
-		if err != nil {
-			return nil, fmt.Errorf("instance %s is split tags %s failed", item.Endpoint, item.Tags)
-		}
-		// 容器主机打应用标签
-		if tags["type"] == config.EndpointKeyDocker {
-			insts, exists := cache.IpInstanceCache.Get(ident)
-			// 空容器和单机多实例不打应用标签
-			if exists && len(insts) == 1 {
-				item.TagsMap["app"] = insts[0].App
-				item.TagsMap["group"] = insts[0].Group
-				item.TagsMap["env"] = insts[0].Env
-			}
-			logger.Warningf("docker host is empty ,the number of instance is wrong ,endpoint %s ", host.Ident)
-		}
-		item.TagsMap["ip"] = host.Ident
-		item.Endpoint = host.Ident
+	case model.EndpointTypePm:
+		fallthrough
+	case model.EndpointTypeDocker:
+		fallthrough
 	case model.EndpointTypeNetwork:
-		networkIp := item.Endpoint
-		network, exists := cache.EndpointCache.Get(networkIp)
+		ident := item.Endpoint
+		endpointItem, exists := cache.EndpointCache.Get(ident)
 		if !exists {
-			return nil, fmt.Errorf("ip %s is not exists in networks", networkIp)
+			return nil, fmt.Errorf("ident %s is not exists in endpoint cache", ident)
 		}
-		item.TagsMap["ip"] = network.Ident
-		item.Endpoint = network.Ident
+		item.TagsMap["ip"] = endpointItem.Ident
+		item.Endpoint = endpointItem.Ident
 	default:
 		// 其他类型丢弃
 		return nil, fmt.Errorf("metric type is not found.item :%v", metricInfo)

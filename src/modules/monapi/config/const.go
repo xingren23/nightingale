@@ -14,9 +14,11 @@ const (
 	FilterTagEnv      = "env"
 )
 
-// endpoint type
+// 服务树资源类型 endpoint type
 const (
 	EndpointKeyDocker  = "docker"
 	EndpointKeyPM      = "pm"
 	EndpointKeyNetwork = "network"
+	// todo 兼容app_instance
+	EndpointKeyInstance = "instance"
 )

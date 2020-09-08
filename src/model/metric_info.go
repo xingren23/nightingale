@@ -6,7 +6,8 @@ import (
 
 const (
 	EndpointTypeInstance = "INSTANCE"
-	EndpointTypeHost     = "HOST"
+	EndpointTypePm       = "PM"
+	EndpointTypeDocker   = "DOCKER"
 	EndpointTypeNetwork  = "NETWORK"
 )
 
