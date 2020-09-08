@@ -62,8 +62,8 @@ func (t *Team) CheckFields() error {
 		return fmt.Errorf("name dangerous")
 	}
 
-	if !str.IsMatch(t.Ident, `^[a-z0-9\-]+$`) {
-		return fmt.Errorf("ident permissible characters: [a-z0-9] and -")
+	if !str.IsMatch(t.Ident, `^[A-Za-z0-9\-_]+$`) {
+		return fmt.Errorf("ident permissible characters: [A-Za-z0-9] and -,_")
 	}
 
 	return nil
