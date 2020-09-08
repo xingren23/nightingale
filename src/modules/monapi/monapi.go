@@ -22,6 +22,7 @@ import (
 	"github.com/didi/nightingale/src/modules/monapi/mcache"
 	"github.com/didi/nightingale/src/modules/monapi/redisc"
 	"github.com/didi/nightingale/src/modules/monapi/scache"
+	"github.com/didi/nightingale/src/toolkits/identity"
 	"github.com/didi/nightingale/src/toolkits/stats"
 )
 
@@ -61,6 +62,8 @@ func init() {
 func main() {
 	aconf()
 	pconf()
+
+	identity.Init(config.Get().Identity)
 
 	config.InitLogger()
 	go stats.Init("n9e.monapi")
