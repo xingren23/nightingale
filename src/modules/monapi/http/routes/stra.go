@@ -1,8 +1,11 @@
 package routes
 
 import (
+	"fmt"
+	"github.com/didi/nightingale/src/modules/monapi/cmdb"
 	"github.com/gin-gonic/gin"
 	"github.com/toolkits/pkg/errors"
+	"strings"
 
 	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/scache"
@@ -17,7 +20,7 @@ func straPost(c *gin.Context) {
 	stra.LastUpdator = me.Username
 
 	errors.Dangerous(stra.Encode())
-	errors.Dangerous(stra.CheckGroups())
+	errors.Dangerous(checkGroups(stra))
 
 	exist, err := model.StraExist(stra.Nid, 0, stra.Name)
 	if err != nil {
@@ -119,4 +122,39 @@ func effectiveStrasGet(c *gin.Context) {
 		stras = scache.StraCache.GetByNode(node)
 	}
 	renderData(c, stras, nil)
+}
+
+func checkGroups(s *model.Stra) error {
+	node, err := cmdb.GetCmdb().NodeGet("id", s.Nid)
+	if err != nil {
+		return err
+	}
+
+	allGroups := make([]int64, 0)
+	if s.NeedUpgrade == 1 && len(s.AlertUpgrade.Groups) > 0 {
+		for _, group := range s.AlertUpgrade.Groups {
+			allGroups = append(allGroups, group)
+		}
+	}
+	for _, group := range s.NotifyGroup {
+		allGroups = append(allGroups, int64(group))
+	}
+
+	for _, group := range allGroups {
+		team, err := model.TeamGet("id", group)
+		if err != nil {
+			return err
+		}
+
+		teamNode, err := cmdb.GetCmdb().NodeGet("id", team.Nid)
+		if err != nil {
+			return err
+		}
+
+		if !strings.HasPrefix(node.Path, teamNode.Path) {
+			return fmt.Errorf("告警组[%s][id=%d]不在当前服务树节点下", team.Ident, group)
+		}
+	}
+
+	return nil
 }
