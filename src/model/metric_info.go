@@ -21,7 +21,6 @@ type MetricInfo struct {
 	Description  string    `json:"description"`
 	Category     string    `json:"category"`
 	EndpointType string    `json:"endpoint_type"`
-	MachineType  string    `json:"machine_type"`
 	CreateTime   time.Time `json:"create_time"`
 	CreateBy     int       `json:"create_by"`
 	UpdateTime   time.Time `json:"update_time"`
