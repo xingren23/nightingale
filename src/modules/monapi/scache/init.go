@@ -99,7 +99,7 @@ func syncStras() {
 				}
 			}
 
-			if endpointType == config.EndpointKeyInstance {
+			if endpointType == model.EndpointTypeInstance {
 				// instance endpoint type doesn't need filter
 				stra.Endpoints = append(stra.Endpoints, e.Ident)
 			} else {
@@ -125,7 +125,7 @@ func syncStras() {
 		}
 
 		// convert app tags
-		if endpointType == config.EndpointKeyInstance {
+		if endpointType == model.EndpointTypeInstance {
 			// 容器打应用标签
 			stra, err := convertAppTag(stra)
 			if err != nil {
