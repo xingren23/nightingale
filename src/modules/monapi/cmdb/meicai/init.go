@@ -2,13 +2,14 @@ package meicai
 
 import (
 	"fmt"
-	"github.com/didi/nightingale/src/modules/monapi/redisc"
-	"github.com/didi/nightingale/src/toolkits/identity"
 	"log"
 	"math/rand"
 	"path"
 	"strconv"
 	"time"
+
+	"github.com/didi/nightingale/src/modules/monapi/redisc"
+	"github.com/didi/nightingale/src/toolkits/identity"
 
 	"github.com/didi/nightingale/src/toolkits/stats"
 
@@ -88,6 +89,8 @@ func (meicai *Meicai) SyncOpsLoop() {
 	syncIntervalSecs := 30 * 60
 
 	for {
+		// The command returns -2 if the key does not exist.
+		// The command returns -1 if the key exists but has no associated expire.
 		ttl := redisc.TTL(lockName)
 		if ttl != -2 {
 			if ttl == -1 {
@@ -95,6 +98,7 @@ func (meicai *Meicai) SyncOpsLoop() {
 					logger.Errorf("expire %s %d failed, %s", lockName, syncIntervalSecs, err)
 				}
 			}
+			logger.Infof("get redis lock %s failed, ttl %d", lockName, ttl)
 		} else {
 			ok, err := redisc.SETNX(lockName, identity.Identity, syncIntervalSecs)
 			if ok {
@@ -110,7 +114,7 @@ func (meicai *Meicai) SyncOpsLoop() {
 			}
 		}
 
-		time.Sleep(5*time.Minute + time.Duration(rand.Int()%10000000000))
+		time.Sleep(5*time.Minute + time.Duration(rand.Int()%10)*time.Second)
 	}
 }
 
