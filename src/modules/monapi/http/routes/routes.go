@@ -42,6 +42,8 @@ func Config(r *gin.Engine) {
 
 		nolog.GET("/garbage", GarbageFilterGet)
 		nolog.GET("/metric_info", metricInfoGet)
+
+		nolog.GET("/trigger/syncops", syncOps)
 	}
 
 	login := r.Group("/api/portal").Use(middleware.Logined())

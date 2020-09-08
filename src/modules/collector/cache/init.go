@@ -8,7 +8,6 @@ import (
 
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/model"
-	"github.com/didi/nightingale/src/modules/monapi/config"
 	"github.com/didi/nightingale/src/toolkits/address"
 	"github.com/toolkits/pkg/logger"
 	"github.com/toolkits/pkg/net/httplib"
@@ -78,7 +77,8 @@ func buildEndpointCache() error {
 			continue
 		}
 		if value, ok := tags["type"]; ok {
-			if value == config.EndpointKeyDocker || value == config.EndpointKeyPM || value == config.EndpointKeyNetwork {
+			if value == model.EndpointTypeDocker || value == model.EndpointTypePm || value == model.
+				EndpointTypeNetwork {
 				hostMap[endpoint.Ident] = endpoint
 			}
 		}

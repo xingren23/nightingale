@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/didi/nightingale/src/toolkits/stats"
-
+	"github.com/didi/nightingale/src/model"
 	"github.com/didi/nightingale/src/modules/monapi/cmdb/dataobj"
-	"github.com/didi/nightingale/src/modules/monapi/config"
+	"github.com/didi/nightingale/src/toolkits/stats"
 	"github.com/didi/nightingale/src/toolkits/str"
 
 	jsoniter "github.com/json-iterator/go"
@@ -360,10 +359,10 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 
 // host type : PM（物理机）、ALI_VM（阿里云）、TENCENT_VM（腾讯云）、KSC_VM（金山云）、KSC_PM（金山云物理机）、DOCKER（容器）、LOCAL_VM（虚拟机）
 func convertHostType2EndpointType(host string) string {
-	if strings.ToUpper(host) == "DOCKER" {
-		return config.EndpointKeyDocker
+	if strings.ToUpper(host) == model.EndpointTypeDocker {
+		return model.EndpointTypeDocker
 	} else {
-		return config.EndpointKeyPM
+		return model.EndpointTypePm
 	}
 }
 
@@ -381,7 +380,7 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 		extra := make(map[string]string, 0)
 		extra["env"] = network.EnvCode
 		extra["idc"] = network.DataCenterCode
-		extra["type"] = config.EndpointKeyNetwork
+		extra["type"] = model.EndpointTypeNetwork
 		extra["ip"] = network.ManageIp
 		endpoint.Tags = str.SortedTags(extra)
 
