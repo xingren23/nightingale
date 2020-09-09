@@ -10,6 +10,6 @@ const (
 // 策略过滤标签
 const (
 	FilterTagNodePath = "nodePath"
-	FilterTagHost     = "host"
+	FilterTagEndpoint = "endpoint"
 	FilterTagEnv      = "env"
 )

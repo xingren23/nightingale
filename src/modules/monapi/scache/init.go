@@ -58,7 +58,7 @@ func syncStras() {
 
 		// 环境标签
 		envE, envN := analysisTag(stra, config.FilterTagEnv)
-		hostE, hostN := analysisTag(stra, config.FilterTagHost)
+		endpointE, endpointN := analysisTag(stra, config.FilterTagEndpoint)
 		nodePathE, nodePathN := analysisTag(stra, config.FilterTagNodePath)
 
 		//增加叶子节点nid(排除子节点)
@@ -77,10 +77,10 @@ func syncStras() {
 		// 根据指标元数据类型加载 endpoint
 		for _, e := range endpoints {
 			// host filter
-			if len(hostE.M) != 0 && !hostE.Exists(e.Ident) {
+			if len(endpointE.M) != 0 && !endpointE.Exists(e.Ident) {
 				continue
 			}
-			if len(hostN.M) != 0 && hostN.Exists(e.Ident) {
+			if len(endpointN.M) != 0 && endpointN.Exists(e.Ident) {
 				continue
 			}
 
@@ -116,7 +116,7 @@ func syncStras() {
 		if len(stra.Tags) > 0 {
 			tagArrs := make([]model.Tag, 0)
 			for _, tag := range stra.Tags {
-				if tag.Tkey == config.FilterTagEnv || tag.Tkey == config.FilterTagHost || tag.Tkey == config.FilterTagNodePath {
+				if tag.Tkey == config.FilterTagEnv || tag.Tkey == config.FilterTagEndpoint || tag.Tkey == config.FilterTagNodePath {
 					continue
 				}
 				tagArrs = append(tagArrs, tag)

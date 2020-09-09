@@ -163,7 +163,7 @@ func straTagKeysPost(c *gin.Context) {
 	curNode, err := cmdb.GetCmdb().NodeGet("id", f.Nid)
 	errors.Dangerous(err)
 	// 补充服务树标签
-	res := []string{config.FilterTagEnv, config.FilterTagHost, config.FilterTagNodePath}
+	res := []string{config.FilterTagEnv, config.FilterTagNodePath}
 	qEndpoints := make([]string, 0)
 	if curNode.Leaf == 1 {
 		leafIds, err := cmdb.GetCmdb().LeafIds(curNode)
@@ -183,7 +183,7 @@ func straTagKeysPost(c *gin.Context) {
 	for _, resp := range tagKResps {
 		if resp.Metric == f.Metric {
 			for _, k := range resp.TagKeys {
-				if k == config.FilterTagEnv || k == "endpoint" || k == "ip" {
+				if k == config.FilterTagEnv {
 					continue
 				}
 				res = append(res, k)
@@ -266,7 +266,7 @@ func straTagValsPost(c *gin.Context) {
 
 	qEndpoints := make([]string, 0)
 	// 查询host标签
-	if f.QueryKey == config.FilterTagHost {
+	if f.QueryKey == config.FilterTagEndpoint {
 		endpoints, _, err := cmdb.GetCmdb().EndpointUnderNodeGets(leafNids, f.QueryVal, "", "", f.Limit, offset(c, f.Limit,
 			999))
 		errors.Dangerous(err)
@@ -289,13 +289,13 @@ func straTagValsPost(c *gin.Context) {
 	}
 	// 排除nodePath标签
 	for idx, include := range f.Include {
-		if include.Key == config.FilterTagNodePath || include.Key == config.FilterTagHost {
+		if include.Key == config.FilterTagNodePath {
 			f.Include = append(f.Include[:idx], f.Include[idx+1:]...)
 			break
 		}
 	}
 	for idx, exclude := range f.Exclude {
-		if exclude.Key == config.FilterTagNodePath || exclude.Key == config.FilterTagHost {
+		if exclude.Key == config.FilterTagNodePath {
 			f.Exclude = append(f.Exclude[:idx], f.Exclude[idx+1:]...)
 			break
 		}

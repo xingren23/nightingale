@@ -76,7 +76,6 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 					for _, series := range result.Series {
 
 						endpoint := series.Tags["endpoint"]
-						delete(series.Tags, "endpoint")
 
 						influxCounter, err := dataobj.GetCounter(series.Name, "", series.Tags)
 						if err != nil {
@@ -378,10 +377,7 @@ func showTagKeys(c *InfluxClient, metric, database string, endpoints []string) [
 			for _, series := range result.Series {
 				for _, valuePair := range series.Values {
 					tagKey := valuePair[0].(string)
-					// 去掉默认tag endpoint
-					if tagKey != "endpoint" {
-						keys = append(keys, tagKey)
-					}
+					keys = append(keys, tagKey)
 				}
 			}
 		}
@@ -485,7 +481,6 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 						for _, item := range items {
 							if strings.HasPrefix(item, "endpoint=") {
 								curItem = item
-								continue
 							}
 							if item != recv.Metric {
 								newItems = append(newItems, item)
