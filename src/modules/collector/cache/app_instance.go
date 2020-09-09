@@ -18,25 +18,25 @@ var AppInstanceCache *AppInstanceCacheMap
 
 func NewAppInstanceCache() *AppInstanceCacheMap {
 	return &AppInstanceCacheMap{
-		instanceMap: map[string]*AppInstance{},
+		Data: map[string]*AppInstance{},
 	}
 }
 
 // instance(uuid) -> endpoint
 type AppInstanceCacheMap struct {
 	sync.RWMutex
-	instanceMap map[string]*AppInstance
+	Data map[string]*AppInstance
 }
 
 func (cache *AppInstanceCacheMap) Get(uuid string) (*AppInstance, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
-	value, exists := cache.instanceMap[uuid]
+	value, exists := cache.Data[uuid]
 	return value, exists
 }
 
 func (this *AppInstanceCacheMap) SetAll(instances map[string]*AppInstance) {
 	this.Lock()
 	defer this.Unlock()
-	this.instanceMap = instances
+	this.Data = instances
 }

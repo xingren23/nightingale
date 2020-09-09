@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/didi/nightingale/src/modules/collector/cache"
+
 	"github.com/didi/nightingale/src/dataobj"
 	"github.com/didi/nightingale/src/modules/collector/core"
 	"github.com/didi/nightingale/src/modules/collector/core/falcon"
@@ -93,4 +95,20 @@ func getStrategy(c *gin.Context) {
 
 func getLogCached(c *gin.Context) {
 	render.Data(c, worker.GetCachedAll(), nil)
+}
+
+func getMetricInfo(c *gin.Context) {
+	render.Data(c, cache.MetricInfoCache.Data, nil)
+}
+
+func getGarbage(c *gin.Context) {
+	render.Data(c, cache.GarbageCache.Data, nil)
+}
+
+func getEndpoint(c *gin.Context) {
+	render.Data(c, cache.EndpointCache.Data, nil)
+}
+
+func getAppInstance(c *gin.Context) {
+	render.Data(c, cache.AppInstanceCache.Data, nil)
 }

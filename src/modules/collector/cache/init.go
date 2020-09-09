@@ -168,6 +168,7 @@ func getEndpoints() (EndpointsResp, error) {
 		addr := addrs[i]
 		// TODO : 翻页查询
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, EndpointsApi)
+		logger.Infof("get endpoint from url, %s", url)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil && err.Error() != "" {
 			err = fmt.Errorf("get endpints from %s failed, error:%v", url, err)
@@ -192,6 +193,7 @@ func getAppInstances() (InstancesResp, error) {
 		addr := addrs[i]
 		// TODO : 翻页查询
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, InstancesApi)
+		logger.Infof("get app instance from url, %s", url)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil && err.Error() != "" {
 			err = fmt.Errorf("get apps from %s failed, error:%v", url, err)
@@ -215,6 +217,7 @@ func getMetricInfo() (MetricInfoResp, error) {
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, MetricInfoApi)
+		logger.Infof("get metric info from url, %s", url)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil && err.Error() != "" {
 			err = fmt.Errorf("get metricInfo from %s failed, error:%v", url, err)
@@ -238,6 +241,7 @@ func getGarbageFilter() (GarbageFilterResp, error) {
 	for _, i := range rand.Perm(count) {
 		addr := addrs[i]
 		url := fmt.Sprintf("http://%s%s?limit=100000", addr, GarbageApi)
+		logger.Infof("get garbage from url, %s", url)
 		err = httplib.Get(url).SetTimeout(time.Duration(Timeout) * time.Millisecond).ToJSON(&res)
 		if err != nil && err.Error() != "" {
 			err = fmt.Errorf("get GarbageFilter config from %s failed, error:%v", url, err)

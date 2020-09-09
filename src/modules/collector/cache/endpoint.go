@@ -15,25 +15,25 @@ var EndpointCache *EndpointCacheMap
 
 func NewEndpointCache() *EndpointCacheMap {
 	return &EndpointCacheMap{
-		hostMap: map[string]*Endpoint{},
+		Data: map[string]*Endpoint{},
 	}
 }
 
 // host/network-ident(ip) -> endpoint
 type EndpointCacheMap struct {
 	sync.RWMutex
-	hostMap map[string]*Endpoint
+	Data map[string]*Endpoint
 }
 
 func (cache *EndpointCacheMap) Get(ident string) (*Endpoint, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
-	value, exists := cache.hostMap[ident]
+	value, exists := cache.Data[ident]
 	return value, exists
 }
 
 func (this *EndpointCacheMap) SetAll(hosts map[string]*Endpoint) {
 	this.Lock()
 	defer this.Unlock()
-	this.hostMap = hosts
+	this.Data = hosts
 }

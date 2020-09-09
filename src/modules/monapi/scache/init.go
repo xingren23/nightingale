@@ -126,7 +126,6 @@ func syncStras() {
 
 		// convert app tags
 		if endpointType == model.EndpointTypeInstance {
-			// 容器打应用标签
 			stra, err := convertAppTag(stra)
 			if err != nil {
 				logger.Errorf("stra %v convert app tags error %v", stra, err)

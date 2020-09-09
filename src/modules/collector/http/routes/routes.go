@@ -13,6 +13,11 @@ func Config(r *gin.Engine) {
 		sys.GET("/pid", pid)
 		sys.GET("/addr", addr)
 
+		sys.GET("/metric_info", getMetricInfo)
+		sys.GET("/app_instances", getAppInstance)
+		sys.GET("/endpoints", getEndpoint)
+		sys.GET("/garbage", getGarbage)
+
 		sys.GET("/stra", getStrategy)
 		sys.GET("/cached", getLogCached)
 		sys.POST("/push", pushData)
