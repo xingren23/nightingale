@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"unicode"
 )
 
 const (
@@ -411,8 +410,8 @@ func alignTs(ts int64, period int64) int64 {
 }
 
 // service tag digit to _id
-func convertSeviceTag(key, val string) string {
-	if !strings.HasPrefix(key, "service.") {
+func convertSeviceTag(metric, key, val string) string {
+	if !strings.HasPrefix(metric, "service.") || key != "service" {
 		return val
 	}
 	length := len(val)
@@ -423,32 +422,28 @@ func convertSeviceTag(key, val string) string {
 	builder.Reset()
 	defer bufferPool.Put(builder)
 
-	for i, j := 0, 1; i < length && j < length; {
-		for string(val[i]) != "/" && i < length && j < length {
-			builder.WriteByte(val[i])
-			i++
-			j++
-		}
-		builder.WriteByte(val[i])
-		flag := true
-		tmp := new(bytes.Buffer)
-		for j < length && string(val[j]) != "/" {
-			// 不是一个数字
-			flag = unicode.IsDigit(rune(val[j]))
-			builder.WriteByte(val[j])
-			j++
-		}
-		if j-i != 1 {
-			if flag {
-				builder.WriteString("_id")
-			} else {
-				builder.WriteString(tmp.String())
+	lastIdx := -1
+	for i := 0; i < length; i++ {
+		if val[i] == '/' {
+			if i-lastIdx > 1 {
+				gap := val[lastIdx+1 : i]
+				if _, err := strconv.ParseFloat(gap, 64); err != nil {
+					builder.WriteString(gap)
+				} else {
+					builder.WriteString("_id")
+				}
 			}
+
+			builder.WriteString("/")
+			lastIdx = i
 		}
-		i = j
-		j++
-		if j == length {
-			builder.WriteByte(val[i])
+	}
+	if val[length-1] != '/' {
+		gap := val[lastIdx+1 : length]
+		if _, err := strconv.ParseFloat(gap, 64); err != nil {
+			builder.WriteString(gap)
+		} else {
+			builder.WriteString("_id")
 		}
 	}
 
@@ -518,14 +513,16 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 		delete(m.TagsMap, k)
 		k, need := filterByCache(filterStr, k)
 		if !need {
-			continue
+			err = fmt.Errorf("tag key contains invalid chars")
+			return
 		}
 		v, need := filterByCache(filterStr, v)
 		if !need {
-			continue
+			err = fmt.Errorf("tag value contains invalid chars")
+			return
 		}
 		// 过滤service接口
-		v = convertSeviceTag(k, v)
+		v = convertSeviceTag(m.Metric, k, v)
 		if len(k) == 0 || len(v) == 0 {
 			err = fmt.Errorf("tag key and value should not be empty")
 			return
