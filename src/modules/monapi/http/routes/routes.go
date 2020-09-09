@@ -164,6 +164,10 @@ func Config(r *gin.Engine) {
 		hawkeye.GET("/event/his", eventHisGetsHawkeye)
 		// 屏蔽
 		hawkeye.GET("/node/:id/maskconf", maskconfGetsHawkeye)
+		// 屏蔽查询标签
+		hawkeye.POST("/maskconf/tagKeys", maskconfTagKeysPost)
+		// 屏蔽查询标签value
+		hawkeye.POST("/maskconf/tagVals", maskconfTagValsPost)
 	}
 
 	v1 := r.Group("/v1/portal").Use(middleware.CheckHeaderToken())
