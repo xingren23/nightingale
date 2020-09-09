@@ -183,7 +183,6 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		if instance.Port > 0 {
 			item.TagsMap["port"] = strconv.Itoa(instance.Port)
 		}
-		item.TagsMap["ip"] = instance.Ident
 		item.Endpoint = instance.Ident
 	case model.EndpointTypePm:
 		fallthrough
@@ -195,7 +194,6 @@ func convertMetricItem(item *dataobj.MetricValue) (*dataobj.MetricValue, error) 
 		if !exists {
 			return nil, fmt.Errorf("ident %s is not exists in endpoint cache", ident)
 		}
-		item.TagsMap["ip"] = endpointItem.Ident
 		item.Endpoint = endpointItem.Ident
 	default:
 		// 其他类型丢弃

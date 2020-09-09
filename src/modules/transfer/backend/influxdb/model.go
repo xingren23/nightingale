@@ -58,7 +58,7 @@ func (query *ShowSeries) renderInclude() {
 		includePart := "("
 		for _, include := range query.Include {
 			for _, value := range include.Values {
-				includePart += fmt.Sprintf(" \"%s\"='%s' AND", include.Key, value)
+				includePart += fmt.Sprintf(" \"%s\"='%s' OR", include.Key, value)
 			}
 		}
 		includePart = includePart[:len(includePart)-len("AND")]
