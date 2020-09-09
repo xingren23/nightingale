@@ -21,7 +21,7 @@ func Init(l LoggerSection) {
 		os.Exit(1)
 	}
 
-	lb.SetRotateByHour(true)
+	lb.SetRotateByHour(false)
 	lb.SetKeepHours(l.KeepHours)
 
 	logger.SetLogging(l.Level, lb)

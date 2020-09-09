@@ -108,13 +108,16 @@ func (u *User) CanModifyTeam(t *Team) (bool, error) {
 		return true, nil
 	}
 
-	session := DB["uic"].Where("team_id=? and user_id=?", t.Id, u.Id)
-	if t.Mgmt == 1 {
-		session = session.Where("is_admin=1")
-	}
+	// fixme : 通过 tianwang 控制权限
+	//session := DB["uic"].Where("team_id=? and user_id=?", t.Id, u.Id)
+	//if t.Mgmt == 1 {
+	//	session = session.Where("is_admin=1")
+	//}
+	//
+	//cnt, err := session.Count(new(TeamUser))
+	//return cnt > 0, err
 
-	cnt, err := session.Count(new(TeamUser))
-	return cnt > 0, err
+	return true, nil
 }
 
 func (u *User) CopyLdapAttr(sr *ldap.SearchResult) {
