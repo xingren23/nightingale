@@ -91,6 +91,12 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 
 					}
 				}
+			} else {
+				if err != nil {
+					logger.Errorf("query data point on influxdb error %v.", err)
+				} else if response.Error() != nil {
+					logger.Errorf("query data point on influxdb error %v.", response.Error())
+				}
 			}
 		}
 	}
@@ -200,6 +206,12 @@ func (influxdb *InfluxdbDataSource) QueryMetrics(recv dataobj.EndpointsRecv) *da
 			}
 		}
 		return resp
+	} else {
+		if err != nil {
+			logger.Errorf("query metrics on influxdb error %v.", err)
+		} else if response.Error() != nil {
+			logger.Errorf("query metrics on influxdb error %v.", response.Error())
+		}
 	}
 	return nil
 }
@@ -305,6 +317,12 @@ func (influxdb *InfluxdbDataSource) QueryTagValsByClude(recv dataobj.TagValsClud
 			resTagPairs = append(resTagPairs, tp)
 		}
 		tagkvResp.Tagkvs = resTagPairs
+	} else {
+		if err != nil {
+			logger.Errorf("query tag value by clude on influxdb error %v.", err)
+		} else if response.Error() != nil {
+			logger.Errorf("query tag value by clude on influxdb error %v.", response.Error())
+		}
 	}
 
 	return tagkvResp
@@ -398,6 +416,12 @@ func showTagValues(c *InfluxClient, keys []string, metric, database string) []*d
 				}
 			}
 		}
+	} else {
+		if err != nil {
+			logger.Errorf("query tag value on influxdb error %v.", err)
+		} else if response.Error() != nil {
+			logger.Errorf("query tag value on influxdb error %v.", response.Error())
+		}
 	}
 	return tagkv
 }
@@ -479,6 +503,12 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 						}
 					}
 				}
+			}
+		} else {
+			if err != nil {
+				logger.Errorf("query index by clude on influxdb error %v.", err)
+			} else if response.Error() != nil {
+				logger.Errorf("query index by clude  on influxdb error %v.", response.Error())
 			}
 		}
 		for _, xcludeResp := range xcludeRespMap {
