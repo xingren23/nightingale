@@ -26,6 +26,10 @@ type tagKQueryForm struct {
 	Metric string `json:"metric"`
 }
 
+/**
+leaf节点查询节点下endpoint的influxdb标签
+其他节点查询influxdb表中全量标签
+*/
 func maskconfTagKeysPost(c *gin.Context) {
 	var f tagKQueryForm
 	errors.Dangerous(c.ShouldBind(&f))
@@ -74,6 +78,10 @@ type tagVQueryForm struct {
 	Limit    int                `json:"limit"`
 }
 
+/**
+leaf节点查询节点下endpoint的influxdb标签
+其他节点查询influxdb表中全量标签
+*/
 func maskconfTagValsPost(c *gin.Context) {
 	var f tagVQueryForm
 	errors.Dangerous(c.ShouldBind(&f))

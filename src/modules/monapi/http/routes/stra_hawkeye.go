@@ -156,6 +156,11 @@ type tagKsQueryForm struct {
 	Metric string `json:"metric"`
 }
 
+/**
+包含服务树过滤标签(env,endpoint,nodePath)
+leaf节点查询节点下endpoint的influxdb标签
+其他节点查询influxdb表中全量标签
+*/
 func straTagKeysPost(c *gin.Context) {
 	var f tagKsQueryForm
 	errors.Dangerous(c.ShouldBind(&f))
@@ -237,6 +242,12 @@ type tagValsQueryForm struct {
 	Limit    int                `json:"limit"`
 }
 
+/**
+包含服务树过滤标签(env,endpoint,nodePath)
+endpoint,env,nodePath标签查询服务树
+leaf节点查询节点下endpoint的influxdb标签
+其他节点查询influxdb表中全量标签
+*/
 func straTagValsPost(c *gin.Context) {
 	var f tagValsQueryForm
 	errors.Dangerous(c.ShouldBind(&f))
