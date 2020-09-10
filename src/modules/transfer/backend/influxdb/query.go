@@ -482,6 +482,7 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 						for _, item := range items {
 							if strings.HasPrefix(item, "endpoint=") {
 								curItem = item
+								continue
 							}
 							if item != recv.Metric {
 								newItems = append(newItems, item)
