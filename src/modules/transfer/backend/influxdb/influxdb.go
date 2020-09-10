@@ -1,6 +1,7 @@
 package influxdb
 
 import (
+	"strings"
 	"time"
 
 	"github.com/didi/nightingale/src/dataobj"
@@ -59,6 +60,16 @@ func (influxdb *InfluxdbDataSource) Push2Queue(items []*dataobj.MetricValue) {
 
 		if !isSuccess {
 			errCnt += 1
+		}
+
+		// 守望者 service 相关指标， service.count, service.error.count, service.success.count, service.success.count.time*
+		if item.Metric == "service.error.count" || item.Metric == "service.success.count" ||
+			item.Metric == "service.count" || strings.HasPrefix(item.Metric, "service.success.count.time") {
+			serviceItem := influxdb.convert2InfluxdbServiceItem(item)
+			isSuccess := influxdb.InfluxdbQueue.PushFront(serviceItem)
+			if !isSuccess {
+				errCnt += 1
+			}
 		}
 	}
 	stats.Counter.Set("influxdb.queue.err", errCnt)
@@ -129,6 +140,21 @@ func (influxdb *InfluxdbDataSource) convert2InfluxdbItem(d *dataobj.MetricValue)
 	t.Tags["endpoint"] = d.Endpoint
 	t.Measurement = d.Metric
 	t.Fields["value"] = d.Value
+	t.Timestamp = d.Timestamp
+
+	return &t
+}
+
+// 守望者系统特有指标
+func (influxdb *InfluxdbDataSource) convert2InfluxdbServiceItem(d *dataobj.MetricValue) *dataobj.InfluxdbItem {
+	t := dataobj.InfluxdbItem{Tags: make(map[string]string), Fields: make(map[string]interface{})}
+
+	for k, v := range d.TagsMap {
+		t.Tags[k] = v
+	}
+	t.Tags["endpoint"] = d.Endpoint
+	t.Measurement = "service"
+	t.Fields[d.Metric[len("service."):]] = d.Value
 	t.Timestamp = d.Timestamp
 
 	return &t
