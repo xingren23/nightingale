@@ -320,6 +320,9 @@ func GetReqs(stra *model.Stra, metric string, endpoints []string, now int64) []*
 				TS:       now,
 			}
 			lostSeries = append(lostSeries, s)
+		} else if index.Step == -1 {
+			// influxdb没有查到索引，丢弃掉，不告警
+			continue
 		} else {
 			if len(index.Tags) == 0 {
 				hash := str.MD5(index.Endpoint, index.Metric, "")
