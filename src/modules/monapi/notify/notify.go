@@ -120,6 +120,9 @@ func genTags(event *model.Event) string {
 }
 
 func genEndpoint(event *model.Event) string {
+	if event.EndpointAlias == "" {
+		return event.Endpoint
+	}
 	return fmt.Sprintf("%s(%s)", event.Endpoint, event.EndpointAlias)
 }
 
