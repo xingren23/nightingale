@@ -496,6 +496,7 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 						if len(newItems) > 0 {
 							if tags, err := dataobj.SplitTagsString(strings.Join(newItems, ",")); err == nil {
 								xcludeRespMap[curItem].Tags = append(xcludeRespMap[curItem].Tags, dataobj.SortedTags(tags))
+								xcludeRespMap[curItem].Step = 60
 							}
 						}
 					}
