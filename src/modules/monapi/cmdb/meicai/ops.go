@@ -352,7 +352,7 @@ func convertHost2Endpoint(hosts []CmdbHost) []*dataobj.Endpoint {
 		extra["env"] = host.EnvCode
 		extra["idc"] = host.DataCenterCode
 		extra["type"] = convertHostType2EndpointType(host.Type)
-		extra["ip"] = host.Ip
+		extra["endpoint"] = host.Ip
 		endpoint.Tags = str.SortedTags(extra)
 
 		ret = append(ret, endpoint)
@@ -384,7 +384,7 @@ func convertNetwork2Endpoint(networks []Network) []*dataobj.Endpoint {
 		extra["env"] = network.EnvCode
 		extra["idc"] = network.DataCenterCode
 		extra["type"] = model.EndpointTypeNetwork
-		extra["ip"] = network.ManageIp
+		extra["endpoint"] = network.ManageIp
 		endpoint.Tags = str.SortedTags(extra)
 
 		ret = append(ret, endpoint)
