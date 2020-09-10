@@ -53,6 +53,19 @@ type TsdbQueryResponse struct {
 	Values   []*RRDData `json:"values"`
 }
 
+func (t *TsdbQueryResponse) String() string {
+	return fmt.Sprintf(
+		"<Start:%s, End:%s, Endpoint:%s, Counter:%s, DsType:%s, Step:%d Values:%v>",
+		str.UnixTsFormat(t.Start),
+		str.UnixTsFormat(t.End),
+		t.Endpoint,
+		t.Counter,
+		t.DsType,
+		t.Step,
+		t.Values,
+	)
+}
+
 type TsdbItem struct {
 	Endpoint  string            `json:"endpoint"`
 	Metric    string            `json:"metric"`
