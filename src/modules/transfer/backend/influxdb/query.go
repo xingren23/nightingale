@@ -76,6 +76,7 @@ func (influxdb *InfluxdbDataSource) QueryData(inputs []dataobj.QueryData) []*dat
 					for _, series := range result.Series {
 
 						endpoint := series.Tags["endpoint"]
+						delete(series.Tags, "endpoint")
 
 						influxCounter, err := dataobj.GetCounter(series.Name, "", series.Tags)
 						if err != nil {
