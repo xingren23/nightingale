@@ -448,7 +448,7 @@ func (influxdb *InfluxdbDataSource) QueryIndexByClude(recvs []dataobj.CludeRecv)
 				Endpoint: endpoint,
 				Metric:   recv.Metric,
 				Tags:     make([]string, 0),
-				Step:     60,
+				Step:     -1,
 				DsType:   "GAUGE",
 			}
 		}
