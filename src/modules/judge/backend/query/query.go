@@ -58,6 +58,7 @@ func Query(reqs []*dataobj.QueryData, sid int64, expFunc string) []*dataobj.Tsdb
 		} else {
 			respData = append(respData, resp.Data...)
 		}
+		logger.Debugf("query data from transfer %v", respData)
 	}
 
 	return respData
@@ -122,6 +123,8 @@ func QueryFromMem(reqs []*dataobj.QueryData, sid int64) ([]*dataobj.TsdbQueryRes
 			newReqs = append(newReqs, newReq)
 		}
 	}
+
+	logger.Debugf("query data from memory %v", resps)
 
 	return resps, newReqs
 }
