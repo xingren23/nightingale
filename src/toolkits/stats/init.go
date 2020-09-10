@@ -28,7 +28,7 @@ func Init(prefix string, addr ...string) {
 	} else if file.IsExist(path.Join(runner.Cwd, "etc", "address.yml")) {
 		//address.yml 存在，则使用配置文件的地址
 		port := address.GetHTTPPort("collector")
-		PushUrl = fmt.Sprintf("http://127.0.0.1:%d/api/collector/push", port)
+		PushUrl = fmt.Sprintf("http://127.0.0.1:%d/v1/push", port)
 	}
 
 	Counter = NewCounter(prefix)

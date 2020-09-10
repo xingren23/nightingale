@@ -23,3 +23,6 @@ logger:
   dir: logs/judge
   level: WARNING
   keepHours: 2
+
+strategy:
+  nodataInterval: 60
