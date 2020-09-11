@@ -170,7 +170,7 @@ func DoNotify(event *model.Event) {
 		case "sms":
 			var tos []string
 			for j := 0; j < len(users); j++ {
-				tos = append(tos, users[j].Phone)
+				tos = append(tos, users[j].Username)
 			}
 
 			message.Tos = tos
