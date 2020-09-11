@@ -168,7 +168,7 @@ func straTagKeysPost(c *gin.Context) {
 	curNode, err := cmdb.GetCmdb().NodeGet("id", f.Nid)
 	errors.Dangerous(err)
 	// 补充服务树标签
-	res := []string{config.FilterTagEnv, config.FilterTagNodePath}
+	res := []string{config.FilterTagEnv, config.FilterTagNodePath, config.FilterTagEndpoint}
 	qEndpoints := make([]string, 0)
 	if curNode.Leaf == 1 {
 		leafIds, err := cmdb.GetCmdb().LeafIds(curNode)
@@ -188,7 +188,7 @@ func straTagKeysPost(c *gin.Context) {
 	for _, resp := range tagKResps {
 		if resp.Metric == f.Metric {
 			for _, k := range resp.TagKeys {
-				if k == config.FilterTagEnv {
+				if k == config.FilterTagEnv || k == config.FilterTagEndpoint {
 					continue
 				}
 				res = append(res, k)
