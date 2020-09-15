@@ -83,7 +83,7 @@ UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'container.%';
 UPDATE metric_info SET endpoint_type = 'DOCKER' WHERE metric like 'fpm.%';
 # 指标元数据洗物理机类型
 UPDATE metric_info SET endpoint_type = 'PM' WHERE endpoint_type = 'HOST';
-
+DELETE FROM metric_info WHERE metric not like '%.%';
 # 上线用户组导数
 INSERT INTO n9e_uic.`user` (id,username,dispname,email) SELECT id,code,name,email FROM arch_hawkeye.user WHERE status >-1;
 INSERT INTO n9e_uic.`team` (id,nid,ident,name) SELECT id,service_tag_id,name,description from arch_hawkeye.team WHERE status >-1;

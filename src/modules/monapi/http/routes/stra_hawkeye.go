@@ -24,6 +24,19 @@ func strasHawkeyeGet(c *gin.Context) {
 	name := queryStr(c, "name", "")
 	priority := queryInt(c, "priority", 4)
 	nid := queryInt64(c, "nid", 0)
+
+	username, exists := c.Get("username")
+	if !exists {
+		errors.Dangerous(fmt.Errorf("signed in user [%s] is not exists", username.(string)))
+		return
+	}
+	// 权限判断
+	hasPermit, err := hasOpsPermission(nid, username.(string))
+	if !hasPermit || err != nil {
+		errors.Dangerous(fmt.Errorf("当前用户没有此节点权限"))
+		return
+	}
+
 	list, err := model.StrasList(name, priority, nid)
 	straEndpointsMap := make(map[int64][]string)
 
@@ -46,6 +59,61 @@ func strasHawkeyeGet(c *gin.Context) {
 		stra.Endpoints = straEndpointsMap[stra.Id]
 	}
 	renderData(c, list, err)
+}
+
+type opsRoleQueryForm struct {
+	SrvTreeId int64  `json:"srvTreeId"`
+	UserCode  string `json:"userCode"`
+}
+
+type SrvRoleResponse struct {
+	Message string     `json:"message"`
+	Status  int64      `json:"status"`
+	Result  []*SrvRole `json:"result"`
+}
+
+type SrvRole struct {
+	Level string `json:"level"`
+	Name  string `json:"name"`
+	Code  string `json:"code"`
+	Type  string `json:"type"`
+}
+
+func hasOpsPermission(nid int64, signedInUser string) (bool, error) {
+	hasPermission := false
+	cfg := config.Get().Permission
+	url := cfg.Addr + "/api/srv_tree_user/find_tree_user_role"
+	req := opsRoleQueryForm{
+		SrvTreeId: nid,
+		UserCode:  signedInUser,
+	}
+	var err error
+	var result SrvRoleResponse
+	err = httplib.Post(url).JSONBodyQuiet(req).
+		Header("token", cfg.Token).
+		SetTimeout(time.Duration(cfg.Timeout) * time.Millisecond).
+		ToJSON(&result)
+
+	if err != nil {
+		return false, fmt.Errorf("get srvRole failed, error:%v, req:%+v", err, req)
+	}
+
+	if result.Status != 200 {
+		return false, fmt.Errorf("get srvRole response status code %d %s", result.Status, result.Message)
+	}
+
+	// 角色判断权限
+	for _, role := range result.Result {
+		if role == nil {
+			continue
+		}
+		// 节点角色为研发、运维、dba、测试有查看策略权限
+		if strings.HasPrefix(role.Code, "develop_") || strings.HasPrefix(role.Code, "op_") || strings.HasPrefix(role.Code, "dba_") || strings.HasPrefix(role.Code, "test_") {
+			hasPermission = true
+		}
+	}
+
+	return hasPermission, nil
 }
 
 type metricsQueryForm struct {
@@ -86,7 +154,7 @@ func straMetricsPost(c *gin.Context) {
 		errors.Dangerous(err)
 
 		for _, metric := range metrics {
-			if f.Query != "" && !strings.Contains(metric, f.Query) {
+			if f.Query != "" && !strings.HasPrefix(metric, f.Query) {
 				continue
 			}
 			var note string
@@ -103,7 +171,7 @@ func straMetricsPost(c *gin.Context) {
 	} else {
 		metricInfoMap := mcache.MetricInfoCache.GetAll()
 		for _, item := range metricInfoMap {
-			if f.Query != "" && !strings.Contains(item.Metric, f.Query) {
+			if f.Query != "" && !strings.HasPrefix(item.Metric, f.Query) {
 				continue
 			}
 			m := metricResp{Metric: item.Metric, Note: item.Description}
@@ -393,11 +461,9 @@ func straEffectiveGet(c *gin.Context) {
 	if stras != nil && len(stras) > 0 {
 		for _, item := range stras {
 			if item.Id == stra.Id {
-				stra.Endpoints = item.Endpoints
-				stra.Tags = item.Tags
 				judgeNode, err := scache.JudgeActiveNode.GetInstanceBy(node)
 				errors.Dangerous(err)
-
+				stra = item
 				stra.JudgeInstance = judgeNode
 				break
 			}
