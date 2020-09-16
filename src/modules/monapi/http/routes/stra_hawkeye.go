@@ -86,7 +86,7 @@ func straMetricsPost(c *gin.Context) {
 		errors.Dangerous(err)
 
 		for _, metric := range metrics {
-			if f.Query != "" && !strings.Contains(metric, f.Query) {
+			if f.Query != "" && !strings.HasPrefix(metric, f.Query) {
 				continue
 			}
 			var note string
@@ -103,7 +103,7 @@ func straMetricsPost(c *gin.Context) {
 	} else {
 		metricInfoMap := mcache.MetricInfoCache.GetAll()
 		for _, item := range metricInfoMap {
-			if f.Query != "" && !strings.Contains(item.Metric, f.Query) {
+			if f.Query != "" && !strings.HasPrefix(item.Metric, f.Query) {
 				continue
 			}
 			m := metricResp{Metric: item.Metric, Note: item.Description}
@@ -393,11 +393,9 @@ func straEffectiveGet(c *gin.Context) {
 	if stras != nil && len(stras) > 0 {
 		for _, item := range stras {
 			if item.Id == stra.Id {
-				stra.Endpoints = item.Endpoints
-				stra.Tags = item.Tags
 				judgeNode, err := scache.JudgeActiveNode.GetInstanceBy(node)
 				errors.Dangerous(err)
-
+				stra = item
 				stra.JudgeInstance = judgeNode
 				break
 			}
