@@ -210,13 +210,14 @@ func isInConverge(event *model.Event) bool {
 		startTs = recoveryTs
 	}
 
-	cnt, err := model.EventCnt(event.HashId, model.ParseEtime(startTs), model.ParseEtime(now), event.RealUpgrade)
+	cnt, err := model.EventCnt(event.HashId, startTs, now, event.RealUpgrade)
 	if err != nil {
 		logger.Errorf("get event count failed, err: %v", err)
 		return false
 	}
 
 	if cnt >= convergeMaxCounts {
+		println("收敛,hashid: ", event.HashId)
 		logger.Infof("converge max counts: %d reached, current: %v, event hashid: %v", convergeMaxCounts, cnt, event.HashId)
 		return true
 	}
