@@ -48,11 +48,6 @@ func strasHawkeyeGet(c *gin.Context) {
 	renderData(c, list, err)
 }
 
-type opsRoleQueryForm struct {
-	SrvTreeId int64  `json:"srvTreeId"`
-	UserCode  string `json:"userCode"`
-}
-
 type metricsQueryForm struct {
 	Nid   int64  `json:"nid"`
 	Limit int    `json:"limit"`
