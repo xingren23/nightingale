@@ -217,7 +217,6 @@ func isInConverge(event *model.Event) bool {
 	}
 
 	if cnt >= convergeMaxCounts {
-		println("收敛,hashid: ", event.HashId)
 		logger.Infof("converge max counts: %d reached, current: %v, event hashid: %v", convergeMaxCounts, cnt, event.HashId)
 		return true
 	}
