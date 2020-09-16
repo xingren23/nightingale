@@ -11,26 +11,19 @@ import (
 )
 
 type Config struct {
-	Salt       string                   `yaml:"salt"`
-	Logger     loggerSection            `yaml:"logger"`
-	HTTP       httpSection              `yaml:"http"`
-	LDAP       ldapSection              `yaml:"ldap"`
-	Redis      redisSection             `yaml:"redis"`
-	Queue      queueSection             `yaml:"queue"`
-	Cleaner    cleanerSection           `yaml:"cleaner"`
-	Link       linkSection              `yaml:"link"`
-	Notify     map[string][]string      `yaml:"notify"`
-	Tokens     []string                 `yaml:"tokens"`
-	SSO        ssoSection               `yaml:"sso"`
-	Cmdb       CmdbSection              `yaml:"cmdb"`
-	Permission PermissionSection        `yaml:"permission"`
-	Identity   identity.IdentitySection `yaml:"identity"`
-}
-
-type PermissionSection struct {
-	Addr    string `yaml:"addr"`
-	Timeout int    `yaml:"timeout"`
-	Token   string `yaml:"token"`
+	Salt     string                   `yaml:"salt"`
+	Logger   loggerSection            `yaml:"logger"`
+	HTTP     httpSection              `yaml:"http"`
+	LDAP     ldapSection              `yaml:"ldap"`
+	Redis    redisSection             `yaml:"redis"`
+	Queue    queueSection             `yaml:"queue"`
+	Cleaner  cleanerSection           `yaml:"cleaner"`
+	Link     linkSection              `yaml:"link"`
+	Notify   map[string][]string      `yaml:"notify"`
+	Tokens   []string                 `yaml:"tokens"`
+	SSO      ssoSection               `yaml:"sso"`
+	Cmdb     CmdbSection              `yaml:"cmdb"`
+	Identity identity.IdentitySection `yaml:"identity"`
 }
 
 type CmdbSection struct {

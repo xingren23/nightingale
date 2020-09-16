@@ -24,13 +24,12 @@ sys:
   # monitor nic which filtered by prefix
   ifacePrefix:
     - eth
-    - em
-    - ens
+    - bond
 
   # ignore disk mount point
   mountIgnore:
     prefix:
-      - /var/lib
+      - /data/docker
       - /run
     # collect anyway
     exclude: []
