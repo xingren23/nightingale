@@ -43,7 +43,7 @@ func genClaimLink(event *model.Event) string {
 }
 
 func genStraLink(event *model.Event) string {
-	return fmt.Sprintf(config.Get().Link.Stra, event.Sid)
+	return fmt.Sprintf(config.Get().Link.Stra, event.Nid, event.Sid)
 }
 
 func genEventLink(event *model.Event) string {
