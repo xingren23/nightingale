@@ -34,17 +34,16 @@ func PushV1(metricItems []*dataobj.MetricValue) error {
 		if item.Endpoint == "" {
 			item.Endpoint = identity.Identity
 		}
-		err = item.CheckMetricValidity(filterStr, now)
+		err = item.ConvertAndCheckValidity(filterStr, now)
 		if err != nil {
-			msg := fmt.Errorf("metric:%v err:%v", item, err)
-			logger.Warning(msg)
+			logger.Debugf("metric:%v err:%v", item, err)
 			// 如果数据有问题，直接跳过吧，比如mymon采集的到的数据，其实只有一个有问题，剩下的都没问题
 			continue
 		}
 		// 指标转换：白名单、渲染标签
 		item, err := convertMetricItem(item)
 		if err != nil {
-			logger.Errorf("convert error metric:%v err:%v", item, err)
+			logger.Debugf("metric:%v err:%v", item, err)
 			continue
 		}
 		if item.CounterType == dataobj.COUNTER {
@@ -105,10 +104,9 @@ func Push(metricItems []*dataobj.MetricValue) error {
 		if item.Endpoint == "" {
 			item.Endpoint = identity.Identity
 		}
-		err = item.CheckMetricValidity(filterStr, now)
+		err = item.ConvertAndCheckValidity(filterStr, now)
 		if err != nil {
-			msg := fmt.Errorf("metric:%v err:%v", item, err)
-			logger.Warning(msg)
+			logger.Debugf("metric:%v err:%v", item, err)
 			// 如果数据有问题，直接跳过吧，比如mymon采集的到的数据，其实只有一个有问题，剩下的都没问题
 			continue
 		}

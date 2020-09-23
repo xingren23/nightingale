@@ -451,65 +451,10 @@ func convertSeviceTag(metric, key, val string) string {
 	return res
 }
 
-func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err error) {
-	if m == nil {
-		err = fmt.Errorf("item is nil")
-		return
-	}
-
-	if m.Metric == "" || m.Endpoint == "" {
-		err = fmt.Errorf("metric or endpoint should not be empty")
-		return
-	}
-
-	// 检测保留字 fixme : reservedWords
-	reservedWords := "[\\t] [\\r] [\\n] [,] [ ] [=]"
-	if HasReservedWords(m.Metric) {
-		err = fmt.Errorf("metric:%s contains reserved words: %s", m.Metric, reservedWords)
-		return
-	}
-	if HasReservedWords(m.Endpoint) {
-		err = fmt.Errorf("endpoint:%s contains reserved words: %s", m.Endpoint, reservedWords)
-		return
-	}
-
-	if m.CounterType == "" {
-		m.CounterType = GAUGE
-	}
-
-	if m.CounterType != GAUGE && m.CounterType != COUNTER && m.CounterType != SUBTRACT {
-		err = fmt.Errorf("wrong counter type")
-		return
-	}
-
-	if m.ValueUntyped == "" {
-		err = fmt.Errorf("value is nil")
-		return
-	}
-
-	if m.Step <= 0 {
-		err = fmt.Errorf("step sholud larger than 0")
-		return
-	}
-
-	if len(m.TagsMap) == 0 {
-		m.TagsMap, err = SplitTagsString(m.Tags)
-		if err != nil {
-			return
-		}
-	}
-
-	if len(m.TagsMap) > 12 {
-		err = fmt.Errorf("tagkv count is too large > 12")
-	}
-
-	if len(m.Metric) > 128 {
-		err = fmt.Errorf("len(m.Metric) is too large")
-		return
-	}
+// 扩展checkvalidity，支持tagk/tagv 反垃圾，对service tag进行转换
+func (m *MetricValue) ConvertAndCheckValidity(filterStr []string, now int64) (err error) {
 
 	for k, v := range m.TagsMap {
-		// fixme: for 循环内部 不要 delete
 		delete(m.TagsMap, k)
 		k, need := filterByCache(filterStr, k)
 		if !need {
@@ -531,51 +476,7 @@ func (m *MetricValue) CheckMetricValidity(filterStr []string, now int64) (err er
 		m.TagsMap[k] = v
 	}
 
-	m.Tags = SortedTags(m.TagsMap)
-	if len(m.Tags) > 512 {
-		err = fmt.Errorf("len(m.Tags) is too large")
-		return
-	}
-
-	//时间超前5分钟则报错
-	if m.Timestamp-now > 300 {
-		err = fmt.Errorf("point timestamp:%d is ahead of now:%d", m.Timestamp, now)
-		return
-	}
-
-	if m.Timestamp <= 0 {
-		m.Timestamp = now
-	}
-
-	m.Timestamp = alignTs(m.Timestamp, int64(m.Step))
-
-	valid := true
-	var vv float64
-	// fixme ： 抽取一个方法
-	switch cv := m.ValueUntyped.(type) {
-	case string:
-		vv, err = strconv.ParseFloat(cv, 64)
-		if err != nil {
-			valid = false
-		}
-	case float64:
-		vv = cv
-	case uint64:
-		vv = float64(cv)
-	case int64:
-		vv = float64(cv)
-	case int:
-		vv = float64(cv)
-	default:
-		valid = false
-	}
-
-	if !valid {
-		err = fmt.Errorf("value [%v] is illegal", m.Value)
-		return
-	}
-
-	m.Value = vv
+	err = m.CheckValidity(now)
 	return
 }
 
